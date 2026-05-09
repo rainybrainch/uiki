@@ -2753,9 +2753,12 @@ function showToast(msg) {
 // 起動
 // ─────────────────────────────────────────────────────────
 function bootstrap() {
-  // Service Worker 登録
+  // Service Worker 登録（updateViaCache: 'none' で sw.js 自体もキャッシュせず毎回最新を取る）
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
+    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(reg => {
+      // 1時間ごとに更新チェック
+      setInterval(() => reg.update().catch(() => {}), 60 * 60 * 1000);
+    }).catch(() => {});
   }
 
   // ① 初回起動時、RBAI Layer 構成由来のデフォルト集水域を投入

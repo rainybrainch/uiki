@@ -44,10 +44,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 同一オリジン HTML/JS/その他: network-first、失敗したらキャッシュ
+  // 同一オリジン: network-first + ブラウザキャッシュをスキップ
+  // これで `?v=N` が無くても毎回最新を取りに行く
   if (url.origin === self.location.origin) {
     event.respondWith(
-      fetch(req)
+      fetch(req, { cache: 'no-store' })
         .then((res) => {
           if (res.ok) {
             const clone = res.clone();
