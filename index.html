@@ -332,6 +332,14 @@ section, footer {
   text-overflow: ellipsis;
 }
 
+.feed-item .device-badge {
+  flex-shrink: 0;
+  font-size: 0.95rem;
+  margin-top: 0.05rem;
+  line-height: 1;
+  filter: grayscale(20%);
+}
+
 .feed-item .feed-date {
   font-family: var(--mono);
   font-size: 0.7rem;
@@ -1018,10 +1026,193 @@ footer {
   border-color: var(--rain-blue);
 }
 
+/* ───── Header (sticky top) ───── */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.7rem 1.1rem calc(0.7rem) 1.1rem;
+  padding-top: calc(0.7rem + env(safe-area-inset-top));
+  background: rgba(7,9,15,0.92);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(201,168,76,0.1);
+}
+.app-header .logo {
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  color: var(--gold);
+  letter-spacing: 0.18em;
+  font-weight: 600;
+}
+.menu-btn {
+  background: transparent;
+  border: none;
+  color: var(--gold);
+  font-size: 1.45rem;
+  cursor: pointer;
+  padding: 0.25rem 0.6rem;
+  line-height: 1;
+}
+
+/* ───── Tab pages ───── */
+.tab-page { display: block; }
+.tab-page[hidden] { display: none !important; }
+
+/* ───── Bottom tab bar ───── */
+.tab-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(7,9,15,0.97);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid rgba(201,168,76,0.18);
+  display: flex;
+  z-index: 40;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.tab-bar button {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--dim);
+  padding: 0.6rem 0.3rem 0.55rem;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.18rem;
+  font-family: var(--sans);
+  transition: color 0.2s ease;
+  position: relative;
+}
+.tab-bar button .tab-icon { font-size: 1.35rem; line-height: 1; }
+.tab-bar button .tab-label { font-size: 0.66rem; letter-spacing: 0.08em; }
+.tab-bar button.active { color: var(--gold); }
+.tab-bar button.active::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 30%;
+  right: 30%;
+  height: 2px;
+  background: var(--gold);
+  border-radius: 0 0 2px 2px;
+}
+
+/* ───── Drawer menu ───── */
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(380px, 88vw);
+  background: var(--bg);
+  border-left: 1px solid rgba(201,168,76,0.2);
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.3s ease;
+  padding-top: env(safe-area-inset-top);
+}
+.drawer.open { transform: translateX(0); }
+.drawer[hidden] { display: none !important; }
+
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 55;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.drawer-overlay.open { opacity: 1; }
+.drawer-overlay[hidden] { display: none !important; }
+
+.drawer-header {
+  padding: 1.6rem 1.3rem 1.3rem;
+  border-bottom: 1px solid rgba(201,168,76,0.15);
+  background: linear-gradient(180deg, rgba(201,168,76,0.06), transparent);
+}
+.drawer-title {
+  font-family: var(--serif);
+  font-size: 1.4rem;
+  color: var(--gold);
+  letter-spacing: 0.18em;
+  font-weight: 600;
+}
+.drawer-sub {
+  font-family: var(--sans);
+  font-size: 0.75rem;
+  color: var(--dim);
+  margin-top: 0.4rem;
+  line-height: 1.5;
+}
+
+.drawer-list {
+  list-style: none;
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.4rem 0;
+  margin: 0;
+}
+.drawer-list li {
+  border-bottom: 1px solid rgba(201,168,76,0.07);
+}
+.drawer-list a {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.95rem 1.3rem;
+  color: var(--text);
+  text-decoration: none;
+  font-family: var(--sans);
+  font-size: 0.92rem;
+  cursor: pointer;
+  transition: background 0.15s ease, padding-left 0.15s ease;
+  letter-spacing: 0.05em;
+}
+.drawer-list a:hover { background: rgba(201,168,76,0.05); }
+.drawer-list a.current {
+  background: rgba(201,168,76,0.07);
+  border-left: 3px solid var(--gold);
+  padding-left: calc(1.3rem - 3px);
+  color: var(--gold);
+}
+.drawer-list .dr-icon {
+  font-size: 1.15rem;
+  flex-shrink: 0;
+  width: 1.6em;
+  text-align: center;
+}
+
+.drawer-close {
+  background: rgba(0,0,0,0.4);
+  border: none;
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 0.95rem;
+  padding: 1.1rem;
+  cursor: pointer;
+  letter-spacing: 0.15em;
+  border-top: 1px solid rgba(201,168,76,0.15);
+  padding-bottom: calc(1.1rem + env(safe-area-inset-bottom));
+}
+.drawer-close:hover { background: rgba(0,0,0,0.6); }
+
+/* main は下にタブバーぶんの padding */
+main { padding-bottom: 5.2rem; }
+
 /* ───── Toast ───── */
 .toast {
   position: fixed;
-  bottom: 1.5rem;
+  bottom: 5.5rem;
   left: 50%;
   transform: translateX(-50%) translateY(20px);
   background: rgba(7,9,15,0.95);
@@ -1065,8 +1256,14 @@ footer {
 
 <canvas id="rain-canvas"></canvas>
 
+<header class="app-header">
+  <div class="logo">UIKI</div>
+  <button id="menu-toggle" class="menu-btn" aria-label="メニュー">☰</button>
+</header>
+
 <main>
 
+  <div class="tab-page" data-tab="home">
   <!-- Hero -->
   <section class="hero">
     <h1>雨域図<span class="subtitle-roman">UIKI</span></h1>
@@ -1080,25 +1277,18 @@ footer {
     </div>
   </section>
 
-  <!-- プロジェクト一覧（最重要・Hero直下） -->
-  <section class="catchments reveal">
-    <h2 class="section-label">プロジェクト<span class="label-poetic">集水域</span></h2>
-    <div class="catchment-grid" id="catchment-grid"></div>
-    <div id="catchment-detail" class="catchment-detail" hidden>
-      <h3 id="detail-name"></h3>
-      <ul class="task-list" id="detail-tasks"></ul>
-    </div>
-  </section>
-
-  <!-- 今日のタスク -->
+  <!-- 今日のタスク（ホーム） -->
   <section class="today-feed reveal">
     <h2 class="section-label">今日のタスク<span class="label-poetic">今日の雨</span></h2>
     <div id="today-feed"></div>
   </section>
 
-  <!-- 最近のタスク（直近30日） -->
+  </div><!-- /tab home -->
+
+  <div class="tab-page" data-tab="tasks" hidden>
+  <!-- 最近のタスク -->
   <section class="recent-feed reveal">
-    <h2 class="section-label">最近のタスク<span class="label-poetic">降った雨たち（直近30日）</span></h2>
+    <h2 class="section-label">最近のタスク<span class="label-poetic">直近30日</span></h2>
     <div id="recent-feed"></div>
     <div class="feed-meta" id="recent-meta"></div>
   </section>
@@ -1109,17 +1299,31 @@ footer {
     <p class="invoke-poetic">雨は、意志から始まる</p>
     <button class="invoke-toggle" id="invoke-toggle">▽ タスクを追加</button>
     <form class="invoke-form" id="invoke-form" hidden>
-      <label>プロジェクト（集水域）
+      <label>プロジェクト
         <select id="form-project" required></select>
       </label>
       <label>タスク内容
-        <textarea id="form-text" rows="3" maxlength="200" placeholder="ここに書いたことは消せません（長押しで「染み」化のみ可能）" required></textarea>
+        <textarea id="form-text" rows="3" maxlength="200" placeholder="ここに書いたことは消せません" required></textarea>
       </label>
       <button type="submit" class="submit-btn">追加する</button>
       <p class="warning-line">追加したタスクは削除できません</p>
     </form>
   </section>
+  </div><!-- /tab tasks -->
 
+  <div class="tab-page" data-tab="projects" hidden>
+  <!-- プロジェクト一覧 -->
+  <section class="catchments reveal">
+    <h2 class="section-label">プロジェクト<span class="label-poetic">集水域</span></h2>
+    <div class="catchment-grid" id="catchment-grid"></div>
+    <div id="catchment-detail" class="catchment-detail" hidden>
+      <h3 id="detail-name"></h3>
+      <ul class="task-list" id="detail-tasks"></ul>
+    </div>
+  </section>
+  </div><!-- /tab projects -->
+
+  <div class="tab-page" data-tab="log" hidden>
   <!-- 365日の記録 -->
   <section class="grid-section reveal">
     <h2 class="section-label">365日の記録<span class="label-poetic">365日の地形</span></h2>
@@ -1154,8 +1358,49 @@ footer {
     </div>
     <button id="open-config" class="config-btn">設定</button>
   </footer>
+  </div><!-- /tab log -->
 
 </main>
+
+<!-- ボトムタブナビ -->
+<nav class="tab-bar" id="tab-bar">
+  <button data-tab="home" class="active">
+    <span class="tab-icon">🏠</span>
+    <span class="tab-label">ホーム</span>
+  </button>
+  <button data-tab="tasks">
+    <span class="tab-icon">📋</span>
+    <span class="tab-label">タスク</span>
+  </button>
+  <button data-tab="projects">
+    <span class="tab-icon">📁</span>
+    <span class="tab-label">プロジェクト</span>
+  </button>
+  <button data-tab="log">
+    <span class="tab-icon">📅</span>
+    <span class="tab-label">記録</span>
+  </button>
+</nav>
+
+<!-- ドロワーメニュー -->
+<aside class="drawer" id="drawer" hidden>
+  <div class="drawer-header">
+    <div class="drawer-title">UIKI</div>
+    <div class="drawer-sub">雨域図 ── 全プロジェクト横断のタスクハブ</div>
+  </div>
+  <ul class="drawer-list">
+    <li><a data-tab="home"><span class="dr-icon">🏠</span><span>ホーム</span></a></li>
+    <li><a data-tab="tasks"><span class="dr-icon">📋</span><span>タスク</span></a></li>
+    <li><a data-tab="projects"><span class="dr-icon">📁</span><span>プロジェクト</span></a></li>
+    <li><a data-tab="log"><span class="dr-icon">📅</span><span>365日の記録</span></a></li>
+    <li><a id="dr-add"><span class="dr-icon">➕</span><span>タスクを追加</span></a></li>
+    <li><a id="dr-config"><span class="dr-icon">⚙️</span><span>設定（PAT・通知）</span></a></li>
+    <li><a href="https://gist.github.com/rainybrainch/b90942bcc77eb8bf6c987f0ed983e344" target="_blank" rel="noopener"><span class="dr-icon">📡</span><span>Gistデータを開く</span></a></li>
+    <li><a href="https://github.com/rainybrainch/uiki" target="_blank" rel="noopener"><span class="dr-icon">📦</span><span>UIKIリポジトリ</span></a></li>
+  </ul>
+  <button class="drawer-close" id="drawer-close">× 閉じる</button>
+</aside>
+<div class="drawer-overlay" id="drawer-overlay" hidden></div>
 
 <div id="grid-tooltip" class="grid-tooltip" hidden></div>
 
@@ -1488,6 +1733,8 @@ UIKI.sync = (() => {
     }
   }
 
+  let _firstMerge = true;
+
   function merge(remote) {
     if (!remote) return false;
     const lp = UIKI.store.get('projects', []);
@@ -1500,19 +1747,27 @@ UIKI.sync = (() => {
     for (const p of rp) {
       const ex = pMap.get(p.id);
       if (!ex) pMap.set(p.id, p);
-      // プロジェクトは編集禁止のため updatedAt 比較不要
     }
 
+    const localIds = new Set(lt.map(t => t.id));
     const tMap = new Map();
     for (const t of lt) tMap.set(t.id, t);
+    const newlyArrived = []; // 通知対象
     for (const t of rt) {
       const ex = tMap.get(t.id);
       if (!ex) {
         tMap.set(t.id, t);
+        if (!localIds.has(t.id) && !t.stain && !t.completed) {
+          newlyArrived.push(t);
+        }
       } else {
-        // stain は false→true 一方通行。どちらかが true なら true
+        // stain・completed は false→true 一方通行
         const merged = { ...ex };
         if (t.stain === true || ex.stain === true) merged.stain = true;
+        if (t.completed === true || ex.completed === true) {
+          merged.completed = true;
+          merged.completedAt = t.completedAt || ex.completedAt || new Date().toISOString();
+        }
         const exU = ex.updatedAt || ex.createdAt;
         const tU = t.updatedAt || t.createdAt;
         if (tU > exU) merged.updatedAt = tU;
@@ -1523,6 +1778,23 @@ UIKI.sync = (() => {
     UIKI.store.set('projects', [...pMap.values()]);
     UIKI.store.set('tasks', [...tMap.values()]);
     UIKI.store.recomputeRainfall();
+
+    // 初回マージ以外で新規タスクがあれば通知
+    if (!_firstMerge && newlyArrived.length > 0) {
+      const projects = UIKI.store.get('projects', []);
+      const pNameMap = {};
+      for (const p of projects) pNameMap[p.id] = p.name;
+      const sample = newlyArrived[0];
+      const projName = pNameMap[sample.projectId] || '雨域';
+      const title = newlyArrived.length === 1
+        ? '新しいタスク ── ' + projName
+        : '新しいタスク ' + newlyArrived.length + ' 件';
+      const body = newlyArrived.length === 1
+        ? sample.text.slice(0, 80)
+        : '[' + projName + '] ' + sample.text.slice(0, 60) + ' …他';
+      UIKI.notify.fire(title, body);
+    }
+    _firstMerge = false;
     return true;
   }
 
@@ -1736,8 +2008,13 @@ UIKI.render = (() => {
     const btnHtml = task.completed
       ? '<button class="complete-btn done" title="完了済（戻せない）">✓</button>'
       : '<button class="complete-btn" title="完了にする（一方通行）">✓</button>';
+    const dev = task.device || 'any';
+    const devIcon = dev === 'mobile' ? '<span class="device-badge" title="スマホでできる">📱</span>'
+                  : dev === 'pc'     ? '<span class="device-badge" title="PCが必要">💻</span>'
+                                      : '<span class="device-badge" title="どちらでも">🌐</span>';
     li.innerHTML = `
       ${btnHtml}
+      ${devIcon}
       <span class="badge" style="background: ${hexAlpha(color, 0.18)}; color: ${color};">${escapeHtml(pname)}</span>
       <span class="feed-date">${dateShort}</span>
       <span class="feed-text">${escapeHtml(task.text)}</span>
@@ -2298,6 +2575,67 @@ function bootstrap() {
   document.getElementById('open-config').addEventListener('click', () => UIKI.config.open());
   document.getElementById('cfg-cancel').addEventListener('click', () => UIKI.config.close());
   document.getElementById('cfg-save').addEventListener('click', () => UIKI.config.save());
+
+  // ───── タブ切替 ─────
+  function switchTab(name) {
+    document.querySelectorAll('.tab-page').forEach(p => p.hidden = (p.dataset.tab !== name));
+    document.querySelectorAll('#tab-bar button').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+    document.querySelectorAll('.drawer-list a[data-tab]').forEach(a => a.classList.toggle('current', a.dataset.tab === name));
+    UIKI.store.set('current_tab', name);
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    // タブ切替時に IntersectionObserver で reveal を効かせる
+    setTimeout(() => {
+      document.querySelectorAll('.tab-page:not([hidden]) .reveal').forEach(el => el.classList.add('visible'));
+    }, 50);
+  }
+  document.querySelectorAll('#tab-bar button[data-tab]').forEach(b => {
+    b.addEventListener('click', () => switchTab(b.dataset.tab));
+  });
+
+  // ───── ドロワー ─────
+  const drawer = document.getElementById('drawer');
+  const drawerOverlay = document.getElementById('drawer-overlay');
+  function openDrawer() {
+    drawer.hidden = false;
+    drawerOverlay.hidden = false;
+    requestAnimationFrame(() => {
+      drawer.classList.add('open');
+      drawerOverlay.classList.add('open');
+    });
+  }
+  function closeDrawer() {
+    drawer.classList.remove('open');
+    drawerOverlay.classList.remove('open');
+    setTimeout(() => {
+      drawer.hidden = true;
+      drawerOverlay.hidden = true;
+    }, 300);
+  }
+  document.getElementById('menu-toggle').addEventListener('click', openDrawer);
+  document.getElementById('drawer-close').addEventListener('click', closeDrawer);
+  drawerOverlay.addEventListener('click', closeDrawer);
+  document.querySelectorAll('.drawer-list a[data-tab]').forEach(a => {
+    a.addEventListener('click', () => { switchTab(a.dataset.tab); closeDrawer(); });
+  });
+  document.getElementById('dr-add').addEventListener('click', () => {
+    switchTab('tasks');
+    closeDrawer();
+    setTimeout(() => {
+      const form = document.getElementById('invoke-form');
+      const toggle = document.getElementById('invoke-toggle');
+      if (form && form.hidden) toggle.click();
+      const text = document.getElementById('form-text');
+      if (text) text.focus();
+    }, 350);
+  });
+  document.getElementById('dr-config').addEventListener('click', () => {
+    closeDrawer();
+    UIKI.config.open();
+  });
+
+  // 初期タブ復元
+  const initialTab = UIKI.store.get('current_tab', 'home');
+  switchTab(initialTab);
 
   // 表示件数セレクタ
   const limitSel = document.getElementById('recent-limit-select');
