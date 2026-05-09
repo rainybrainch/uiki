@@ -415,6 +415,96 @@ section, footer {
   background: rgba(201,168,76,0.05);
 }
 
+/* ───── フィルタバー ───── */
+.filter-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  margin: 0.6rem 0 1rem;
+  padding: 0.7rem 0.8rem;
+  background: rgba(255,255,255,0.022);
+  border: 1px solid rgba(201,168,76,0.1);
+  border-radius: 4px;
+}
+.filter-bar input[type="text"] {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(201,168,76,0.2);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 0.88rem;
+  padding: 0.55rem 0.8rem;
+  border-radius: 3px;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+.filter-bar input[type="text"]:focus { border-color: var(--gold); }
+.filter-row {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.filter-label {
+  font-family: var(--sans);
+  font-size: 0.7rem;
+  color: var(--dim);
+  letter-spacing: 0.08em;
+  flex-shrink: 0;
+  min-width: 2.8em;
+}
+.filter-chip {
+  font-family: var(--sans);
+  font-size: 0.72rem;
+  padding: 0.28rem 0.7rem;
+  border-radius: 12px;
+  border: 1px solid rgba(201,168,76,0.18);
+  background: transparent;
+  color: var(--dim);
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+.filter-chip:hover { border-color: rgba(201,168,76,0.4); color: var(--text); }
+.filter-chip.active {
+  background: rgba(201,168,76,0.14);
+  color: var(--gold);
+  border-color: var(--gold);
+}
+.filter-bar select {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(201,168,76,0.2);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  padding: 0.35rem 0.6rem;
+  border-radius: 3px;
+  cursor: pointer;
+  flex: 1;
+  min-width: 8em;
+  outline: none;
+}
+.filter-clear {
+  font-family: var(--sans);
+  font-size: 0.7rem;
+  background: transparent;
+  border: 1px dashed rgba(255,255,255,0.18);
+  color: var(--dim);
+  padding: 0.28rem 0.7rem;
+  border-radius: 3px;
+  cursor: pointer;
+  letter-spacing: 0.05em;
+}
+.filter-clear:hover { color: var(--gold); border-color: var(--gold); }
+.filter-result-count {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--dim);
+  letter-spacing: 0.05em;
+  margin-left: auto;
+}
+
 .display-options {
   display: flex;
   gap: 0.6rem;
@@ -1480,6 +1570,25 @@ main { padding-bottom: 5.2rem; }
   <!-- 今日のタスク（ホーム） -->
   <section class="today-feed reveal">
     <h2 class="section-label">今日のタスク<span class="label-poetic">今日の雨</span></h2>
+    <div class="filter-bar" data-filter-bar="home">
+      <input type="text" class="filter-search" placeholder="🔍 タスクを検索...">
+      <div class="filter-row">
+        <span class="filter-label">作業</span>
+        <button class="filter-chip active" data-device="all">全部</button>
+        <button class="filter-chip" data-device="mobile">📱 スマホ</button>
+        <button class="filter-chip" data-device="pc">💻 手作業</button>
+        <button class="filter-chip" data-device="any">🌐 共通</button>
+      </div>
+      <div class="filter-row">
+        <span class="filter-label">分類</span>
+        <select class="filter-genre"></select>
+        <select class="filter-project"></select>
+      </div>
+      <div class="filter-row">
+        <button class="filter-clear">クリア</button>
+        <span class="filter-result-count"></span>
+      </div>
+    </div>
     <div id="today-feed"></div>
   </section>
 
@@ -1489,6 +1598,25 @@ main { padding-bottom: 5.2rem; }
   <!-- 最近のタスク -->
   <section class="recent-feed reveal">
     <h2 class="section-label">最近のタスク<span class="label-poetic">直近30日</span></h2>
+    <div class="filter-bar" data-filter-bar="tasks">
+      <input type="text" class="filter-search" placeholder="🔍 タスクを検索...">
+      <div class="filter-row">
+        <span class="filter-label">作業</span>
+        <button class="filter-chip active" data-device="all">全部</button>
+        <button class="filter-chip" data-device="mobile">📱 スマホ</button>
+        <button class="filter-chip" data-device="pc">💻 手作業</button>
+        <button class="filter-chip" data-device="any">🌐 共通</button>
+      </div>
+      <div class="filter-row">
+        <span class="filter-label">分類</span>
+        <select class="filter-genre"></select>
+        <select class="filter-project"></select>
+      </div>
+      <div class="filter-row">
+        <button class="filter-clear">クリア</button>
+        <span class="filter-result-count"></span>
+      </div>
+    </div>
     <div id="recent-feed"></div>
     <div class="feed-meta" id="recent-meta"></div>
   </section>
@@ -2376,35 +2504,67 @@ UIKI.render = (() => {
     return `rgba(${r},${g},${b},${a})`;
   }
 
+  // ───── フィルタ（ホーム/タスク両タブ共有） ─────
+  function getFilter() {
+    return UIKI.store.get('filter', { search:'', device:'all', genre:'all', project:'all' });
+  }
+  function saveFilter(f) { UIKI.store.set('filter', f); }
+  function applyFilter(tasks) {
+    const f = getFilter();
+    if (!f.search && f.device === 'all' && f.genre === 'all' && f.project === 'all') return tasks;
+    const projects = UIKI.store.get('projects', []);
+    const projById = {};
+    for (const p of projects) projById[p.id] = p;
+    const term = (f.search || '').toLowerCase().trim();
+    return tasks.filter(t => {
+      if (term && !(t.text || '').toLowerCase().includes(term)) return false;
+      if (f.device !== 'all' && (t.device || 'any') !== f.device) return false;
+      if (f.project !== 'all' && t.projectId !== f.project) return false;
+      if (f.genre !== 'all') {
+        let cur = projById[t.projectId];
+        let topId = cur ? cur.id : null;
+        while (cur && cur.parentId) {
+          cur = projById[cur.parentId];
+          if (cur) topId = cur.id;
+        }
+        if (topId !== f.genre) return false;
+      }
+      return true;
+    });
+  }
+
   function todayFeed() {
     const wrap = document.getElementById('today-feed');
     if (!wrap) return;
     const today = todayStr();
-    // 「今日のタスク」= 未完了は日付問わず全部 + 完了は今日完了したものだけ
-    const tasks = UIKI.store.get('tasks', [])
+    let tasks = UIKI.store.get('tasks', [])
       .filter(t => {
         if (t.stain) return false;
-        if (!t.completed) return true; // 未完了は持ち越し
-        if (t.completedAt && t.completedAt.slice(0, 10) === today) return true; // 今日完了
+        if (!t.completed) return true;
+        if (t.completedAt && t.completedAt.slice(0, 10) === today) return true;
         return false;
-      })
-      .sort((a, b) => {
-        if (!!a.completed !== !!b.completed) return a.completed ? 1 : -1;
-        return (b.createdAt || '').localeCompare(a.createdAt || '');
       });
+    tasks = applyFilter(tasks).sort((a, b) => {
+      if (!!a.completed !== !!b.completed) return a.completed ? 1 : -1;
+      return (b.createdAt || '').localeCompare(a.createdAt || '');
+    });
     const projects = UIKI.store.get('projects', []);
     const pMap = {};
     for (const p of projects) pMap[p.id] = p;
 
     wrap.innerHTML = '';
     if (tasks.length === 0) {
-      wrap.innerHTML = '<div class="feed-empty">今日はまだ追加なし</div>';
+      const f = getFilter();
+      const filtered = !!(f.search || f.device !== 'all' || f.genre !== 'all' || f.project !== 'all');
+      wrap.innerHTML = '<div class="feed-empty">' + (filtered ? '該当なし（フィルタを変えてください）' : '今日はまだ追加なし') + '</div>';
+      updateFilterCount('home', 0);
       return;
     }
     const list = document.createElement('div');
     list.className = 'feed-list';
     for (const t of tasks) list.appendChild(buildFeedItem(t, pMap));
     wrap.appendChild(list);
+    updateFilterCount('home', tasks.length);
   }
 
   function recentFeed() {
@@ -2419,20 +2579,22 @@ UIKI.render = (() => {
     const cutoffStr = ymd(cutoff);
 
     const all = UIKI.store.get('tasks', []).filter(t => !t.stain);
-    const recent = all
-      .filter(t => t.date >= cutoffStr)
-      .sort((a, b) => {
-        if (!!a.completed !== !!b.completed) return a.completed ? 1 : -1;
-        return (b.createdAt || '').localeCompare(a.createdAt || '');
-      });
+    let recent = all.filter(t => t.date >= cutoffStr);
+    recent = applyFilter(recent).sort((a, b) => {
+      if (!!a.completed !== !!b.completed) return a.completed ? 1 : -1;
+      return (b.createdAt || '').localeCompare(a.createdAt || '');
+    });
     const projects = UIKI.store.get('projects', []);
     const pMap = {};
     for (const p of projects) pMap[p.id] = p;
 
     wrap.innerHTML = '';
     if (recent.length === 0) {
-      wrap.innerHTML = '<div class="feed-empty">直近30日、タスクなし</div>';
+      const f = getFilter();
+      const filtered = !!(f.search || f.device !== 'all' || f.genre !== 'all' || f.project !== 'all');
+      wrap.innerHTML = '<div class="feed-empty">' + (filtered ? '該当なし' : '直近30日、タスクなし') + '</div>';
       if (meta) meta.textContent = '';
+      updateFilterCount('tasks', 0);
       return;
     }
 
@@ -2466,6 +2628,14 @@ UIKI.render = (() => {
       wrap.appendChild(less);
     }
     if (meta) meta.innerHTML = '直近30日：<span class="num">' + recent.length + '</span>件（' + projects.length + ' プロジェクト）';
+    updateFilterCount('tasks', recent.length);
+  }
+
+  function updateFilterCount(tabKey, n) {
+    const bar = document.querySelector('.filter-bar[data-filter-bar="' + tabKey + '"]');
+    if (!bar) return;
+    const el = bar.querySelector('.filter-result-count');
+    if (el) el.textContent = n + ' 件';
   }
 
   function showDetail(projectId) {
@@ -3005,6 +3175,116 @@ function bootstrap() {
     }
     window.history.replaceState({}, '', window.location.pathname);
   }
+
+  // ───── フィルタバー初期化（ホーム・タスク両方を同期） ─────
+  function initFilterBars() {
+    const projects = UIKI.store.get('projects', []);
+    const parents = projects.filter(p => !p.parentId);
+    const children = projects.filter(p => p.parentId);
+
+    const bars = document.querySelectorAll('.filter-bar');
+    bars.forEach(bar => {
+      const f = getFilter();
+
+      // 検索ボックス
+      const search = bar.querySelector('.filter-search');
+      search.value = f.search || '';
+      search.addEventListener('input', (e) => {
+        const cur = getFilter();
+        cur.search = e.target.value;
+        saveFilter(cur);
+        syncBars();
+        rerenderFeeds();
+      });
+
+      // device チップ
+      bar.querySelectorAll('.filter-chip[data-device]').forEach(chip => {
+        chip.classList.toggle('active', chip.dataset.device === (f.device || 'all'));
+        chip.addEventListener('click', () => {
+          const cur = getFilter();
+          cur.device = chip.dataset.device;
+          saveFilter(cur);
+          syncBars();
+          rerenderFeeds();
+        });
+      });
+
+      // genre セレクタ
+      const gSel = bar.querySelector('.filter-genre');
+      gSel.innerHTML = '<option value="all">全ジャンル</option>';
+      for (const p of parents) {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = p.name;
+        gSel.appendChild(opt);
+      }
+      gSel.value = f.genre || 'all';
+      gSel.addEventListener('change', (e) => {
+        const cur = getFilter();
+        cur.genre = e.target.value;
+        cur.project = 'all'; // ジャンル変更時はプロジェクトリセット
+        saveFilter(cur);
+        syncBars();
+        rerenderFeeds();
+      });
+
+      // project セレクタ（genre で絞り込み）
+      const pSel = bar.querySelector('.filter-project');
+      const refreshProjectOptions = () => {
+        const cur = getFilter();
+        pSel.innerHTML = '<option value="all">全プロジェクト</option>';
+        const filtered = cur.genre === 'all'
+          ? children
+          : children.filter(c => c.parentId === cur.genre);
+        for (const p of filtered) {
+          const opt = document.createElement('option');
+          opt.value = p.id;
+          opt.textContent = p.name;
+          pSel.appendChild(opt);
+        }
+        pSel.value = cur.project || 'all';
+      };
+      refreshProjectOptions();
+      pSel.addEventListener('change', (e) => {
+        const cur = getFilter();
+        cur.project = e.target.value;
+        saveFilter(cur);
+        syncBars();
+        rerenderFeeds();
+      });
+      // syncBars 内から呼べるように bar にメソッドを保存
+      bar._refreshProjectOptions = refreshProjectOptions;
+
+      // クリアボタン
+      const clearBtn = bar.querySelector('.filter-clear');
+      clearBtn.addEventListener('click', () => {
+        saveFilter({ search:'', device:'all', genre:'all', project:'all' });
+        syncBars();
+        rerenderFeeds();
+      });
+    });
+  }
+
+  function syncBars() {
+    const f = getFilter();
+    document.querySelectorAll('.filter-bar').forEach(bar => {
+      const search = bar.querySelector('.filter-search');
+      if (search && search.value !== (f.search || '')) search.value = f.search || '';
+      bar.querySelectorAll('.filter-chip[data-device]').forEach(chip => {
+        chip.classList.toggle('active', chip.dataset.device === (f.device || 'all'));
+      });
+      const gSel = bar.querySelector('.filter-genre');
+      if (gSel) gSel.value = f.genre || 'all';
+      if (bar._refreshProjectOptions) bar._refreshProjectOptions();
+    });
+  }
+
+  function rerenderFeeds() {
+    UIKI.render.todayFeed();
+    UIKI.render.recentFeed();
+  }
+
+  initFilterBars();
 
   // 表示件数セレクタ
   const limitSel = document.getElementById('recent-limit-select');
