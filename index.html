@@ -2378,8 +2378,14 @@ UIKI.render = (() => {
     const wrap = document.getElementById('today-feed');
     if (!wrap) return;
     const today = todayStr();
+    // 「今日のタスク」= 未完了は日付問わず全部 + 完了は今日完了したものだけ
     const tasks = UIKI.store.get('tasks', [])
-      .filter(t => !t.stain && t.date === today)
+      .filter(t => {
+        if (t.stain) return false;
+        if (!t.completed) return true; // 未完了は持ち越し
+        if (t.completedAt && t.completedAt.slice(0, 10) === today) return true; // 今日完了
+        return false;
+      })
       .sort((a, b) => {
         if (!!a.completed !== !!b.completed) return a.completed ? 1 : -1;
         return (b.createdAt || '').localeCompare(a.createdAt || '');
