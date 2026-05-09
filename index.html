@@ -1192,12 +1192,26 @@ UIKI.inbox = (() => {
 // sync: Gist との同期（fetch + ETag + UNION マージ）
 // ─────────────────────────────────────────────────────────
 UIKI.sync = (() => {
-  const POLL_MS = 30000;
+  // ハードコードされた共有 Gist ID（読み取りは PAT 不要、書込は PAT が要る）
+  const SHARED_GIST_ID = 'b90942bcc77eb8bf6c987f0ed983e344';
+  // 認証なしポーリングは Rate Limit 60req/h なので 60秒に
+  const POLL_MS = 60000;
   let timer = null;
   let isDirty = false;
   let inFlight = false;
 
   const apiBase = 'https://api.github.com/gists/';
+
+  function activeGistId() {
+    const cfg = UIKI.store.get('config', null);
+    if (cfg && cfg.gistId) return cfg.gistId;
+    return SHARED_GIST_ID;
+  }
+
+  function hasPAT() {
+    const cfg = UIKI.store.get('config', null);
+    return !!(cfg && cfg.pat);
+  }
 
   const status = (state, msg) => {
     const el = document.getElementById('sync-status');
@@ -1237,16 +1251,15 @@ UIKI.sync = (() => {
   }
 
   async function fetchGist() {
+    const gistId = activeGistId();
+    if (!gistId) return null;
     const cfg = UIKI.store.get('config', null);
-    if (!cfg || !cfg.pat || !cfg.gistId) return null;
     const etag = UIKI.store.get('gist_etag', '');
-    const headers = {
-      Authorization: 'Bearer ' + cfg.pat,
-      Accept: 'application/vnd.github+json'
-    };
+    const headers = { Accept: 'application/vnd.github+json' };
+    if (cfg && cfg.pat) headers['Authorization'] = 'Bearer ' + cfg.pat;
     if (etag) headers['If-None-Match'] = etag;
 
-    const r = await fetch(apiBase + cfg.gistId, { headers });
+    const r = await fetch(apiBase + gistId, { headers });
 
     if (r.status === 304) {
       status('ok', '域、接続済み');
@@ -1284,18 +1297,13 @@ UIKI.sync = (() => {
 
   async function pushGist() {
     const cfg = UIKI.store.get('config', null);
-    if (!cfg || !cfg.pat) return;
-
-    if (!cfg.gistId) {
-      try {
-        cfg.gistId = await createGist(cfg.pat);
-        UIKI.store.set('config', cfg);
-      } catch (e) {
-        status('error', 'Gist 作成失敗');
-        isDirty = true;
-        return;
-      }
+    if (!cfg || !cfg.pat) {
+      // 読み取り専用モードでは何もしない（Claude Code が gh CLI で書く）
+      isDirty = false;
+      return;
     }
+
+    const gistId = activeGistId();
 
     const payload = {
       version: 2,
@@ -1305,7 +1313,7 @@ UIKI.sync = (() => {
     };
 
     try {
-      const r = await fetch(apiBase + cfg.gistId, {
+      const r = await fetch(apiBase + gistId, {
         method: 'PATCH',
         headers: {
           Authorization: 'Bearer ' + cfg.pat,
@@ -1374,12 +1382,10 @@ UIKI.sync = (() => {
 
   async function tick() {
     if (inFlight || document.hidden) return;
-    const cfg = UIKI.store.get('config', null);
-    if (!cfg || !cfg.pat) return;
 
     inFlight = true;
     try {
-      if (isDirty) await pushGist();
+      if (isDirty && hasPAT()) await pushGist();
       const remote = await fetchGist();
       const changed = merge(remote);
       if (changed) UIKI.render.all();
@@ -2018,6 +2024,11 @@ function bootstrap() {
 
   form.addEventListener('submit', (e) => {
     e.preventDefault();
+    const cfg = UIKI.store.get('config', null);
+    if (!cfg || !cfg.pat) {
+      showToast('読み取り専用モード ── 雨を招くには「設定」で書込権限を');
+      return;
+    }
     const projectId = document.getElementById('form-project').value;
     const text = document.getElementById('form-text').value.trim();
     if (!projectId || !text) return;
@@ -2068,14 +2079,12 @@ function bootstrap() {
   });
   window.addEventListener('online', () => UIKI.sync.tick());
 
-  // 同期開始
+  // 同期開始（PATなしでも読み取りは動く）
   const cfg = UIKI.store.get('config', null);
   if (!cfg || !cfg.pat) {
-    UIKI.sync.status('offline', 'この雨は、端末に閉じている');
-    UIKI.config.open();
-  } else {
-    UIKI.sync.start();
+    UIKI.sync.status('loading', '雨域を読み込んでいる…（読み取り専用）');
   }
+  UIKI.sync.start();
 }
 
 if (document.readyState === 'loading') {
