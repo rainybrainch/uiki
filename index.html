@@ -1466,6 +1466,7 @@ main { padding-bottom: 5.2rem; }
     <li><a data-tab="log"><span class="dr-icon">📅</span><span>365日の記録</span></a></li>
     <li><a id="dr-add"><span class="dr-icon">➕</span><span>タスクを追加</span></a></li>
     <li><a id="dr-config"><span class="dr-icon">⚙️</span><span>設定（PAT・通知）</span></a></li>
+    <li><a href="claude-mobile-prompt.md" target="_blank" rel="noopener"><span class="dr-icon">🤖</span><span>Claude モバイル連携テンプレ</span></a></li>
     <li><a href="https://gist.github.com/rainybrainch/b90942bcc77eb8bf6c987f0ed983e344" target="_blank" rel="noopener"><span class="dr-icon">📡</span><span>Gistデータを開く</span></a></li>
     <li><a href="https://github.com/rainybrainch/uiki" target="_blank" rel="noopener"><span class="dr-icon">📦</span><span>UIKIリポジトリ</span></a></li>
   </ul>
@@ -1585,11 +1586,13 @@ UIKI.store = (() => {
 // ─────────────────────────────────────────────────────────
 // プロトコル：
 //   各プロジェクトは以下の形で localStorage('uiki_inbox') に追加：
-//     [{ text: string, projectName: string, projectColor?: string, createdAt: ISO }]
+//     [{ text: string, projectName: string, projectColor?: string, createdAt: ISO, device?: 'mobile'|'pc'|'any' }]
+//   device は ☂モーダル化（2026-05-09）で追加。Phase 4.7 自動降雨と整合。
 //   UIKI 起動時にこの配列を消費して自分の tasks に取り込む。
 //   消費後は inbox を削除（同じ雨を二重に降らせない）。
 UIKI.inbox = (() => {
   const KEY = 'uiki_inbox';
+  const VALID_DEVICES = new Set(['mobile', 'pc', 'any']);
   function consume() {
     let queue;
     try {
@@ -1625,6 +1628,7 @@ UIKI.inbox = (() => {
         projects.push(p);
       }
       const createdAt = item.createdAt || new Date().toISOString();
+      const device = VALID_DEVICES.has(item.device) ? item.device : 'any';
       tasks.push({
         id: UIKI.store.newId('t'),
         projectId: p.id,
@@ -1632,7 +1636,10 @@ UIKI.inbox = (() => {
         date: createdAt.slice(0, 10),
         createdAt,
         updatedAt: createdAt,
-        stain: false
+        stain: false,
+        completed: false,
+        completedAt: null,
+        device
       });
       count++;
     }
@@ -2781,6 +2788,57 @@ function bootstrap() {
   // 初期タブ復元
   const initialTab = UIKI.store.get('current_tab', 'home');
   switchTab(initialTab);
+
+  // ───── URL クエリでタスク追加（Claude モバイル等から） ─────
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.has('add')) {
+    const addText = urlParams.get('add');
+    const reqProject = urlParams.get('project') || 'p_rbai_inc';
+    const reqDevice = urlParams.get('device') || 'any';
+    const validDevs = ['mobile', 'pc', 'any'];
+    const device = validDevs.includes(reqDevice) ? reqDevice : 'any';
+    const cfg = UIKI.store.get('config', null);
+
+    if (cfg && cfg.pat && addText) {
+      const projects = UIKI.store.get('projects', []);
+      const projectId = projects.find(p => p.id === reqProject) ? reqProject : 'p_rbai_inc';
+      const now = new Date().toISOString();
+      const d = new Date();
+      const today = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+      const tasks = UIKI.store.get('tasks', []);
+      tasks.push({
+        id: UIKI.store.newId('t'),
+        projectId,
+        text: addText,
+        date: today,
+        createdAt: now,
+        updatedAt: now,
+        stain: false,
+        completed: false,
+        completedAt: null,
+        device
+      });
+      UIKI.store.set('tasks', tasks);
+      UIKI.store.recomputeRainfall();
+      UIKI.sync.markDirty();
+      UIKI.sync.pushGist();
+      UIKI.render.all();
+      showToast('追加した: ' + addText.slice(0, 28));
+    } else if (addText) {
+      switchTab('tasks');
+      setTimeout(() => {
+        const toggle = document.getElementById('invoke-toggle');
+        const form = document.getElementById('invoke-form');
+        if (form && form.hidden) toggle.click();
+        const sel = document.getElementById('form-project');
+        const ta = document.getElementById('form-text');
+        if (sel) sel.value = reqProject;
+        if (ta) { ta.value = addText; ta.focus(); }
+        showToast('PAT 設定後にここから追加可');
+      }, 400);
+    }
+    window.history.replaceState({}, '', window.location.pathname);
+  }
 
   // 表示件数セレクタ
   const limitSel = document.getElementById('recent-limit-select');
