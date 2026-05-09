@@ -30,30 +30,34 @@ https://rainybrainch.github.io/uiki/?add=<タスク内容をURLエンコード>&
 ### プロジェクトID一覧（適切なもの1つを選ぶ）
 
 **案件**
-- `p_shonigan` 小児がんAI（母上案件・20万円契約・5/10進捗報告）
+- `p_shonigan` 小児がんAI（母上案件・20万円契約・5/10進捗報告） → https://rainybrainch.github.io/pediatric-cancer-support/
 
 **マネぼう系**
-- `p_manebou` マネぼう塾HP
-- `p_shinmane` 新マネぼう（経済学習メタゲーム）
-- `p_manebou_todo` マネぼうTODO
+- `p_manebou` マネぼう塾HP → https://rainybrainch.github.io/manebou-hp/
+- `p_shinmane` 新マネぼう（経済学習メタゲーム） → 未公開（ローカルのみ）
+- `p_manebou_todo` マネぼうTODO → https://rainybrainch.github.io/manebou-todo/
 
 **創作系**
-- `p_raina` RAINA（487シーン・12キャラ・9エンディング）
-- `p_amesekai` 雨と世界（ambient / 診断）
-- `p_fukurouzo` 服牢井像（思想5本柱）
-- `p_story` 物語工房（STORY DIVISION）
-- `p_atelier` 電脳工房
+- `p_raina` RAINA（487シーン・12キャラ・9エンディング） → 未公開
+- `p_amesekai` 雨と世界（ambient / 診断） → 未公開
+- `p_fukurouzo` 服牢井像（思想5本柱） → 未公開
+- `p_story` 物語工房（STORY DIVISION） → 未公開
+- `p_atelier` 電脳工房 → 未公開
 
 **自問自答系**
-- `p_askup` ASK-UP（毎日3秒の自問自答）
-- `p_sasuke` SASUKE Mania
-- `p_omasasu` OMASASU（個人トレーニング）
+- `p_askup` ASK-UP（毎日3秒の自問自答） → 未公開
+- `p_sasuke` SASUKE Mania → 未公開
+- `p_omasasu` OMASASU（個人トレーニング） → 未公開
 
 **RBAI Inc.（システム）**
-- `p_uiki` UIKI（このアプリ自身）
-- `p_rbai_inc` RBAI Inc.（システム全体）
+- `p_uiki` UIKI（このアプリ自身） → https://rainybrainch.github.io/uiki/
+- `p_rbai_inc` RBAI Inc.（システム全体） → 未公開
 
 迷ったら `p_rbai_inc` でOK。
+
+### URL を聞かれた時
+
+ユーザーが「○○のURL教えて」「○○ってどこにある？」と聞いてきたら、上記の URL を回答してください。「未公開」のものは「ローカル（WebPages配下）にあり、まだGitHub Pagesでは公開されていません」と答えること。
 
 ### device 判定
 
