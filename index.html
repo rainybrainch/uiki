@@ -321,6 +321,48 @@ section, footer {
   letter-spacing: 0.08em;
 }
 
+.show-more {
+  display: block;
+  margin: 1rem auto 0;
+  background: transparent;
+  border: 1px solid rgba(201,168,76,0.3);
+  color: var(--gold);
+  font-family: var(--sans);
+  font-size: 0.82rem;
+  padding: 0.55rem 1.4rem;
+  cursor: pointer;
+  letter-spacing: 0.1em;
+  border-radius: 2px;
+  transition: all 0.2s ease;
+}
+.show-more:hover {
+  border-color: var(--gold);
+  background: rgba(201,168,76,0.05);
+}
+
+.display-options {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  justify-content: center;
+  margin: 1.2rem 0;
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  color: var(--dim);
+  flex-wrap: wrap;
+}
+.display-options label { letter-spacing: 0.08em; }
+.display-options select {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(201,168,76,0.25);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 0.8rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
 .feed-meta .num {
   font-family: var(--mono);
   color: var(--gold);
@@ -1030,6 +1072,19 @@ footer {
     <div class="grid-365" id="grid-365"></div>
   </section>
 
+  <!-- 表示設定 -->
+  <div class="display-options reveal">
+    <label>「最近のタスク」初期表示
+      <select id="recent-limit-select">
+        <option value="3">3 件</option>
+        <option value="5" selected>5 件</option>
+        <option value="10">10 件</option>
+        <option value="20">20 件</option>
+        <option value="999">全件</option>
+      </select>
+    </label>
+  </div>
+
   <!-- Footer -->
   <footer class="reveal">
     <p class="footer-quote">点と点は、線になる</p>
@@ -1567,11 +1622,19 @@ UIKI.render = (() => {
   }
 
   function catchments() {
-    const projects = UIKI.store.get('projects', []);
+    const projectsRaw = UIKI.store.get('projects', []);
     const tasks = UIKI.store.get('tasks', []);
     const grid = document.getElementById('catchment-grid');
     if (!grid) return;
     grid.innerHTML = '';
+
+    // タスク件数の多いプロジェクトを先頭に、0件は末尾
+    const counts = {};
+    for (const t of tasks) {
+      if (t.stain) continue;
+      counts[t.projectId] = (counts[t.projectId] || 0) + 1;
+    }
+    const projects = [...projectsRaw].sort((a, b) => (counts[b.id] || 0) - (counts[a.id] || 0));
 
     for (const p of projects) {
       const ptasks = tasks.filter(t => t.projectId === p.id && !t.stain);
@@ -1688,11 +1751,37 @@ UIKI.render = (() => {
       if (meta) meta.textContent = '';
       return;
     }
+
+    const limit = UIKI.store.get('recent_limit', 5);
+    const expanded = UIKI.store.get('recent_expanded', false);
+    const visible = expanded ? recent : recent.slice(0, limit);
+    const remaining = recent.length - visible.length;
+
     const list = document.createElement('div');
     list.className = 'feed-list two-col';
-    for (const t of recent) list.appendChild(buildFeedItem(t, pMap));
+    for (const t of visible) list.appendChild(buildFeedItem(t, pMap));
     wrap.appendChild(list);
-    if (meta) meta.innerHTML = '直近30日：<span class="num">' + recent.length + '</span>件のタスク（' + projects.length + ' プロジェクト）';
+
+    if (remaining > 0) {
+      const more = document.createElement('button');
+      more.className = 'show-more';
+      more.textContent = '＋ あと ' + remaining + ' 件を見る';
+      more.addEventListener('click', () => {
+        UIKI.store.set('recent_expanded', true);
+        recentFeed();
+      });
+      wrap.appendChild(more);
+    } else if (expanded && recent.length > limit) {
+      const less = document.createElement('button');
+      less.className = 'show-more';
+      less.textContent = '− 折りたたむ（最新 ' + limit + ' 件のみ表示）';
+      less.addEventListener('click', () => {
+        UIKI.store.set('recent_expanded', false);
+        recentFeed();
+      });
+      wrap.appendChild(less);
+    }
+    if (meta) meta.innerHTML = '直近30日：<span class="num">' + recent.length + '</span>件（' + projects.length + ' プロジェクト）';
   }
 
   function showDetail(projectId) {
@@ -2098,6 +2187,18 @@ function bootstrap() {
   document.getElementById('open-config').addEventListener('click', () => UIKI.config.open());
   document.getElementById('cfg-cancel').addEventListener('click', () => UIKI.config.close());
   document.getElementById('cfg-save').addEventListener('click', () => UIKI.config.save());
+
+  // 表示件数セレクタ
+  const limitSel = document.getElementById('recent-limit-select');
+  if (limitSel) {
+    const saved = UIKI.store.get('recent_limit', 5);
+    limitSel.value = String(saved);
+    limitSel.addEventListener('change', (e) => {
+      UIKI.store.set('recent_limit', parseInt(e.target.value, 10) || 5);
+      UIKI.store.set('recent_expanded', false);
+      UIKI.render.recentFeed();
+    });
+  }
 
   // IntersectionObserver でセクション fadeIn
   const io = new IntersectionObserver((entries) => {
