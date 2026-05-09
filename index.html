@@ -356,15 +356,16 @@ section, footer {
 
 .catchment-card .row1 {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: space-between;
   gap: 0.5rem;
+  margin-bottom: 0.2rem;
 }
 
 .catchment-card .name {
   font-family: var(--serif);
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: 1rem;
   color: var(--gold);
   letter-spacing: 0.06em;
   white-space: nowrap;
@@ -374,9 +375,21 @@ section, footer {
 
 .catchment-card .count {
   font-family: var(--mono);
-  font-size: 0.78rem;
+  font-size: 1.15rem;
+  font-weight: 500;
   color: var(--rain-blue);
   flex-shrink: 0;
+  letter-spacing: 0;
+}
+
+.catchment-card .count-unit {
+  font-size: 0.7rem;
+  color: var(--dim);
+  margin-left: 0.15em;
+}
+
+.catchment-card.has-tasks {
+  border-color: rgba(58,111,201,0.4);
 }
 
 .bar-track {
@@ -971,6 +984,16 @@ footer {
     </div>
   </section>
 
+  <!-- プロジェクト一覧（最重要・Hero直下） -->
+  <section class="catchments reveal">
+    <h2 class="section-label">プロジェクト<span class="label-poetic">集水域</span></h2>
+    <div class="catchment-grid" id="catchment-grid"></div>
+    <div id="catchment-detail" class="catchment-detail" hidden>
+      <h3 id="detail-name"></h3>
+      <ul class="task-list" id="detail-tasks"></ul>
+    </div>
+  </section>
+
   <!-- 今日のタスク -->
   <section class="today-feed reveal">
     <h2 class="section-label">今日のタスク<span class="label-poetic">今日の雨</span></h2>
@@ -982,16 +1005,6 @@ footer {
     <h2 class="section-label">最近のタスク<span class="label-poetic">降った雨たち（直近30日）</span></h2>
     <div id="recent-feed"></div>
     <div class="feed-meta" id="recent-meta"></div>
-  </section>
-
-  <!-- プロジェクト -->
-  <section class="catchments reveal">
-    <h2 class="section-label">プロジェクト<span class="label-poetic">集水域</span></h2>
-    <div class="catchment-grid" id="catchment-grid"></div>
-    <div id="catchment-detail" class="catchment-detail" hidden>
-      <h3 id="detail-name"></h3>
-      <ul class="task-list" id="detail-tasks"></ul>
-    </div>
   </section>
 
   <!-- タスクを追加 -->
@@ -1570,17 +1583,17 @@ UIKI.render = (() => {
       const color = p.color || '#3a6fc9';
 
       const card = document.createElement('div');
-      card.className = 'catchment-card' + (total === 0 ? ' empty' : '');
+      card.className = 'catchment-card' + (total === 0 ? ' empty' : ' has-tasks');
       card.dataset.projectId = p.id;
       card.innerHTML = `
         <div class="row1">
           <div class="name">${escapeHtml(p.name)}</div>
-          <div class="count">${total}</div>
+          <div class="count" style="color:${color};">${total}<span class="count-unit">件</span></div>
         </div>
         <div class="bar-track"><div class="bar-fill" style="width:${fill}%; background: linear-gradient(to right, ${color} 0%, var(--gold) 100%);"></div></div>
         ${total === 0
           ? '<div class="empty-note">タスクなし</div>'
-          : '<div class="last-rain">最終追加 ' + fmtJp(lastDate) + '</div>'
+          : '<div class="last-rain">最終 ' + fmtJp(lastDate) + '</div>'
         }
       `;
       card.addEventListener('click', () => showDetail(p.id));
