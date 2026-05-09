@@ -1083,7 +1083,109 @@ UIKI.store = (() => {
     set('rainfall', arr);
     return arr;
   };
-  return { get, set, newId, recomputeRainfall };
+  // RBAI 管理基盤と整合した初期集水域（dashboard.md / MAP.md / 服牢AI.md と整合）
+  // 起動時 projects が空なら、Layer 構成由来のデフォルト集水域を投入する。
+  // 「全プロジェクト横断」の思想を実装側で具現化する起点。
+  const seedDefaultProjects = () => {
+    const existing = get('projects', []);
+    if (existing.length > 0) return false;
+    const now = new Date().toISOString();
+    const defaults = [
+      // L0 思想層（システム集水域：固定 ID）
+      { id: 'p_rbai_inc',     name: 'RBAI Inc.',     color: '#c9a84c', layer: 'L0' },
+      // L1 自問自答コア
+      { name: 'ASK-UP',       color: '#FF4500', layer: 'L1' },
+      { name: 'OMASASU',      color: '#FFD700', layer: 'L1' },
+      // L2 物語・世界観
+      { name: 'RAINA',        color: '#7c3aed', layer: 'L2' },
+      { name: '物語工房',     color: '#9C27B0', layer: 'L2' },
+      // L3 マネぼう系
+      { name: 'マネぼうTODO', color: '#4CAF7D', layer: 'L3' },
+      { name: 'マネぼう塾',   color: '#F5C842', layer: 'L3' },
+      // L4 創造工房
+      { name: '電脳工房',     color: '#00BCD4', layer: 'L4' },
+    ];
+    const seeded = defaults.map(d => ({
+      id: d.id || (newId('p')),
+      name: d.name,
+      color: d.color,
+      layer: d.layer,
+      createdAt: now
+    }));
+    set('projects', seeded);
+    return true;
+  };
+  return { get, set, newId, recomputeRainfall, seedDefaultProjects };
+})();
+
+// ─────────────────────────────────────────────────────────
+// inbox: 各プロジェクトから localStorage('uiki_inbox') に投げ込まれた雨を取り込む
+// ─────────────────────────────────────────────────────────
+// プロトコル：
+//   各プロジェクトは以下の形で localStorage('uiki_inbox') に追加：
+//     [{ text: string, projectName: string, projectColor?: string, createdAt: ISO }]
+//   UIKI 起動時にこの配列を消費して自分の tasks に取り込む。
+//   消費後は inbox を削除（同じ雨を二重に降らせない）。
+UIKI.inbox = (() => {
+  const KEY = 'uiki_inbox';
+  function consume() {
+    let queue;
+    try {
+      const raw = localStorage.getItem(KEY);
+      if (!raw) return 0;
+      queue = JSON.parse(raw);
+    } catch (e) {
+      localStorage.removeItem(KEY);
+      return 0;
+    }
+    if (!Array.isArray(queue) || queue.length === 0) {
+      localStorage.removeItem(KEY);
+      return 0;
+    }
+
+    let projects = UIKI.store.get('projects', []);
+    const tasks = UIKI.store.get('tasks', []);
+    let count = 0;
+
+    for (const item of queue) {
+      const name = String(item && item.projectName || '').trim();
+      const text = String(item && item.text || '').trim().slice(0, 200);
+      if (!name || !text) continue;
+
+      let p = projects.find(x => x.name === name);
+      if (!p) {
+        p = {
+          id: UIKI.store.newId('p'),
+          name: name.slice(0, 50),
+          color: item.projectColor || '#3a6fc9',
+          createdAt: new Date().toISOString()
+        };
+        projects.push(p);
+      }
+      const createdAt = item.createdAt || new Date().toISOString();
+      tasks.push({
+        id: UIKI.store.newId('t'),
+        projectId: p.id,
+        text,
+        date: createdAt.slice(0, 10),
+        createdAt,
+        updatedAt: createdAt,
+        stain: false
+      });
+      count++;
+    }
+
+    if (count > 0) {
+      UIKI.store.set('projects', projects);
+      UIKI.store.set('tasks', tasks);
+      UIKI.store.recomputeRainfall();
+      if (UIKI.sync && UIKI.sync.markDirty) UIKI.sync.markDirty();
+      if (UIKI.sync && UIKI.sync.pushGist) UIKI.sync.pushGist();
+    }
+    localStorage.removeItem(KEY);
+    return count;
+  }
+  return { consume };
 })();
 
 // ─────────────────────────────────────────────────────────
@@ -1105,8 +1207,9 @@ UIKI.sync = (() => {
   };
 
   async function validatePAT(pat) {
+    // fine-grained token (Gist scope のみ) でも /gists は叩けるので、それで検証する
     try {
-      const r = await fetch('https://api.github.com/user', {
+      const r = await fetch('https://api.github.com/gists?per_page=1', {
         headers: { Authorization: 'Bearer ' + pat, Accept: 'application/vnd.github+json' }
       });
       return r.ok;
@@ -1845,12 +1948,27 @@ UIKI.config = (() => {
     const ok = await UIKI.sync.validatePAT(pat);
     if (!ok) { showToast('PAT が無効'); return; }
     if (notifEnabled) await UIKI.notify.requestPermission();
-    UIKI.store.set('config', { pat, gistId, notifEnabled });
+    // savedAt を記録：fine-grained PAT は最大365日。期限切れ前に警告を出すため。
+    UIKI.store.set('config', {
+      pat, gistId, notifEnabled,
+      savedAt: new Date().toISOString()
+    });
     showToast('設定を保存した');
     close();
     UIKI.sync.start();
   }
-  return { open, close, save };
+  // PAT の経過日数チェック（330日経過で警告、365日超で error）
+  function checkPATAge() {
+    const cfg = UIKI.store.get('config', null);
+    if (!cfg || !cfg.savedAt) return;
+    const days = Math.floor((Date.now() - new Date(cfg.savedAt).getTime()) / 86400000);
+    if (days >= 365) {
+      UIKI.sync.status('error', 'PAT が期限切れの可能性 ── 設定から再発行を');
+    } else if (days >= 330) {
+      UIKI.sync.status('offline', 'PAT 期限まで残り ' + (365 - days) + ' 日');
+    }
+  }
+  return { open, close, save, checkPATAge };
 })();
 
 // ─────────────────────────────────────────────────────────
@@ -1874,8 +1992,20 @@ function bootstrap() {
     navigator.serviceWorker.register('sw.js').catch(() => {});
   }
 
+  // ① 初回起動時、RBAI Layer 構成由来のデフォルト集水域を投入
+  const seeded = UIKI.store.seedDefaultProjects();
+
+  // ② 各プロジェクトから投げ込まれた雨（uiki_inbox）を取り込む
+  const consumed = UIKI.inbox.consume();
+
   UIKI.rain.init();
   UIKI.render.all();
+
+  if (seeded) showToast('集水域を開いた ── RBAI 8域');
+  if (consumed > 0) showToast('☂ ' + consumed + ' 粒、外から降った');
+
+  // ⑤ PAT 期限チェック
+  UIKI.config.checkPATAge();
 
   // フォーム
   const toggle = document.getElementById('invoke-toggle');
