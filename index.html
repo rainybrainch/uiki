@@ -257,9 +257,53 @@ section, footer {
   cursor: pointer;
   user-select: none;
   -webkit-user-select: none;
-  transition: background 0.2s ease;
+  transition: background 0.2s ease, opacity 0.3s ease;
   position: relative;
   line-height: 1.6;
+}
+
+.feed-item.completed {
+  opacity: 0.45;
+  background: rgba(201,168,76,0.04);
+  border-left-color: var(--gold);
+}
+
+.feed-item.completed .feed-text {
+  text-decoration: line-through;
+  text-decoration-color: rgba(201,168,76,0.4);
+}
+
+.complete-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: 1px solid rgba(201,168,76,0.35);
+  background: transparent;
+  color: rgba(201,168,76,0.55);
+  font-size: 0.85rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+  margin-top: 0.05rem;
+  font-family: var(--mono);
+  line-height: 1;
+}
+.complete-btn:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: rgba(201,168,76,0.08);
+}
+.complete-btn.done {
+  background: var(--gold);
+  color: var(--bg);
+  border-color: var(--gold);
+  cursor: default;
+}
+.complete-btn.done:hover {
+  background: var(--gold);
 }
 
 .feed-item:hover {
@@ -572,6 +616,16 @@ section, footer {
   pointer-events: none;
   cursor: default;
   border-left-color: var(--sand);
+}
+
+.task-item.completed {
+  opacity: 0.5;
+  border-left-color: var(--gold);
+  background: rgba(201,168,76,0.04);
+}
+.task-item.completed .task-text {
+  text-decoration: line-through;
+  text-decoration-color: rgba(201,168,76,0.4);
 }
 
 .task-item .stain-icon {
@@ -1608,17 +1662,17 @@ UIKI.render = (() => {
 
   function hero() {
     const tasks = UIKI.store.get('tasks', []);
-    const today = todayStr();
-    const todayCount = tasks.filter(t => !t.stain && t.date === today).length;
+    const pending = tasks.filter(t => !t.stain && !t.completed);
+    const total = pending.length;
     const el = document.getElementById('rainfall-today');
     if (el) {
-      if (todayCount === 0) {
-        el.innerHTML = '今日のタスク <span class="num">0</span><span class="unit">件</span><span class="rainfall-poetic">今日はまだ、降っていない</span>';
+      if (total === 0) {
+        el.innerHTML = '未完了タスク <span class="num">0</span><span class="unit">件</span><span class="rainfall-poetic">空が乾いている</span>';
       } else {
-        el.innerHTML = '今日のタスク <span class="num">' + todayCount + '</span><span class="unit">件</span><span class="rainfall-poetic">' + todayCount + ' 粒の雨が降った</span>';
+        el.innerHTML = '未完了タスク <span class="num">' + total + '</span><span class="unit">件</span><span class="rainfall-poetic">' + total + ' 粒の雨が地表で待っている</span>';
       }
     }
-    UIKI.rain.setDensity(Math.min(todayCount / 12, 1));
+    UIKI.rain.setDensity(Math.min(total / 12, 1));
   }
 
   function catchments() {
@@ -1628,16 +1682,16 @@ UIKI.render = (() => {
     if (!grid) return;
     grid.innerHTML = '';
 
-    // タスク件数の多いプロジェクトを先頭に、0件は末尾
+    // 未完了タスク件数の多いプロジェクトを先頭に、0件は末尾
     const counts = {};
     for (const t of tasks) {
-      if (t.stain) continue;
+      if (t.stain || t.completed) continue;
       counts[t.projectId] = (counts[t.projectId] || 0) + 1;
     }
     const projects = [...projectsRaw].sort((a, b) => (counts[b.id] || 0) - (counts[a.id] || 0));
 
     for (const p of projects) {
-      const ptasks = tasks.filter(t => t.projectId === p.id && !t.stain);
+      const ptasks = tasks.filter(t => t.projectId === p.id && !t.stain && !t.completed);
       const total = ptasks.length;
       const fill = Math.min(total / 20, 1) * 100;
       const lastDate = ptasks.length
@@ -1674,26 +1728,58 @@ UIKI.render = (() => {
   function buildFeedItem(task, projectMap) {
     const p = projectMap[task.projectId];
     const li = document.createElement('div');
-    li.className = 'feed-item';
+    li.className = 'feed-item' + (task.completed ? ' completed' : '');
     li.dataset.taskId = task.id;
     const color = p ? p.color : '#3a6fc9';
     const pname = p ? p.name : '？';
     const dateShort = task.date.slice(5).replace('-', '/');
+    const btnHtml = task.completed
+      ? '<button class="complete-btn done" title="完了済（戻せない）">✓</button>'
+      : '<button class="complete-btn" title="完了にする（一方通行）">✓</button>';
     li.innerHTML = `
+      ${btnHtml}
       <span class="badge" style="background: ${hexAlpha(color, 0.18)}; color: ${color};">${escapeHtml(pname)}</span>
       <span class="feed-date">${dateShort}</span>
       <span class="feed-text">${escapeHtml(task.text)}</span>
-      <span class="feed-stain-hint">長押しで取消</span>
+      ${task.completed ? '' : '<span class="feed-stain-hint">長押しで取消</span>'}
     `;
-    li.style.borderLeftColor = color;
+    li.style.borderLeftColor = task.completed ? '#c9a84c' : color;
+
+    // 完了ボタンの操作
+    const btn = li.querySelector('.complete-btn');
+    if (btn && !task.completed) {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        completeTask(task.id);
+      });
+    }
+
+    // タスク本体タップで集水域詳細
     li.addEventListener('click', (e) => {
+      if (e.target.closest('.complete-btn')) return;
       if (e.detail === 1) {
-        // 単タップで集水域詳細へ
         if (task.projectId) showDetail(task.projectId);
       }
     });
-    attachLongPress(li, task.id);
+
+    if (!task.completed) attachLongPress(li, task.id);
     return li;
+  }
+
+  function completeTask(taskId) {
+    const tasks = UIKI.store.get('tasks', []);
+    const idx = tasks.findIndex(t => t.id === taskId);
+    if (idx < 0) return;
+    if (tasks[idx].completed) return;
+    tasks[idx].completed = true;
+    tasks[idx].completedAt = new Date().toISOString();
+    tasks[idx].updatedAt = new Date().toISOString();
+    UIKI.store.set('tasks', tasks);
+    UIKI.store.recomputeRainfall();
+    UIKI.sync.markDirty();
+    UIKI.sync.pushGist();
+    showToast('✓ 完了');
+    UIKI.render.all();
   }
 
   function hexAlpha(hex, a) {
@@ -1710,7 +1796,10 @@ UIKI.render = (() => {
     const today = todayStr();
     const tasks = UIKI.store.get('tasks', [])
       .filter(t => !t.stain && t.date === today)
-      .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+      .sort((a, b) => {
+        if (!!a.completed !== !!b.completed) return a.completed ? 1 : -1;
+        return (b.createdAt || '').localeCompare(a.createdAt || '');
+      });
     const projects = UIKI.store.get('projects', []);
     const pMap = {};
     for (const p of projects) pMap[p.id] = p;
@@ -1740,7 +1829,10 @@ UIKI.render = (() => {
     const all = UIKI.store.get('tasks', []).filter(t => !t.stain);
     const recent = all
       .filter(t => t.date >= cutoffStr)
-      .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+      .sort((a, b) => {
+        if (!!a.completed !== !!b.completed) return a.completed ? 1 : -1;
+        return (b.createdAt || '').localeCompare(a.createdAt || '');
+      });
     const projects = UIKI.store.get('projects', []);
     const pMap = {};
     for (const p of projects) pMap[p.id] = p;
@@ -1803,17 +1895,36 @@ UIKI.render = (() => {
       li.innerHTML = '<span class="task-text"><em>この域には、まだ何も降っていない</em></span>';
       list.appendChild(li);
     } else {
+      // 未完了 → 完了 → 染み の順で並べる
+      tasks.sort((a, b) => {
+        const av = a.stain ? 2 : (a.completed ? 1 : 0);
+        const bv = b.stain ? 2 : (b.completed ? 1 : 0);
+        if (av !== bv) return av - bv;
+        return (b.createdAt || '').localeCompare(a.createdAt || '');
+      });
       for (const t of tasks) {
         const li = document.createElement('li');
-        li.className = 'task-item' + (t.stain ? ' stained' : '');
+        const cls = ['task-item'];
+        if (t.stain) cls.push('stained');
+        if (t.completed) cls.push('completed');
+        li.className = cls.join(' ');
         li.dataset.taskId = t.id;
+        const btn = (t.stain || t.completed)
+          ? (t.completed ? '<button class="complete-btn done" title="完了済（戻せない）">✓</button>' : '<span style="display:inline-block;width:24px"></span>')
+          : '<button class="complete-btn" data-task-id="' + t.id + '" title="完了にする">✓</button>';
         li.innerHTML = `
+          ${btn}
           <svg class="stain-icon" width="12" height="16" viewBox="0 0 14 20" style="color: var(--sand);"><use href="#ic-stain"/></svg>
           <span class="task-date">${t.date.slice(5).replace('-', '/')}</span>
           <span class="task-text">${escapeHtml(t.text)}</span>
-          ${t.stain ? '' : '<span class="stain-hint">長押しで取消（染み化）</span>'}
+          ${(t.stain || t.completed) ? '' : '<span class="stain-hint">長押しで取消</span>'}
         `;
-        if (!t.stain) attachLongPress(li, t.id);
+        const cbtn = li.querySelector('.complete-btn:not(.done)');
+        if (cbtn) cbtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          completeTask(t.id);
+        });
+        if (!t.stain && !t.completed) attachLongPress(li, t.id);
         list.appendChild(li);
       }
     }
