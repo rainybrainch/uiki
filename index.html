@@ -452,6 +452,16 @@ section, footer {
 }
 .group-header:hover { background: rgba(255,255,255,0.05); }
 
+/* 階層別の見た目 */
+.group-header.depth-0 { background: rgba(201,168,76,0.06); border-left-width: 4px; padding-top: 0.85rem; padding-bottom: 0.85rem; }
+.group-header.depth-1 { background: rgba(255,255,255,0.025); border-left-color: rgba(201,168,76,0.55); border-left-width: 3px; }
+.group-header.depth-2 { background: rgba(255,255,255,0.018); border-left-color: rgba(201,168,76,0.35); border-left-width: 2px; }
+.group-header.depth-0 .group-name { font-size: 1.05rem; color: var(--gold); }
+.group-header.depth-1 .group-name { font-size: 0.92rem; color: rgba(201,168,76,0.85); }
+.group-header.depth-2 .group-name { font-size: 0.84rem; color: rgba(201,168,76,0.7); }
+.catchment-group.depth-1 { margin-top: 0.2rem; }
+.catchment-group.depth-2 { margin-top: 0.15rem; }
+
 .group-header .group-name {
   font-family: var(--serif);
   font-size: 1.05rem;
@@ -1914,36 +1924,44 @@ UIKI.sync = (() => {
     const rp = remote.projects || [];
     const rt = remote.tasks || [];
 
+    // Gist 優先で完全上書き（削除も反映）
+    // isDirty 時のみローカル限定の追加分を維持
+    const remoteProjIds = new Set(rp.map(p => p.id));
+    const remoteTaskIds = new Set(rt.map(t => t.id));
+
     const pMap = new Map();
-    for (const p of lp) pMap.set(p.id, p);
-    for (const p of rp) {
-      const ex = pMap.get(p.id);
-      if (!ex) pMap.set(p.id, p);
+    for (const p of rp) pMap.set(p.id, p);
+    if (isDirty) {
+      for (const p of lp) {
+        if (!remoteProjIds.has(p.id)) pMap.set(p.id, p);
+      }
     }
 
+    const localTaskById = new Map(lt.map(t => [t.id, t]));
     const localIds = new Set(lt.map(t => t.id));
     const tMap = new Map();
-    for (const t of lt) tMap.set(t.id, t);
-    const newlyArrived = []; // 通知対象
-    for (const t of rt) {
-      const ex = tMap.get(t.id);
-      if (!ex) {
-        tMap.set(t.id, t);
-        if (!localIds.has(t.id) && !t.stain && !t.completed) {
-          newlyArrived.push(t);
-        }
-      } else {
-        // stain・completed は false→true 一方通行
-        const merged = { ...ex };
-        if (t.stain === true || ex.stain === true) merged.stain = true;
-        if (t.completed === true || ex.completed === true) {
+    const newlyArrived = [];
+    for (const r of rt) {
+      const l = localTaskById.get(r.id);
+      if (l) {
+        const merged = { ...r };
+        if (l.stain === true || r.stain === true) merged.stain = true;
+        if (l.completed === true || r.completed === true) {
           merged.completed = true;
-          merged.completedAt = t.completedAt || ex.completedAt || new Date().toISOString();
+          merged.completedAt = r.completedAt || l.completedAt || new Date().toISOString();
         }
-        const exU = ex.updatedAt || ex.createdAt;
-        const tU = t.updatedAt || t.createdAt;
-        if (tU > exU) merged.updatedAt = tU;
-        tMap.set(t.id, merged);
+        const lU = l.updatedAt || l.createdAt;
+        const rU = r.updatedAt || r.createdAt;
+        if (lU > rU) merged.updatedAt = lU;
+        tMap.set(r.id, merged);
+      } else {
+        tMap.set(r.id, r);
+        if (!localIds.has(r.id) && !r.stain && !r.completed) newlyArrived.push(r);
+      }
+    }
+    if (isDirty) {
+      for (const l of lt) {
+        if (!remoteTaskIds.has(l.id)) tMap.set(l.id, l);
       }
     }
 
@@ -2156,26 +2174,27 @@ UIKI.render = (() => {
       counts[t.projectId] = (counts[t.projectId] || 0) + 1;
     }
 
-    // 親と子に分類
-    const parents = projectsRaw.filter(p => !p.parentId);
+    // parentId ごとの子マップ（'__root__' は親なし）
     const childrenByParent = {};
     for (const p of projectsRaw) {
-      if (p.parentId) {
-        (childrenByParent[p.parentId] = childrenByParent[p.parentId] || []).push(p);
-      }
+      const pid = p.parentId || '__root__';
+      (childrenByParent[pid] = childrenByParent[pid] || []).push(p);
     }
 
-    // 親自身のタスク件数 + 子の合計
+    // 自身 + 全子孫の未完了件数
     function totalCount(p) {
       let total = counts[p.id] || 0;
-      const kids = childrenByParent[p.id] || [];
-      for (const k of kids) total += totalCount(k);
+      for (const k of (childrenByParent[p.id] || [])) total += totalCount(k);
       return total;
     }
 
-    // 親プロジェクトが無い（フラット）場合は従来通りカードを並べる
-    if (parents.length === 0 || (parents.length === projectsRaw.length)) {
-      const sorted = [...projectsRaw].sort((a, b) => (counts[b.id] || 0) - (counts[a.id] || 0));
+    const collapseState = UIKI.store.get('group_collapsed', {});
+
+    // 子なし（葉）が多数の場合のフラット表示判定
+    const allRoots = childrenByParent['__root__'] || [];
+    const allHaveNoChildren = projectsRaw.every(p => !(childrenByParent[p.id] || []).length);
+    if (allHaveNoChildren) {
+      const sorted = [...projectsRaw].sort((a,b) => (counts[b.id] || 0) - (counts[a.id] || 0));
       const wrap = document.createElement('div');
       wrap.style.display = 'grid';
       wrap.style.gridTemplateColumns = 'repeat(auto-fill, minmax(170px, 1fr))';
@@ -2183,43 +2202,58 @@ UIKI.render = (() => {
       for (const p of sorted) wrap.appendChild(buildCatchmentCard(p, counts[p.id] || 0, tasks));
       grid.appendChild(wrap);
     } else {
-      // 階層表示
-      const sortedParents = [...parents].sort((a, b) => totalCount(b) - totalCount(a));
-      const collapseState = UIKI.store.get('group_collapsed', {});
+      // 再帰描画関数：depth に応じてインデント、子があるなら折りたたみグループ
+      function renderNode(p, depth, container) {
+        const kids = (childrenByParent[p.id] || []).slice().sort((a,b) => totalCount(b) - totalCount(a));
+        const ptotal = totalCount(p);
+        const directCount = counts[p.id] || 0;
 
-      for (const parent of sortedParents) {
-        const ptotal = totalCount(parent);
-        const kids = childrenByParent[parent.id] || [];
-        const directCount = counts[parent.id] || 0;
-        const items = [];
-        if (directCount > 0) items.push(parent);
-        items.push(...kids);
-        items.sort((a, b) => (counts[b.id] || 0) - (counts[a.id] || 0));
+        if (kids.length === 0) {
+          // 葉ノード = 集水域カード
+          container.appendChild(buildCatchmentCard(p, directCount, tasks));
+          return;
+        }
 
-        const collapsed = collapseState[parent.id] !== undefined
-          ? collapseState[parent.id]
+        // 内部ノード = 折りたたみグループ
+        const collapsed = collapseState[p.id] !== undefined
+          ? collapseState[p.id]
           : (ptotal === 0); // 件数0は初期折りたたみ
 
         const group = document.createElement('div');
-        group.className = 'catchment-group';
+        group.className = 'catchment-group depth-' + depth;
+        group.dataset.depth = depth;
 
         const header = document.createElement('div');
-        header.className = 'group-header' + (collapsed ? ' collapsed' : '');
+        header.className = 'group-header depth-' + depth + (collapsed ? ' collapsed' : '');
+        header.style.paddingLeft = (0.6 + depth * 0.6) + 'rem';
+        const fontSize = depth === 0 ? '0.95rem' : depth === 1 ? '0.85rem' : '0.78rem';
+        header.style.fontSize = fontSize;
         header.innerHTML = `
-          <div class="group-name">${escapeHtml(parent.name)}</div>
+          <div class="group-name">${escapeHtml(p.name)}</div>
           <div class="group-meta">
-            <span class="group-count" style="color:${parent.color || 'var(--rain-blue)'};">${ptotal}<span class="group-count-unit">件</span></span>
+            <span class="group-count" style="color:${p.color || 'var(--rain-blue)'};">${ptotal}<span class="group-count-unit">件</span></span>
             <span class="toggle-arrow">▼</span>
           </div>
         `;
         group.appendChild(header);
 
         const childrenWrap = document.createElement('div');
-        childrenWrap.className = 'group-children';
+        childrenWrap.className = 'group-children depth-' + (depth+1);
         childrenWrap.hidden = collapsed;
-        for (const item of items) {
-          childrenWrap.appendChild(buildCatchmentCard(item, counts[item.id] || 0, tasks));
+        if (depth >= 1) {
+          // 内部の子は枠線で階層を示す
+          childrenWrap.style.paddingLeft = (depth * 0.55) + 'rem';
+          childrenWrap.style.borderLeft = '1px solid rgba(255,255,255,0.08)';
+          childrenWrap.style.marginLeft = '0.55rem';
         }
+
+        // 親自身にタスクがある場合は親自体もカード化（任意の追加配置）
+        if (directCount > 0) {
+          childrenWrap.appendChild(buildCatchmentCard(p, directCount, tasks));
+        }
+
+        for (const kid of kids) renderNode(kid, depth + 1, childrenWrap);
+
         group.appendChild(childrenWrap);
 
         header.addEventListener('click', () => {
@@ -2227,12 +2261,16 @@ UIKI.render = (() => {
           header.classList.toggle('collapsed', willCollapse);
           childrenWrap.hidden = willCollapse;
           const state = UIKI.store.get('group_collapsed', {});
-          state[parent.id] = willCollapse;
+          state[p.id] = willCollapse;
           UIKI.store.set('group_collapsed', state);
         });
 
-        grid.appendChild(group);
+        container.appendChild(group);
       }
+
+      // ルート（parentId:null）から再帰描画
+      const sortedRoots = [...allRoots].sort((a,b) => totalCount(b) - totalCount(a));
+      for (const root of sortedRoots) renderNode(root, 0, grid);
     }
 
     // + 新しいプロジェクト
