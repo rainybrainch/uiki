@@ -422,13 +422,84 @@ section, footer {
   margin: 0 0.25em;
 }
 
-/* ───── 集水域カード（コンパクト版） ───── */
+/* ───── プロジェクト階層 ───── */
 .catchment-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 0.7rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
   margin-top: 1rem;
 }
+
+.catchment-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.7rem 0.9rem;
+  background: rgba(255,255,255,0.03);
+  border-left: 3px solid var(--gold);
+  border-radius: 2px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: background 0.2s ease;
+}
+.group-header:hover { background: rgba(255,255,255,0.05); }
+
+.group-header .group-name {
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--gold);
+  letter-spacing: 0.12em;
+  flex: 1;
+}
+
+.group-header .group-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  flex-shrink: 0;
+}
+
+.group-header .group-count {
+  font-family: var(--mono);
+  font-size: 1rem;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.group-header .group-count-unit {
+  font-family: var(--sans);
+  font-size: 0.7rem;
+  color: var(--dim);
+  margin-left: 0.15em;
+}
+
+.group-header .toggle-arrow {
+  font-size: 0.85rem;
+  color: var(--dim);
+  transition: transform 0.25s ease;
+  width: 1em;
+  text-align: center;
+}
+.group-header.collapsed .toggle-arrow { transform: rotate(-90deg); }
+
+.group-children {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 0.6rem;
+  padding-left: 0.8rem;
+  border-left: 1px dashed rgba(201,168,76,0.15);
+  margin-left: 0.6rem;
+}
+.group-children[hidden] { display: none !important; }
 
 .catchment-card {
   background: rgba(255,255,255,0.02);
@@ -1947,6 +2018,29 @@ UIKI.render = (() => {
     UIKI.rain.setDensity(Math.min(total / 12, 1));
   }
 
+  function buildCatchmentCard(p, total, tasks) {
+    const fill = Math.min(total / 20, 1) * 100;
+    const ptasks = tasks.filter(t => t.projectId === p.id && !t.stain && !t.completed);
+    const lastDate = ptasks.length ? ptasks.map(t => t.date).sort().reverse()[0] : null;
+    const color = p.color || '#3a6fc9';
+    const card = document.createElement('div');
+    card.className = 'catchment-card' + (total === 0 ? ' empty' : ' has-tasks');
+    card.dataset.projectId = p.id;
+    card.innerHTML = `
+      <div class="row1">
+        <div class="name">${escapeHtml(p.name)}</div>
+        <div class="count" style="color:${color};">${total}<span class="count-unit">件</span></div>
+      </div>
+      <div class="bar-track"><div class="bar-fill" style="width:${fill}%; background: linear-gradient(to right, ${color} 0%, var(--gold) 100%);"></div></div>
+      ${total === 0
+        ? '<div class="empty-note">タスクなし</div>'
+        : '<div class="last-rain">最終 ' + fmtJp(lastDate) + '</div>'
+      }
+    `;
+    card.addEventListener('click', () => showDetail(p.id));
+    return card;
+  }
+
   function catchments() {
     const projectsRaw = UIKI.store.get('projects', []);
     const tasks = UIKI.store.get('tasks', []);
@@ -1954,42 +2048,93 @@ UIKI.render = (() => {
     if (!grid) return;
     grid.innerHTML = '';
 
-    // 未完了タスク件数の多いプロジェクトを先頭に、0件は末尾
+    // 未完了件数
     const counts = {};
     for (const t of tasks) {
       if (t.stain || t.completed) continue;
       counts[t.projectId] = (counts[t.projectId] || 0) + 1;
     }
-    const projects = [...projectsRaw].sort((a, b) => (counts[b.id] || 0) - (counts[a.id] || 0));
 
-    for (const p of projects) {
-      const ptasks = tasks.filter(t => t.projectId === p.id && !t.stain && !t.completed);
-      const total = ptasks.length;
-      const fill = Math.min(total / 20, 1) * 100;
-      const lastDate = ptasks.length
-        ? ptasks.map(t => t.date).sort().reverse()[0]
-        : null;
-      const color = p.color || '#3a6fc9';
-
-      const card = document.createElement('div');
-      card.className = 'catchment-card' + (total === 0 ? ' empty' : ' has-tasks');
-      card.dataset.projectId = p.id;
-      card.innerHTML = `
-        <div class="row1">
-          <div class="name">${escapeHtml(p.name)}</div>
-          <div class="count" style="color:${color};">${total}<span class="count-unit">件</span></div>
-        </div>
-        <div class="bar-track"><div class="bar-fill" style="width:${fill}%; background: linear-gradient(to right, ${color} 0%, var(--gold) 100%);"></div></div>
-        ${total === 0
-          ? '<div class="empty-note">タスクなし</div>'
-          : '<div class="last-rain">最終 ' + fmtJp(lastDate) + '</div>'
-        }
-      `;
-      card.addEventListener('click', () => showDetail(p.id));
-      grid.appendChild(card);
+    // 親と子に分類
+    const parents = projectsRaw.filter(p => !p.parentId);
+    const childrenByParent = {};
+    for (const p of projectsRaw) {
+      if (p.parentId) {
+        (childrenByParent[p.parentId] = childrenByParent[p.parentId] || []).push(p);
+      }
     }
 
-    // + 新しい域を開く
+    // 親自身のタスク件数 + 子の合計
+    function totalCount(p) {
+      let total = counts[p.id] || 0;
+      const kids = childrenByParent[p.id] || [];
+      for (const k of kids) total += totalCount(k);
+      return total;
+    }
+
+    // 親プロジェクトが無い（フラット）場合は従来通りカードを並べる
+    if (parents.length === 0 || (parents.length === projectsRaw.length)) {
+      const sorted = [...projectsRaw].sort((a, b) => (counts[b.id] || 0) - (counts[a.id] || 0));
+      const wrap = document.createElement('div');
+      wrap.style.display = 'grid';
+      wrap.style.gridTemplateColumns = 'repeat(auto-fill, minmax(170px, 1fr))';
+      wrap.style.gap = '0.6rem';
+      for (const p of sorted) wrap.appendChild(buildCatchmentCard(p, counts[p.id] || 0, tasks));
+      grid.appendChild(wrap);
+    } else {
+      // 階層表示
+      const sortedParents = [...parents].sort((a, b) => totalCount(b) - totalCount(a));
+      const collapseState = UIKI.store.get('group_collapsed', {});
+
+      for (const parent of sortedParents) {
+        const ptotal = totalCount(parent);
+        const kids = childrenByParent[parent.id] || [];
+        const directCount = counts[parent.id] || 0;
+        const items = [];
+        if (directCount > 0) items.push(parent);
+        items.push(...kids);
+        items.sort((a, b) => (counts[b.id] || 0) - (counts[a.id] || 0));
+
+        const collapsed = collapseState[parent.id] !== undefined
+          ? collapseState[parent.id]
+          : (ptotal === 0); // 件数0は初期折りたたみ
+
+        const group = document.createElement('div');
+        group.className = 'catchment-group';
+
+        const header = document.createElement('div');
+        header.className = 'group-header' + (collapsed ? ' collapsed' : '');
+        header.innerHTML = `
+          <div class="group-name">${escapeHtml(parent.name)}</div>
+          <div class="group-meta">
+            <span class="group-count" style="color:${parent.color || 'var(--rain-blue)'};">${ptotal}<span class="group-count-unit">件</span></span>
+            <span class="toggle-arrow">▼</span>
+          </div>
+        `;
+        group.appendChild(header);
+
+        const childrenWrap = document.createElement('div');
+        childrenWrap.className = 'group-children';
+        childrenWrap.hidden = collapsed;
+        for (const item of items) {
+          childrenWrap.appendChild(buildCatchmentCard(item, counts[item.id] || 0, tasks));
+        }
+        group.appendChild(childrenWrap);
+
+        header.addEventListener('click', () => {
+          const willCollapse = !header.classList.contains('collapsed');
+          header.classList.toggle('collapsed', willCollapse);
+          childrenWrap.hidden = willCollapse;
+          const state = UIKI.store.get('group_collapsed', {});
+          state[parent.id] = willCollapse;
+          UIKI.store.set('group_collapsed', state);
+        });
+
+        grid.appendChild(group);
+      }
+    }
+
+    // + 新しいプロジェクト
     const add = document.createElement('button');
     add.className = 'add-catchment';
     add.innerHTML = '<span class="plus">+</span>新しいプロジェクト';
