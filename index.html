@@ -334,10 +334,33 @@ section, footer {
 
 .feed-item .device-badge {
   flex-shrink: 0;
-  font-size: 0.95rem;
-  margin-top: 0.05rem;
-  line-height: 1;
-  filter: grayscale(20%);
+  font-family: var(--sans);
+  font-size: 0.7rem;
+  font-weight: 500;
+  padding: 0.2rem 0.55rem;
+  border-radius: 3px;
+  letter-spacing: 0.05em;
+  margin-top: 0.1rem;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25em;
+  line-height: 1.3;
+}
+.device-badge.device-mobile {
+  background: rgba(95, 169, 201, 0.18);
+  color: #7ec0d8;
+  border: 1px solid rgba(95, 169, 201, 0.3);
+}
+.device-badge.device-pc {
+  background: rgba(224, 92, 92, 0.16);
+  color: #ec8484;
+  border: 1px solid rgba(224, 92, 92, 0.3);
+}
+.device-badge.device-any {
+  background: rgba(201, 168, 76, 0.14);
+  color: #d4b964;
+  border: 1px solid rgba(201, 168, 76, 0.25);
 }
 
 .feed-item .feed-date {
@@ -2293,9 +2316,9 @@ UIKI.render = (() => {
       ? '<button class="complete-btn done" title="完了済（戻せない）">✓</button>'
       : '<button class="complete-btn" title="完了にする（一方通行）">✓</button>';
     const dev = task.device || 'any';
-    const devIcon = dev === 'mobile' ? '<span class="device-badge" title="スマホでできる">📱</span>'
-                  : dev === 'pc'     ? '<span class="device-badge" title="PCが必要">💻</span>'
-                                      : '<span class="device-badge" title="どちらでも">🌐</span>';
+    const devIcon = dev === 'mobile' ? '<span class="device-badge device-mobile" title="スマホで完結できる">📱 スマホ</span>'
+                  : dev === 'pc'     ? '<span class="device-badge device-pc" title="PCで手作業が必要">💻 手作業</span>'
+                                      : '<span class="device-badge device-any" title="どちらでもOK">🌐 共通</span>';
     li.innerHTML = `
       ${btnHtml}
       ${devIcon}
