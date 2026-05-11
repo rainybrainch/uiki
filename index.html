@@ -388,6 +388,15 @@ section, footer {
 
 .feed-item:hover .feed-stain-hint { color: rgba(255,255,255,0.4); }
 
+.feed-item .feed-deadline {
+  font-family: var(--mono);
+  font-size: 0.70rem;
+  color: rgba(201,168,76,0.50);
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 .feed-meta {
   margin-top: 0.7rem;
   font-family: var(--sans);
@@ -1482,6 +1491,7 @@ main { padding-bottom: 5.2rem; }
   }
   .feed-item .badge { font-size: 0.65rem; padding: 0.15rem 0.45rem; }
   .feed-item .feed-date { font-size: 0.65rem; }
+  .feed-item .feed-deadline { font-size: 0.65rem; }
   .feed-item .feed-text { flex: 1 1 100%; font-size: 0.88rem; line-height: 1.5; order: 2; }
   .feed-item .complete-btn { width: 22px; height: 22px; font-size: 0.8rem; }
   .feed-item .feed-stain-hint { display: none; }
@@ -1632,6 +1642,9 @@ main { padding-bottom: 5.2rem; }
       </label>
       <label>タスク内容
         <textarea id="form-text" rows="3" maxlength="200" placeholder="ここに書いたことは消せません" required></textarea>
+      </label>
+      <label>期限（任意）
+        <input type="date" id="form-deadline" />
       </label>
       <button type="submit" class="submit-btn">追加する</button>
       <p class="warning-line">追加したタスクは削除できません</p>
@@ -1886,6 +1899,7 @@ UIKI.inbox = (() => {
       }
       const createdAt = item.createdAt || new Date().toISOString();
       const device = VALID_DEVICES.has(item.device) ? item.device : 'any';
+      const deadline = (item.deadline && /^\d{4}-\d{2}-\d{2}$/.test(item.deadline)) ? item.deadline : null;
       tasks.push({
         id: UIKI.store.newId('t'),
         projectId: p.id,
@@ -1896,7 +1910,8 @@ UIKI.inbox = (() => {
         stain: false,
         completed: false,
         completedAt: null,
-        device
+        device,
+        deadline
       });
       count++;
     }
@@ -2449,11 +2464,15 @@ UIKI.render = (() => {
     const devIcon = dev === 'mobile' ? '<span class="device-badge device-mobile" title="スマホで完結できる">📱 スマホ</span>'
                   : dev === 'pc'     ? '<span class="device-badge device-pc" title="PCで手作業が必要">💻 手作業</span>'
                                       : '<span class="device-badge device-any" title="どちらでもOK">🌐 共通</span>';
+    const deadlineHtml = (task.deadline && /^\d{4}-\d{2}-\d{2}$/.test(task.deadline))
+      ? `<span class="feed-deadline" title="期限（刻印・催促はしない）">〆 ${task.deadline.slice(5).replace('-', '/')}</span>`
+      : '';
     li.innerHTML = `
       ${btnHtml}
       ${devIcon}
       <span class="badge" style="background: ${hexAlpha(color, 0.18)}; color: ${color};">${escapeHtml(pname)}</span>
       <span class="feed-date">${dateShort}</span>
+      ${deadlineHtml}
       <span class="feed-text">${escapeHtml(task.text)}</span>
       ${task.completed ? '' : '<span class="feed-stain-hint">長押しで取消</span>'}
     `;
@@ -3036,6 +3055,8 @@ function bootstrap() {
     if (!projectId || !text) return;
     const projects = UIKI.store.get('projects', []);
     if (!projects.find(p => p.id === projectId)) return;
+    const deadlineRaw = document.getElementById('form-deadline').value;
+    const deadline = (deadlineRaw && /^\d{4}-\d{2}-\d{2}$/.test(deadlineRaw)) ? deadlineRaw : null;
     const now = new Date().toISOString();
     const tasks = UIKI.store.get('tasks', []);
     tasks.push({
@@ -3048,7 +3069,8 @@ function bootstrap() {
       })(),
       createdAt: now,
       updatedAt: now,
-      stain: false
+      stain: false,
+      deadline
     });
     UIKI.store.set('tasks', tasks);
     UIKI.store.recomputeRainfall();
@@ -3056,6 +3078,7 @@ function bootstrap() {
     UIKI.sync.pushGist();
     UIKI.render.all();
     document.getElementById('form-text').value = '';
+    document.getElementById('form-deadline').value = '';
     showToast('追加した');
   });
 
@@ -3133,6 +3156,8 @@ function bootstrap() {
     const reqDevice = urlParams.get('device') || 'any';
     const validDevs = ['mobile', 'pc', 'any'];
     const device = validDevs.includes(reqDevice) ? reqDevice : 'any';
+    const reqDeadline = urlParams.get('deadline');
+    const deadline = (reqDeadline && /^\d{4}-\d{2}-\d{2}$/.test(reqDeadline)) ? reqDeadline : null;
     const cfg = UIKI.store.get('config', null);
 
     if (cfg && cfg.pat && addText) {
@@ -3152,7 +3177,8 @@ function bootstrap() {
         stain: false,
         completed: false,
         completedAt: null,
-        device
+        device,
+        deadline
       });
       UIKI.store.set('tasks', tasks);
       UIKI.store.recomputeRainfall();
