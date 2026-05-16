@@ -1873,6 +1873,113 @@ main { padding-bottom: 5.2rem; }
   .sand-log { max-height: 280px; }
   .growth-chart { height: 180px; }
 }
+
+/* ===== 雨域メイン（v2.4 / PDF Page 2 風 大カード 2 つ） ===== */
+.uwiki-main-hero h1 {
+  font-size: 2.6rem;
+  letter-spacing: 0.12em;
+}
+.uwiki-main-hero .uwiki-en { font-size: 2.2rem; }
+.uwiki-bigcards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.4rem;
+  margin: 2rem 0 2.5rem;
+}
+.uwiki-bigcard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 2.2rem 1.6rem 1.8rem;
+  background: rgba(255,255,255,0.025);
+  backdrop-filter: blur(8px);
+  border: 1.5px solid;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: var(--serif);
+  color: var(--text);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+.uwiki-bigcard::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 0%, currentColor 0%, transparent 60%);
+  opacity: 0.08;
+  pointer-events: none;
+}
+.uwiki-bigcard:hover {
+  background: rgba(255,255,255,0.05);
+  transform: translateY(-3px);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+}
+.gravity-bigcard {
+  border-color: rgba(201,168,76,0.5);
+  color: var(--gold);
+}
+.gravity-bigcard:hover { border-color: var(--gold); }
+.attraction-bigcard {
+  border-color: rgba(58,111,201,0.5);
+  color: var(--rain-blue);
+}
+.attraction-bigcard:hover { border-color: var(--rain-blue); }
+.bigcard-icon {
+  font-size: 2.6rem;
+  margin-bottom: 0.6rem;
+  filter: drop-shadow(0 0 12px currentColor);
+}
+.bigcard-title {
+  font-size: 1.6rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  color: currentColor;
+  margin-bottom: 0.2rem;
+}
+.bigcard-sub {
+  font-size: 0.78rem;
+  letter-spacing: 0.25em;
+  color: var(--dim);
+  margin-bottom: 1rem;
+  font-family: var(--mono);
+  text-transform: uppercase;
+}
+.bigcard-desc {
+  font-size: 0.92rem;
+  line-height: 1.7;
+  color: rgba(255,255,255,0.75);
+  margin-bottom: 1.4rem;
+  max-width: 320px;
+}
+.bigcard-cta {
+  font-size: 0.84rem;
+  color: currentColor;
+  letter-spacing: 0.08em;
+  padding: 0.5rem 1rem;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  opacity: 0.85;
+  transition: all 0.3s ease;
+}
+.uwiki-bigcard:hover .bigcard-cta {
+  background: currentColor;
+  color: var(--bg);
+  opacity: 1;
+}
+.sand-section { margin-bottom: 2rem; }
+.attraction-hero h1 { font-size: 2rem; }
+.attraction-section { margin-bottom: 2rem; }
+
+@media (max-width: 700px) {
+  .uwiki-bigcards { grid-template-columns: 1fr; gap: 1rem; }
+  .uwiki-main-hero h1 { font-size: 2rem; }
+  .uwiki-main-hero .uwiki-en { font-size: 1.7rem; }
+  .uwiki-bigcard { padding: 1.6rem 1.2rem 1.4rem; }
+  .bigcard-icon { font-size: 2.2rem; }
+  .bigcard-title { font-size: 1.4rem; }
+}
 </style>
 </head>
 <body>
@@ -2024,9 +2131,9 @@ main { padding-bottom: 5.2rem; }
   </footer>
   </div><!-- /tab log -->
 
-  <!-- ===== 雨域タブ（v2.3 / Claude Design 統合 / 2026-05-16） ===== -->
-  <div class="tab-page" data-tab="uwiki" hidden>
-    <div class="uwiki-hero">
+  <!-- ===== 雨域メインタブ（v2.4 / 2026-05-16 / PDF Page 2 風の入口画面） ===== -->
+  <div class="tab-page" data-tab="uwiki-main">
+    <div class="uwiki-hero uwiki-main-hero">
       <h1>雨域 <span class="uwiki-en">Uwiki</span></h1>
       <p>重力と引力の二重奏 ── 内に降り、外で測られる</p>
     </div>
@@ -2036,53 +2143,45 @@ main { padding-bottom: 5.2rem; }
       <div class="jh-text" id="jh-text">情報の「滴」が、あなたの未来を形作る砂となりますように。</div>
     </div>
 
-    <div class="uwiki-grid">
-      <!-- 重力雨域 -->
-      <div class="uwiki-pane gravity-pane">
-        <div class="pane-header">
-          <span class="pane-icon">⏳</span>
-          <h2>重力雨域</h2>
-          <span class="pane-role">Internal ／ メンター</span>
-        </div>
-        <p class="pane-desc">内向きの引力。自分の星、熱量、理想、夢。砂のように沈潜していく創造の領域。</p>
-        <div class="sand-input">
-          <textarea id="sand-text" placeholder="思考の断片を「砂の一粒」として投稿（280字以内）" maxlength="280"></textarea>
-          <div class="sand-input-row">
-            <div class="weight-control" role="group" aria-label="熱量">
-              <button class="weight-btn active" data-weight="1">軽</button>
-              <button class="weight-btn" data-weight="3">重</button>
-              <button class="weight-btn" data-weight="5">超重力</button>
-            </div>
-            <button class="sand-submit" id="sand-submit">沈める</button>
-          </div>
-        </div>
-        <div class="sand-log" id="sand-log">
-          <div class="sand-empty">まだ、砂は降っていない</div>
-        </div>
-      </div>
-
-      <!-- 引力雨域 -->
-      <div class="uwiki-pane attraction-pane">
-        <div class="pane-header">
-          <span class="pane-icon">👁</span>
-          <h2>引力雨域</h2>
-          <span class="pane-role">External ／ アナリスト</span>
-        </div>
-        <p class="pane-desc">外向きの引力。他者から見えた自分。客観的な数値、ステータス。冷徹に測られる現実の姿。</p>
-        <div class="attraction-items" id="attraction-items">
-          <!-- JS で動的描画 -->
-        </div>
-        <button class="attraction-add-btn" id="attraction-add">＋ 項目を追加（最大10）</button>
-      </div>
+    <!-- PDF Page 2 風の 2 大カード -->
+    <div class="uwiki-bigcards">
+      <button class="uwiki-bigcard gravity-bigcard" data-go="home" aria-label="重力雨域を開く">
+        <div class="bigcard-icon">⏳</div>
+        <div class="bigcard-title">重力雨域</div>
+        <div class="bigcard-sub">Internal</div>
+        <p class="bigcard-desc">内向きの引力。自分の星、熱量、理想、夢。砂のように密度が高く、沈潜していく創造の領域。主観的な「想い」を蓄積する場所。</p>
+        <div class="bigcard-cta">→ タスクと砂のログを開く</div>
+      </button>
+      <button class="uwiki-bigcard attraction-bigcard" data-go="uwiki" aria-label="引力雨域を開く">
+        <div class="bigcard-icon">👁</div>
+        <div class="bigcard-title">引力雨域</div>
+        <div class="bigcard-sub">External</div>
+        <p class="bigcard-desc">外向きの引力。他者から見えた自分。客観的な数値、健康状態、社会的ステータス。AIが「図る」ことで暴かれる現実の姿。</p>
+        <div class="bigcard-cta">→ 数値と成長グラフを開く</div>
+      </button>
     </div>
 
-    <!-- 成長の可視化 -->
-    <div class="growth-section">
-      <h3>成長の可視化 ── 重力と引力の均衡</h3>
-      <svg class="growth-chart" id="growth-chart" viewBox="0 0 600 220" preserveAspectRatio="none" aria-label="重力と引力の成長グラフ"></svg>
-      <div class="growth-legend">
-        <span><span class="lg-dot lg-gold"></span>内面の熱量（重力）</span>
-        <span><span class="lg-dot lg-blue"></span>外面の成果（引力）</span>
+    <!-- 砂のログ（軽量・雨域メインに常駐） -->
+    <div class="uwiki-pane gravity-pane sand-section">
+      <div class="pane-header">
+        <span class="pane-icon">✨</span>
+        <h2>砂のログ</h2>
+        <span class="pane-role">クイック投稿</span>
+      </div>
+      <p class="pane-desc">思考の断片を、その場で。熱量ボタンで重さを設定。</p>
+      <div class="sand-input">
+        <textarea id="sand-text" placeholder="今、感じていることを「砂の一粒」として（280字以内）" maxlength="280"></textarea>
+        <div class="sand-input-row">
+          <div class="weight-control" role="group" aria-label="熱量">
+            <button class="weight-btn active" data-weight="1">軽</button>
+            <button class="weight-btn" data-weight="3">重</button>
+            <button class="weight-btn" data-weight="5">超重力</button>
+          </div>
+          <button class="sand-submit" id="sand-submit">沈める</button>
+        </div>
+      </div>
+      <div class="sand-log" id="sand-log">
+        <div class="sand-empty">まだ、砂は降っていない</div>
       </div>
     </div>
 
@@ -2104,31 +2203,58 @@ main { padding-bottom: 5.2rem; }
         <div class="ai-desc">時刻と環境に合わせ、雨の強さを調律する</div>
       </div>
     </div>
-  </div><!-- /tab uwiki -->
+  </div><!-- /tab uwiki-main -->
+
+  <!-- ===== 引力雨域タブ（v2.4 / 旧雨域から数値部分のみ抽出） ===== -->
+  <div class="tab-page" data-tab="uwiki" hidden>
+    <div class="uwiki-hero attraction-hero">
+      <h1><span style="color: var(--rain-blue)">引力雨域</span></h1>
+      <p>External ── 他者から見えた自分・客観的な数値</p>
+    </div>
+
+    <!-- 引力雨域：項目別ゲージ -->
+    <div class="uwiki-pane attraction-pane attraction-section">
+      <div class="pane-header">
+        <span class="pane-icon">👁</span>
+        <h2>客観指標</h2>
+        <span class="pane-role">アナリスト</span>
+      </div>
+      <p class="pane-desc">数値で測られる現実。最大 10 項目まで。タップで現在値を記録。</p>
+      <div class="attraction-items" id="attraction-items">
+        <!-- JS で動的描画 -->
+      </div>
+      <button class="attraction-add-btn" id="attraction-add">＋ 項目を追加（最大10）</button>
+    </div>
+
+    <!-- 成長の可視化 -->
+    <div class="growth-section">
+      <h3>成長の可視化 ── 重力と引力の均衡</h3>
+      <svg class="growth-chart" id="growth-chart" viewBox="0 0 600 220" preserveAspectRatio="none" aria-label="重力と引力の成長グラフ"></svg>
+      <div class="growth-legend">
+        <span><span class="lg-dot lg-gold"></span>内面の熱量（重力）</span>
+        <span><span class="lg-dot lg-blue"></span>外面の成果（引力）</span>
+      </div>
+      <p class="pane-desc" style="text-align:center; margin-top:1rem;">
+        内面の熱量（金）と外面の成果（青）が、バランスよく成長しているかをAIが分析します。
+      </p>
+    </div>
+  </div><!-- /tab uwiki (引力雨域) -->
 
 </main>
 
-<!-- ボトムタブナビ -->
+<!-- ボトムタブナビ（v2.4 / 2026-05-16 / 雨域メイン構造へ転換） -->
 <nav class="tab-bar" id="tab-bar">
-  <button data-tab="home" class="active">
-    <span class="tab-icon">🏠</span>
-    <span class="tab-label">ホーム</span>
-  </button>
-  <button data-tab="tasks">
-    <span class="tab-icon">📋</span>
-    <span class="tab-label">タスク</span>
-  </button>
-  <button data-tab="projects">
-    <span class="tab-icon">📁</span>
-    <span class="tab-label">プロジェクト</span>
-  </button>
-  <button data-tab="log">
-    <span class="tab-icon">📅</span>
-    <span class="tab-label">記録</span>
-  </button>
-  <button data-tab="uwiki">
+  <button data-tab="uwiki-main" class="active">
     <span class="tab-icon">🌧</span>
     <span class="tab-label">雨域</span>
+  </button>
+  <button data-tab="home">
+    <span class="tab-icon">⏳</span>
+    <span class="tab-label">重力雨域</span>
+  </button>
+  <button data-tab="uwiki">
+    <span class="tab-icon">👁</span>
+    <span class="tab-label">引力雨域</span>
   </button>
 </nav>
 
@@ -2139,11 +2265,12 @@ main { padding-bottom: 5.2rem; }
     <div class="drawer-sub">雨域図 ── 全プロジェクト横断のタスクハブ</div>
   </div>
   <ul class="drawer-list">
-    <li><a data-tab="home"><span class="dr-icon">🏠</span><span>ホーム</span></a></li>
-    <li><a data-tab="tasks"><span class="dr-icon">📋</span><span>タスク</span></a></li>
-    <li><a data-tab="projects"><span class="dr-icon">📁</span><span>プロジェクト</span></a></li>
-    <li><a data-tab="log"><span class="dr-icon">📅</span><span>365日の記録</span></a></li>
-    <li><a data-tab="uwiki"><span class="dr-icon">🌧</span><span>雨域（重力／引力）</span></a></li>
+    <li><a data-tab="uwiki-main"><span class="dr-icon">🌧</span><span>雨域（メイン）</span></a></li>
+    <li><a data-tab="home"><span class="dr-icon">⏳</span><span>重力雨域（タスクハブ）</span></a></li>
+    <li><a data-tab="uwiki"><span class="dr-icon">👁</span><span>引力雨域（数値）</span></a></li>
+    <li><a data-tab="tasks"><span class="dr-icon">📋</span><span>　└ タスク一覧</span></a></li>
+    <li><a data-tab="projects"><span class="dr-icon">📁</span><span>　└ プロジェクト</span></a></li>
+    <li><a data-tab="log"><span class="dr-icon">📅</span><span>　└ 365日の記録</span></a></li>
     <li><a id="dr-add"><span class="dr-icon">➕</span><span>タスクを追加</span></a></li>
     <li><a id="dr-config"><span class="dr-icon">⚙️</span><span>設定（PAT・通知）</span></a></li>
     <li><a href="claude-mobile-prompt.md" target="_blank" rel="noopener"><span class="dr-icon">🤖</span><span>Claude モバイル連携テンプレ</span></a></li>
@@ -3827,9 +3954,18 @@ function bootstrap() {
     UIKI.config.open();
   });
 
-  // 初期タブ復元
-  const initialTab = UIKI.store.get('current_tab', 'home');
-  switchTab(initialTab);
+  // 初期タブ復元（v2.4：デフォルトは雨域メイン）
+  const initialTab = UIKI.store.get('current_tab', 'uwiki-main');
+  // 廃止された旧タブ名が保存されていた場合はメインへフォールバック
+  const validTabs = ['uwiki-main', 'home', 'uwiki', 'tasks', 'projects', 'log'];
+  switchTab(validTabs.includes(initialTab) ? initialTab : 'uwiki-main');
+
+  // 大カードのクリックで該当タブへ遷移（PDF Page 2 風）
+  document.querySelectorAll('.uwiki-bigcard[data-go]').forEach(card => {
+    card.addEventListener('click', () => {
+      switchTab(card.dataset.go);
+    });
+  });
 
   // ───── URL クエリでタスク追加（Claude モバイル等から） ─────
   const urlParams = new URLSearchParams(window.location.search);
