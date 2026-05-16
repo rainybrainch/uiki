@@ -2547,6 +2547,18 @@ main { padding-bottom: 5.2rem; }
       </div>
     </section>
 
+    <!-- Drive 食事ログ自動表示（v2.10 / 2026-05-17） -->
+    <section class="yomu-section reveal">
+      <h3>🍽 食事ログ自動表示 <span class="yomu-from" id="drive-meta-meal">読み込み中…</span></h3>
+      <p class="yomu-desc">食事用 Drive フォルダ内の画像を表示。ファイル名から日付を自動抽出（IMG_20260517_080345.jpg 等）。</p>
+      <div class="drive-actions" style="display:flex; gap:0.6rem; flex-wrap:wrap; margin-bottom:0.8rem;">
+        <button class="attraction-add-btn" id="drive-refresh-meal-btn" style="margin: 0; padding: 0.4rem 1rem;">🔄 今すぐ再読込</button>
+      </div>
+      <div class="body-scan-grid" id="drive-grid-meal">
+        <div class="yomu-loading yomu-empty">読み込み中…</div>
+      </div>
+    </section>
+
     <!-- 読雨統合：身体スキャン履歴（v2.7 / UwikiAI 経由・メモ付き） -->
     <section class="yomu-section reveal">
       <h3>🤳 読雨から ── 身体スキャン履歴 <span class="yomu-from">type=body_scan</span></h3>
@@ -2645,6 +2657,10 @@ main { padding-bottom: 5.2rem; }
     <label>Drive フォルダ ID（身体スキャン用）
       <input type="text" id="cfg-drive-folder" autocomplete="off" placeholder="例: 1qCu88aJG93g5BMzUd6sVhXUpxy94Ehgk">
       <small>共有 URL の末尾の文字列。フォルダは「リンクを知っている全員」に設定すること。</small>
+    </label>
+    <label>Drive フォルダ ID（食事ログ用）
+      <input type="text" id="cfg-drive-folder-meal" autocomplete="off" placeholder="食事用の別フォルダID">
+      <small>食事画像専用のフォルダID。身体スキャンと分けて管理。空欄の場合は食事ログ機能はオフ。</small>
     </label>
     <label>OAuth クライアント ID（画像アップロード用・任意）
       <input type="text" id="cfg-drive-oauth" autocomplete="off" placeholder="例: 123456789-abc...apps.googleusercontent.com">
@@ -2799,23 +2815,67 @@ UIKI.upload = (function() {
 // ─────────────────────────────────────────────────────────
 UIKI.drive = (function() {
   const POLL_MS = 5 * 60 * 1000;
-  let state = { files: [], loaded: false, error: null, fetchedAt: null };
+  // v2.10: 複数フォルダ対応（身体スキャン body / 食事ログ meal）
+  const STATES = {
+    body: { files: [], loaded: false, error: null, fetchedAt: null, gridId: 'drive-grid', metaId: 'drive-meta', label: '身体スキャン' },
+    meal: { files: [], loaded: false, error: null, fetchedAt: null, gridId: 'drive-grid-meal', metaId: 'drive-meta-meal', label: '食事ログ' }
+  };
   let pollTimer = null;
 
   function escapeHtml(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
 
-  async function fetchDrive() {
+  // ファイル名から日付抽出（v2.10）
+  function parseFilenameDate(filename) {
+    if (!filename) return null;
+    // 8桁連続数字 + 任意で時刻：IMG_20260517_080345.jpg / PXL_20260517_080345.jpg
+    let m = filename.match(/(?:^|[^0-9])(\d{4})(\d{2})(\d{2})[_T\-\s]?(\d{2})?(\d{2})?(\d{2})?/);
+    if (m) {
+      const y = +m[1], mo = +m[2], d = +m[3];
+      if (y >= 2000 && y <= 2100 && mo >= 1 && mo <= 12 && d >= 1 && d <= 31) {
+        return new Date(y, mo - 1, d, +m[4] || 0, +m[5] || 0, +m[6] || 0);
+      }
+    }
+    // YYYY-MM-DD or YYYY/MM/DD
+    m = filename.match(/(\d{4})[-/](\d{2})[-/](\d{2})(?:[_T\s](\d{2})[:_-]?(\d{2})?[:_-]?(\d{2})?)?/);
+    if (m) {
+      const y = +m[1], mo = +m[2], d = +m[3];
+      if (y >= 2000 && y <= 2100 && mo >= 1 && mo <= 12 && d >= 1 && d <= 31) {
+        return new Date(y, mo - 1, d, +m[4] || 0, +m[5] || 0, +m[6] || 0);
+      }
+    }
+    return null;
+  }
+
+  // 実効日時：ファイル名優先 > EXIF > modifiedTime
+  function getEffectiveDate(file) {
+    const fromName = parseFilenameDate(file.name);
+    if (fromName) return fromName;
+    const exif = file.imageMediaMetadata && file.imageMediaMetadata.time;
+    if (exif) return new Date(exif);
+    if (file.modifiedTime) return new Date(file.modifiedTime);
+    return null;
+  }
+
+  function formatJpDate(d) {
+    if (!d) return '';
+    const pad = n => String(n).padStart(2, '0');
+    return d.getFullYear() + '/' + pad(d.getMonth() + 1) + '/' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+
+  async function fetchOne(kind) {
     const cfg = UIKI.store.get('config', null);
-    if (!cfg || !cfg.driveKey || !cfg.driveFolderId) {
-      state.error = '未設定';
-      renderEmpty();
+    const folderId = kind === 'meal' ? (cfg && cfg.driveFolderIdMeal) : (cfg && cfg.driveFolderId);
+    const st = STATES[kind];
+    if (!st) return;
+    if (!cfg || !cfg.driveKey || !folderId) {
+      st.error = '未設定';
+      renderEmpty(kind);
       return;
     }
     try {
-      // Drive API v3: files.list with q parameter
-      const q = encodeURIComponent("'" + cfg.driveFolderId + "' in parents and trashed=false and (mimeType contains 'image/')");
+      const q = encodeURIComponent("'" + folderId + "' in parents and trashed=false and (mimeType contains 'image/')");
       const fields = encodeURIComponent('files(id,name,createdTime,modifiedTime,mimeType,thumbnailLink,webViewLink,imageMediaMetadata(time))');
       const url = 'https://www.googleapis.com/drive/v3/files?q=' + q + '&fields=' + fields + '&orderBy=modifiedTime%20desc&pageSize=100&key=' + encodeURIComponent(cfg.driveKey);
       const res = await fetch(url);
@@ -2824,66 +2884,77 @@ UIKI.drive = (function() {
         throw new Error('HTTP ' + res.status + ' ' + txt.slice(0, 80));
       }
       const data = await res.json();
-      state.files = Array.isArray(data.files) ? data.files : [];
-      state.loaded = true;
-      state.error = null;
-      state.fetchedAt = new Date().toISOString();
-      renderDrive();
+      st.files = Array.isArray(data.files) ? data.files : [];
+      st.loaded = true;
+      st.error = null;
+      st.fetchedAt = new Date().toISOString();
+      renderKind(kind);
     } catch (e) {
-      state.error = String(e && e.message || e);
-      console.warn('drive fetch failed', e);
-      renderError();
+      st.error = String(e && e.message || e);
+      console.warn('drive fetch failed (' + kind + ')', e);
+      renderError(kind);
     }
   }
 
-  function renderEmpty() {
-    const wrap = document.getElementById('drive-grid');
+  async function fetchDrive() {
+    await Promise.all([fetchOne('body'), fetchOne('meal')]);
+  }
+
+  function renderEmpty(kind) {
+    const st = STATES[kind];
+    const wrap = document.getElementById(st.gridId);
     if (!wrap) return;
-    wrap.innerHTML = '<div class="yomu-empty">Drive 連携が未設定。<br>設定モーダル → 「Google Drive API キー」と「フォルダ ID」を登録すると、フォルダ内の画像が自動表示されます。</div>';
-    const meta = document.getElementById('drive-meta');
+    const cfg = UIKI.store.get('config', null);
+    const folderId = kind === 'meal' ? (cfg && cfg.driveFolderIdMeal) : (cfg && cfg.driveFolderId);
+    const reason = !cfg ? '設定未保存' : !cfg.driveKey ? 'API キー未設定' : !folderId ? 'フォルダ ID 未設定' : '未連携';
+    wrap.innerHTML = '<div class="yomu-empty">' + escapeHtml(reason) + '。<br>設定モーダルで Drive 連携を登録すると自動表示されます。</div>';
+    const meta = document.getElementById(st.metaId);
     if (meta) meta.textContent = '未連携';
   }
 
-  function renderError() {
-    const wrap = document.getElementById('drive-grid');
+  function renderError(kind) {
+    const st = STATES[kind];
+    const wrap = document.getElementById(st.gridId);
     if (!wrap) return;
-    wrap.innerHTML = '<div class="yomu-error">Drive fetch 失敗：' + escapeHtml(state.error || '不明') + '<br><small>API キー・フォルダ ID・共有設定（「リンクを知っている全員」）を確認してください。</small></div>';
+    wrap.innerHTML = '<div class="yomu-error">Drive fetch 失敗：' + escapeHtml(st.error || '不明') + '<br><small>API キー・フォルダ ID・共有設定（「リンクを知っている全員」）を確認してください。</small></div>';
   }
 
-  function renderDrive() {
-    const wrap = document.getElementById('drive-grid');
+  function renderKind(kind) {
+    const st = STATES[kind];
+    const wrap = document.getElementById(st.gridId);
     if (!wrap) return;
-    const meta = document.getElementById('drive-meta');
-    if (!state.files.length) {
-      wrap.innerHTML = '<div class="yomu-empty">Drive フォルダはまだ空。<br>スマホで撮影 → Drive フォルダに画像をアップロードすると、次の同期で自動表示されます（5分以内・「再読込」で即時可）。</div>';
+    const meta = document.getElementById(st.metaId);
+    if (!st.files.length) {
+      wrap.innerHTML = '<div class="yomu-empty">' + escapeHtml(st.label) + 'フォルダはまだ空。<br>Android 共有メニュー or OAuth アップロードで画像を追加してください。</div>';
       if (meta) meta.textContent = '0 枚';
       return;
     }
-    // 撮影日時優先（imageMediaMetadata.time）、なければ modifiedTime
-    state.files.sort((a, b) => {
-      const ta = (a.imageMediaMetadata && a.imageMediaMetadata.time) || a.modifiedTime || '';
-      const tb = (b.imageMediaMetadata && b.imageMediaMetadata.time) || b.modifiedTime || '';
-      return tb.localeCompare(ta);
+    // 実効日時を計算してソート（ファイル名優先）
+    const enriched = st.files.map(f => Object.assign({}, f, { _date: getEffectiveDate(f) }));
+    enriched.sort((a, b) => {
+      const ta = a._date ? a._date.getTime() : 0;
+      const tb = b._date ? b._date.getTime() : 0;
+      return tb - ta;
     });
-    const top = state.files.slice(0, 60);
+    const top = enriched.slice(0, 60);
     wrap.innerHTML = top.map(f => {
-      // thumbnailLink は size 制限あり・自分で size 指定する場合は別 URL
       const thumb = f.thumbnailLink
         ? f.thumbnailLink.replace(/=s\d+/, '=s400')
         : 'https://drive.google.com/thumbnail?id=' + f.id + '&sz=w400';
       const view = f.webViewLink || ('https://drive.google.com/file/d/' + f.id + '/view');
-      const dt = (f.imageMediaMetadata && f.imageMediaMetadata.time) || f.modifiedTime || '';
-      const dateStr = dt ? dt.slice(0, 10) + ' ' + dt.slice(11, 16) : '';
+      const dateStr = formatJpDate(f._date);
+      const baseName = (f.name || '').replace(/\.[a-z0-9]+$/i, '');
       return '<a class="body-scan-card" href="' + escapeHtml(view) + '" target="_blank" rel="noopener" title="' + escapeHtml(f.name + ' / ' + dateStr) + '">' +
         '<img src="' + escapeHtml(thumb) + '" alt="' + escapeHtml(f.name) + '" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display=\'none\'; this.parentNode.classList.add(\'bs-broken\');">' +
         '<div class="bs-meta">' +
           '<div class="bs-date">' + escapeHtml(dateStr) + '</div>' +
+          '<div class="bs-memo">' + escapeHtml(baseName.slice(0, 30)) + '</div>' +
         '</div>' +
       '</a>';
     }).join('');
     if (meta) {
-      const fetchedAt = state.fetchedAt ? new Date(state.fetchedAt).toLocaleTimeString('ja-JP', {hour:'2-digit', minute:'2-digit'}) : '';
-      meta.textContent = state.files.length + ' 枚（同期: ' + fetchedAt + '）';
+      const fetchedAt = st.fetchedAt ? new Date(st.fetchedAt).toLocaleTimeString('ja-JP', {hour:'2-digit', minute:'2-digit'}) : '';
+      meta.textContent = st.files.length + ' 枚（同期: ' + fetchedAt + '）';
     }
   }
 
@@ -2893,7 +2964,7 @@ UIKI.drive = (function() {
     pollTimer = setInterval(fetchDrive, POLL_MS);
   }
 
-  return { init, fetch: fetchDrive, state: () => state };
+  return { init, fetch: fetchDrive, fetchOne, parseFilenameDate, getEffectiveDate, state: () => STATES };
 })();
 
 // ─────────────────────────────────────────────────────────
@@ -4742,9 +4813,11 @@ UIKI.config = (() => {
     document.getElementById('cfg-notif').checked = !!cfg.notifEnabled;
     const dk = document.getElementById('cfg-drive-key');
     const df = document.getElementById('cfg-drive-folder');
+    const dfm = document.getElementById('cfg-drive-folder-meal');
     const doEl2 = document.getElementById('cfg-drive-oauth');
     if (dk) dk.value = cfg.driveKey || '';
     if (df) df.value = cfg.driveFolderId || '1qCu88aJG93g5BMzUd6sVhXUpxy94Ehgk';
+    if (dfm) dfm.value = cfg.driveFolderIdMeal || '129gwV0ySQjJBBTOb-tc2QnDt7xMPRM3v';
     if (doEl2) doEl2.value = cfg.driveOauthClientId || '';
     document.getElementById('config-modal').hidden = false;
   }
@@ -4757,9 +4830,11 @@ UIKI.config = (() => {
     const notifEnabled = document.getElementById('cfg-notif').checked;
     const dkEl = document.getElementById('cfg-drive-key');
     const dfEl = document.getElementById('cfg-drive-folder');
+    const dfmEl = document.getElementById('cfg-drive-folder-meal');
     const doEl = document.getElementById('cfg-drive-oauth');
     const driveKey = dkEl ? dkEl.value.trim() : '';
     const driveFolderId = dfEl ? dfEl.value.trim() : '';
+    const driveFolderIdMeal = dfmEl ? dfmEl.value.trim() : '';
     const driveOauthClientId = doEl ? doEl.value.trim() : '';
 
     // v2.8 緩和：PAT または Drive キーのどちらかがあれば保存可
@@ -4777,7 +4852,7 @@ UIKI.config = (() => {
     // savedAt を記録：fine-grained PAT は最大365日。期限切れ前に警告を出すため。
     UIKI.store.set('config', {
       pat, gistId, notifEnabled,
-      driveKey, driveFolderId, driveOauthClientId,
+      driveKey, driveFolderId, driveFolderIdMeal, driveOauthClientId,
       savedAt: new Date().toISOString()
     });
     showToast(pat ? '設定を保存した' : 'Drive 連携のみで保存した（PAT 未登録）');
@@ -4844,15 +4919,28 @@ function bootstrap() {
   // ⑤ Drive 自動表示（v2.8 / 2026-05-16 / API キー方式・5分polling）
   try { UIKI.drive.init(); } catch(e) { console.warn('drive init failed', e); }
 
-  // Drive 再読込ボタン
+  // Drive 再読込ボタン（身体スキャン）
   const driveRefresh = document.getElementById('drive-refresh-btn');
   if (driveRefresh) {
     driveRefresh.addEventListener('click', () => {
       driveRefresh.textContent = '🔄 同期中…';
       driveRefresh.disabled = true;
-      UIKI.drive.fetch().finally(() => {
+      UIKI.drive.fetchOne('body').finally(() => {
         driveRefresh.textContent = '🔄 今すぐ再読込';
         driveRefresh.disabled = false;
+      });
+    });
+  }
+
+  // Drive 再読込ボタン（食事ログ・v2.10）
+  const driveRefreshMeal = document.getElementById('drive-refresh-meal-btn');
+  if (driveRefreshMeal) {
+    driveRefreshMeal.addEventListener('click', () => {
+      driveRefreshMeal.textContent = '🔄 同期中…';
+      driveRefreshMeal.disabled = true;
+      UIKI.drive.fetchOne('meal').finally(() => {
+        driveRefreshMeal.textContent = '🔄 今すぐ再読込';
+        driveRefreshMeal.disabled = false;
       });
     });
   }
