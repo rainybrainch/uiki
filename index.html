@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#07090f">
 <meta name="description" content="降った雨は、還らない。雨域図 UIKI ── 全プロジェクト横断の記録。">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https:; connect-src https://api.github.com https://www.googleapis.com;">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https:; connect-src https://api.github.com https://www.googleapis.com https://accounts.google.com https://oauth2.googleapis.com; frame-src https://accounts.google.com;">
 <link rel="manifest" href="manifest.json">
 <title>雨域図 UIKI</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -2535,7 +2535,13 @@ main { padding-bottom: 5.2rem; }
     <!-- Drive 自動表示（v2.8 / Drive API で公開フォルダの画像を自動取得） -->
     <section class="yomu-section reveal">
       <h3>📁 Drive フォルダ自動表示 <span class="yomu-from" id="drive-meta">読み込み中…</span></h3>
-      <p class="yomu-desc">設定した Drive フォルダ内の画像を 5 分ごとに自動取得。<br>スマホで撮影 → Drive アップ → 自動で表示。UwikiAI 経由不要。<br><button class="attraction-add-btn" id="drive-refresh-btn" style="margin-top: 0.5rem; padding: 0.4rem 1rem;">🔄 今すぐ再読込</button></p>
+      <p class="yomu-desc">設定した Drive フォルダ内の画像を 5 分ごとに自動取得。<br>スマホで撮影 → Drive アップ → 自動で表示。</p>
+      <div class="drive-actions" style="display:flex; gap:0.6rem; flex-wrap:wrap; margin-bottom:0.8rem;">
+        <input type="file" id="drive-upload-input" accept="image/*" capture="user" style="display:none;">
+        <button class="sand-submit" id="drive-upload-btn" style="background: var(--rain-blue); color: #fff;">📷 画像を追加（OAuth）</button>
+        <button class="attraction-add-btn" id="drive-refresh-btn" style="margin: 0; padding: 0.4rem 1rem;">🔄 今すぐ再読込</button>
+        <span id="drive-upload-status" style="font-size:0.78rem; color: var(--dim); align-self:center;"></span>
+      </div>
       <div class="body-scan-grid" id="drive-grid">
         <div class="yomu-loading yomu-empty">読み込み中…</div>
       </div>
@@ -2640,9 +2646,12 @@ main { padding-bottom: 5.2rem; }
       <input type="text" id="cfg-drive-folder" autocomplete="off" placeholder="例: 1qCu88aJG93g5BMzUd6sVhXUpxy94Ehgk">
       <small>共有 URL の末尾の文字列。フォルダは「リンクを知っている全員」に設定すること。</small>
     </label>
+    <label>OAuth クライアント ID（画像アップロード用・任意）
+      <input type="text" id="cfg-drive-oauth" autocomplete="off" placeholder="例: 123456789-abc...apps.googleusercontent.com">
+      <small>雨域から Drive へ直接アップロードする場合に必要。<a href="https://console.cloud.google.com/apis/credentials" target="_blank">認証情報 → OAuth 2.0 クライアント ID</a>。アプリケーションの種類「ウェブアプリケーション」・承認済み JS 生成元に <code>https://rainybrainch.github.io</code> を追加。</small>
+    </label>
     <p class="cfg-help" style="font-size: 0.78rem;">
-      <strong>取得手順</strong>：① <a href="https://console.cloud.google.com/projectcreate" target="_blank">新規プロジェクト作成</a> → ② <a href="https://console.cloud.google.com/apis/library/drive.googleapis.com" target="_blank">Drive API を有効化</a> → ③ <a href="https://console.cloud.google.com/apis/credentials" target="_blank">認証情報 → API キー作成</a>。<br>
-      API キー制限：HTTP リファラ「https://rainybrainch.github.io/*」推奨。
+      <strong>API キー取得手順</strong>：① <a href="https://console.cloud.google.com/projectcreate" target="_blank">新規プロジェクト作成</a> → ② <a href="https://console.cloud.google.com/apis/library/drive.googleapis.com" target="_blank">Drive API を有効化</a> → ③ <a href="https://console.cloud.google.com/apis/credentials" target="_blank">認証情報 → API キー作成</a>。
     </p>
     <div class="modal-buttons">
       <button id="cfg-cancel">閉じる</button>
@@ -2665,6 +2674,123 @@ main { padding-bottom: 5.2rem; }
 'use strict';
 
 const UIKI = {};
+
+// ─────────────────────────────────────────────────────────
+// upload: Google Drive 画像アップロード（OAuth 認証付き）(v2.9 / 2026-05-16)
+// GIS (Google Identity Services) で OAuth トークン取得 → Drive API upload
+// ─────────────────────────────────────────────────────────
+UIKI.upload = (function() {
+  let gisLoaded = false;
+  let tokenClient = null;
+  let accessToken = null;
+  let tokenExpiresAt = 0;
+
+  function loadGIS() {
+    if (gisLoaded) return Promise.resolve();
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://accounts.google.com/gsi/client';
+      script.async = true;
+      script.defer = true;
+      script.onload = () => { gisLoaded = true; resolve(); };
+      script.onerror = () => reject(new Error('GIS スクリプト読込失敗'));
+      document.head.appendChild(script);
+    });
+  }
+
+  function initTokenClient(clientId) {
+    if (tokenClient && tokenClient._clientId === clientId) return tokenClient;
+    if (!window.google || !google.accounts || !google.accounts.oauth2) {
+      throw new Error('GIS が未ロード');
+    }
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: clientId,
+      scope: 'https://www.googleapis.com/auth/drive.file',
+      callback: '' // 都度差し替え
+    });
+    tokenClient._clientId = clientId;
+    return tokenClient;
+  }
+
+  async function getAccessToken() {
+    if (accessToken && Date.now() < tokenExpiresAt - 60000) return accessToken;
+    const cfg = UIKI.store.get('config', null);
+    if (!cfg || !cfg.driveOauthClientId) {
+      throw new Error('OAuth クライアント ID が未設定');
+    }
+    await loadGIS();
+    initTokenClient(cfg.driveOauthClientId);
+    return new Promise((resolve, reject) => {
+      tokenClient.callback = (resp) => {
+        if (resp.error) { reject(new Error('OAuth エラー: ' + resp.error)); return; }
+        accessToken = resp.access_token;
+        tokenExpiresAt = Date.now() + (parseInt(resp.expires_in, 10) || 3600) * 1000;
+        resolve(accessToken);
+      };
+      tokenClient.requestAccessToken({ prompt: '' }); // 初回のみ同意画面
+    });
+  }
+
+  async function uploadFile(file, onProgress) {
+    const cfg = UIKI.store.get('config', null);
+    if (!cfg || !cfg.driveFolderId) throw new Error('Drive フォルダ ID が未設定');
+    if (!file) throw new Error('ファイル未選択');
+
+    const token = await getAccessToken();
+    // 撮影時刻を EXIF から抽出するのは複雑なので、ファイル名にタイムスタンプを付与
+    const now = new Date();
+    const ts = now.toISOString().replace(/[-:]/g, '').slice(0, 15);
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+    const fname = 'scan_' + ts + '_' + file.name;
+
+    // multipart upload
+    const metadata = {
+      name: fname,
+      parents: [cfg.driveFolderId],
+      mimeType: file.type || 'image/jpeg'
+    };
+    const boundary = '----UIKI' + Math.random().toString(36).slice(2);
+    const delimiter = '\r\n--' + boundary + '\r\n';
+    const closeDelim = '\r\n--' + boundary + '--';
+
+    const fileBuf = await file.arrayBuffer();
+    const enc = new TextEncoder();
+    const head = delimiter +
+      'Content-Type: application/json; charset=UTF-8\r\n\r\n' +
+      JSON.stringify(metadata) +
+      delimiter +
+      'Content-Type: ' + (file.type || 'image/jpeg') + '\r\n\r\n';
+    const headBytes = enc.encode(head);
+    const tailBytes = enc.encode(closeDelim);
+    const body = new Uint8Array(headBytes.length + fileBuf.byteLength + tailBytes.length);
+    body.set(headBytes, 0);
+    body.set(new Uint8Array(fileBuf), headBytes.length);
+    body.set(tailBytes, headBytes.length + fileBuf.byteLength);
+
+    // XMLHttpRequest で進捗対応
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink,thumbnailLink,modifiedTime');
+      xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+      xhr.setRequestHeader('Content-Type', 'multipart/related; boundary=' + boundary);
+      xhr.upload.onprogress = (e) => {
+        if (onProgress && e.lengthComputable) onProgress(e.loaded / e.total);
+      };
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try { resolve(JSON.parse(xhr.responseText)); }
+          catch(e) { reject(new Error('レスポンス解析失敗')); }
+        } else {
+          reject(new Error('アップロード失敗: HTTP ' + xhr.status + ' ' + xhr.responseText.slice(0, 100)));
+        }
+      };
+      xhr.onerror = () => reject(new Error('ネットワークエラー'));
+      xhr.send(body);
+    });
+  }
+
+  return { loadGIS, getAccessToken, uploadFile };
+})();
 
 // ─────────────────────────────────────────────────────────
 // drive: Google Drive 公開フォルダ自動表示 (v2.8 / 2026-05-16)
@@ -4616,8 +4742,10 @@ UIKI.config = (() => {
     document.getElementById('cfg-notif').checked = !!cfg.notifEnabled;
     const dk = document.getElementById('cfg-drive-key');
     const df = document.getElementById('cfg-drive-folder');
+    const doEl2 = document.getElementById('cfg-drive-oauth');
     if (dk) dk.value = cfg.driveKey || '';
     if (df) df.value = cfg.driveFolderId || '1qCu88aJG93g5BMzUd6sVhXUpxy94Ehgk';
+    if (doEl2) doEl2.value = cfg.driveOauthClientId || '';
     document.getElementById('config-modal').hidden = false;
   }
   function close() {
@@ -4629,8 +4757,10 @@ UIKI.config = (() => {
     const notifEnabled = document.getElementById('cfg-notif').checked;
     const dkEl = document.getElementById('cfg-drive-key');
     const dfEl = document.getElementById('cfg-drive-folder');
+    const doEl = document.getElementById('cfg-drive-oauth');
     const driveKey = dkEl ? dkEl.value.trim() : '';
     const driveFolderId = dfEl ? dfEl.value.trim() : '';
+    const driveOauthClientId = doEl ? doEl.value.trim() : '';
 
     // v2.8 緩和：PAT または Drive キーのどちらかがあれば保存可
     if (!pat && !driveKey) {
@@ -4647,7 +4777,7 @@ UIKI.config = (() => {
     // savedAt を記録：fine-grained PAT は最大365日。期限切れ前に警告を出すため。
     UIKI.store.set('config', {
       pat, gistId, notifEnabled,
-      driveKey, driveFolderId,
+      driveKey, driveFolderId, driveOauthClientId,
       savedAt: new Date().toISOString()
     });
     showToast(pat ? '設定を保存した' : 'Drive 連携のみで保存した（PAT 未登録）');
@@ -4724,6 +4854,47 @@ function bootstrap() {
         driveRefresh.textContent = '🔄 今すぐ再読込';
         driveRefresh.disabled = false;
       });
+    });
+  }
+
+  // Drive アップロードボタン（v2.9 / OAuth 認証付き）
+  const uploadBtn = document.getElementById('drive-upload-btn');
+  const uploadInput = document.getElementById('drive-upload-input');
+  const uploadStatus = document.getElementById('drive-upload-status');
+  if (uploadBtn && uploadInput) {
+    uploadBtn.addEventListener('click', () => {
+      const cfg = UIKI.store.get('config', null);
+      if (!cfg || !cfg.driveOauthClientId) {
+        showToast('OAuth クライアント ID を設定モーダルで登録してください');
+        return;
+      }
+      uploadInput.click();
+    });
+    uploadInput.addEventListener('change', async () => {
+      const file = uploadInput.files && uploadInput.files[0];
+      if (!file) return;
+      const sizeMB = (file.size / 1024 / 1024).toFixed(1);
+      uploadBtn.disabled = true;
+      uploadBtn.textContent = '📤 アップロード中…';
+      if (uploadStatus) uploadStatus.textContent = '認証中… (' + sizeMB + ' MB)';
+      try {
+        const result = await UIKI.upload.uploadFile(file, (p) => {
+          if (uploadStatus) uploadStatus.textContent = '送信中 ' + Math.round(p * 100) + '%';
+        });
+        showToast('☔ Drive に保存：' + (result.name || '画像').slice(0, 30));
+        if (uploadStatus) uploadStatus.textContent = '✓ 完了';
+        // 即 fetch して画面更新
+        setTimeout(() => UIKI.drive.fetch(), 1500);
+      } catch (e) {
+        showToast('アップロード失敗：' + (e.message || String(e)).slice(0, 80));
+        if (uploadStatus) uploadStatus.textContent = '✗ ' + (e.message || '失敗').slice(0, 40);
+        console.warn('upload failed', e);
+      } finally {
+        uploadBtn.disabled = false;
+        uploadBtn.textContent = '📷 画像を追加（OAuth）';
+        uploadInput.value = '';
+        setTimeout(() => { if (uploadStatus) uploadStatus.textContent = ''; }, 5000);
+      }
     });
   }
 
