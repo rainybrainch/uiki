@@ -2550,9 +2550,12 @@ main { padding-bottom: 5.2rem; }
     <!-- Drive 食事ログ自動表示（v2.10 / 2026-05-17） -->
     <section class="yomu-section reveal">
       <h3>🍽 食事ログ自動表示 <span class="yomu-from" id="drive-meta-meal">読み込み中…</span></h3>
-      <p class="yomu-desc">食事用 Drive フォルダ内の画像を表示。ファイル名から日付を自動抽出（IMG_20260517_080345.jpg 等）。</p>
+      <p class="yomu-desc">食事用 Drive フォルダ内の画像を表示。ファイル名から日付を自動抽出。日付アイコン：📁ファイル名 / 📷EXIF / ☁️アップ時刻 / 🔄更新時刻</p>
       <div class="drive-actions" style="display:flex; gap:0.6rem; flex-wrap:wrap; margin-bottom:0.8rem;">
+        <input type="file" id="drive-upload-meal-input" accept="image/*" capture="environment" style="display:none;">
+        <button class="sand-submit" id="drive-upload-meal-btn" style="background: var(--rain-blue); color: #fff;">📷 食事を追加（OAuth）</button>
         <button class="attraction-add-btn" id="drive-refresh-meal-btn" style="margin: 0; padding: 0.4rem 1rem;">🔄 今すぐ再読込</button>
+        <span id="drive-upload-meal-status" style="font-size:0.78rem; color: var(--dim); align-self:center;"></span>
       </div>
       <div class="body-scan-grid" id="drive-grid-meal">
         <div class="yomu-loading yomu-empty">読み込み中…</div>
@@ -2747,22 +2750,24 @@ UIKI.upload = (function() {
     });
   }
 
-  async function uploadFile(file, onProgress) {
+  async function uploadFile(file, onProgress, opts) {
+    opts = opts || {};
     const cfg = UIKI.store.get('config', null);
-    if (!cfg || !cfg.driveFolderId) throw new Error('Drive フォルダ ID が未設定');
+    const targetFolder = opts.folderId || (cfg && cfg.driveFolderId);
+    if (!targetFolder) throw new Error('Drive フォルダ ID が未設定');
     if (!file) throw new Error('ファイル未選択');
 
     const token = await getAccessToken();
-    // 撮影時刻を EXIF から抽出するのは複雑なので、ファイル名にタイムスタンプを付与
+    // ファイル名先頭にタイムスタンプを付与（雨域での日付抽出を確実に）
     const now = new Date();
     const ts = now.toISOString().replace(/[-:]/g, '').slice(0, 15);
-    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
-    const fname = 'scan_' + ts + '_' + file.name;
+    const prefix = opts.prefix || 'scan';
+    const fname = prefix + '_' + ts + '_' + file.name;
 
     // multipart upload
     const metadata = {
       name: fname,
-      parents: [cfg.driveFolderId],
+      parents: [targetFolder],
       mimeType: file.type || 'image/jpeg'
     };
     const boundary = '----UIKI' + Math.random().toString(36).slice(2);
@@ -2848,14 +2853,16 @@ UIKI.drive = (function() {
     return null;
   }
 
-  // 実効日時：ファイル名優先 > EXIF > modifiedTime
+  // 実効日時：ファイル名優先 > EXIF > createdTime > modifiedTime
+  // v2.11: 日付の出所も返す（精度判定用）
   function getEffectiveDate(file) {
     const fromName = parseFilenameDate(file.name);
-    if (fromName) return fromName;
+    if (fromName) return { date: fromName, source: 'name' };
     const exif = file.imageMediaMetadata && file.imageMediaMetadata.time;
-    if (exif) return new Date(exif);
-    if (file.modifiedTime) return new Date(file.modifiedTime);
-    return null;
+    if (exif) return { date: new Date(exif), source: 'exif' };
+    if (file.createdTime) return { date: new Date(file.createdTime), source: 'created' };
+    if (file.modifiedTime) return { date: new Date(file.modifiedTime), source: 'modified' };
+    return { date: null, source: null };
   }
 
   function formatJpDate(d) {
@@ -2929,14 +2936,19 @@ UIKI.drive = (function() {
       if (meta) meta.textContent = '0 枚';
       return;
     }
-    // 実効日時を計算してソート（ファイル名優先）
-    const enriched = st.files.map(f => Object.assign({}, f, { _date: getEffectiveDate(f) }));
+    // 実効日時を計算してソート（ファイル名優先・最新順）
+    const enriched = st.files.map(f => {
+      const eff = getEffectiveDate(f);
+      return Object.assign({}, f, { _date: eff.date, _source: eff.source });
+    });
     enriched.sort((a, b) => {
       const ta = a._date ? a._date.getTime() : 0;
       const tb = b._date ? b._date.getTime() : 0;
       return tb - ta;
     });
     const top = enriched.slice(0, 60);
+    const sourceLabel = { name: '📁', exif: '📷', created: '☁️', modified: '🔄' };
+    const sourceTitle = { name: 'ファイル名から', exif: 'EXIF撮影時刻', created: 'アップロード時刻', modified: '更新時刻' };
     wrap.innerHTML = top.map(f => {
       const thumb = f.thumbnailLink
         ? f.thumbnailLink.replace(/=s\d+/, '=s400')
@@ -2944,10 +2956,12 @@ UIKI.drive = (function() {
       const view = f.webViewLink || ('https://drive.google.com/file/d/' + f.id + '/view');
       const dateStr = formatJpDate(f._date);
       const baseName = (f.name || '').replace(/\.[a-z0-9]+$/i, '');
-      return '<a class="body-scan-card" href="' + escapeHtml(view) + '" target="_blank" rel="noopener" title="' + escapeHtml(f.name + ' / ' + dateStr) + '">' +
+      const srcIcon = sourceLabel[f._source] || '?';
+      const srcTitle = sourceTitle[f._source] || '日付不明';
+      return '<a class="body-scan-card" href="' + escapeHtml(view) + '" target="_blank" rel="noopener" title="' + escapeHtml(f.name + ' / ' + dateStr + ' [' + srcTitle + ']') + '">' +
         '<img src="' + escapeHtml(thumb) + '" alt="' + escapeHtml(f.name) + '" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display=\'none\'; this.parentNode.classList.add(\'bs-broken\');">' +
         '<div class="bs-meta">' +
-          '<div class="bs-date">' + escapeHtml(dateStr) + '</div>' +
+          '<div class="bs-date"><span title="' + escapeHtml(srcTitle) + '">' + srcIcon + '</span> ' + escapeHtml(dateStr) + '</div>' +
           '<div class="bs-memo">' + escapeHtml(baseName.slice(0, 30)) + '</div>' +
         '</div>' +
       '</a>';
@@ -4945,46 +4959,61 @@ function bootstrap() {
     });
   }
 
-  // Drive アップロードボタン（v2.9 / OAuth 認証付き）
-  const uploadBtn = document.getElementById('drive-upload-btn');
-  const uploadInput = document.getElementById('drive-upload-input');
-  const uploadStatus = document.getElementById('drive-upload-status');
-  if (uploadBtn && uploadInput) {
-    uploadBtn.addEventListener('click', () => {
+  // Drive アップロードボタン共通処理（v2.11）
+  function bindUploadButton(btnId, inputId, statusId, kind) {
+    const btn = document.getElementById(btnId);
+    const input = document.getElementById(inputId);
+    const status = document.getElementById(statusId);
+    if (!btn || !input) return;
+    const labels = {
+      body: { idle: '📷 画像を追加（OAuth）', toastPrefix: '🤳 Drive に保存：' },
+      meal: { idle: '📷 食事を追加（OAuth）', toastPrefix: '🍽 食事を Drive に保存：' }
+    };
+    const lbl = labels[kind] || labels.body;
+    btn.addEventListener('click', () => {
       const cfg = UIKI.store.get('config', null);
       if (!cfg || !cfg.driveOauthClientId) {
         showToast('OAuth クライアント ID を設定モーダルで登録してください');
         return;
       }
-      uploadInput.click();
+      const folderId = kind === 'meal' ? (cfg && cfg.driveFolderIdMeal) : (cfg && cfg.driveFolderId);
+      if (!folderId) {
+        showToast((kind === 'meal' ? '食事用' : '身体スキャン用') + 'フォルダ ID が未設定');
+        return;
+      }
+      input.click();
     });
-    uploadInput.addEventListener('change', async () => {
-      const file = uploadInput.files && uploadInput.files[0];
+    input.addEventListener('change', async () => {
+      const file = input.files && input.files[0];
       if (!file) return;
+      const cfg = UIKI.store.get('config', null);
+      const folderId = kind === 'meal' ? cfg.driveFolderIdMeal : cfg.driveFolderId;
+      const prefix = kind === 'meal' ? 'meal' : 'scan';
       const sizeMB = (file.size / 1024 / 1024).toFixed(1);
-      uploadBtn.disabled = true;
-      uploadBtn.textContent = '📤 アップロード中…';
-      if (uploadStatus) uploadStatus.textContent = '認証中… (' + sizeMB + ' MB)';
+      btn.disabled = true;
+      btn.textContent = '📤 アップロード中…';
+      if (status) status.textContent = '認証中… (' + sizeMB + ' MB)';
       try {
         const result = await UIKI.upload.uploadFile(file, (p) => {
-          if (uploadStatus) uploadStatus.textContent = '送信中 ' + Math.round(p * 100) + '%';
-        });
-        showToast('☔ Drive に保存：' + (result.name || '画像').slice(0, 30));
-        if (uploadStatus) uploadStatus.textContent = '✓ 完了';
-        // 即 fetch して画面更新
-        setTimeout(() => UIKI.drive.fetch(), 1500);
+          if (status) status.textContent = '送信中 ' + Math.round(p * 100) + '%';
+        }, { folderId, prefix });
+        showToast(lbl.toastPrefix + (result.name || '画像').slice(0, 30));
+        if (status) status.textContent = '✓ 完了';
+        setTimeout(() => UIKI.drive.fetchOne(kind), 1500);
       } catch (e) {
         showToast('アップロード失敗：' + (e.message || String(e)).slice(0, 80));
-        if (uploadStatus) uploadStatus.textContent = '✗ ' + (e.message || '失敗').slice(0, 40);
-        console.warn('upload failed', e);
+        if (status) status.textContent = '✗ ' + (e.message || '失敗').slice(0, 40);
+        console.warn('upload failed (' + kind + ')', e);
       } finally {
-        uploadBtn.disabled = false;
-        uploadBtn.textContent = '📷 画像を追加（OAuth）';
-        uploadInput.value = '';
-        setTimeout(() => { if (uploadStatus) uploadStatus.textContent = ''; }, 5000);
+        btn.disabled = false;
+        btn.textContent = lbl.idle;
+        input.value = '';
+        setTimeout(() => { if (status) status.textContent = ''; }, 5000);
       }
     });
   }
+  bindUploadButton('drive-upload-btn', 'drive-upload-input', 'drive-upload-status', 'body');
+  bindUploadButton('drive-upload-meal-btn', 'drive-upload-meal-input', 'drive-upload-meal-status', 'meal');
 
   if (seeded) showToast('集水域を開いた ── RBAI 8域');
   if (consumed > 0) showToast('☂ ' + consumed + ' 粒、外から降った');
