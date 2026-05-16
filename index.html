@@ -2248,6 +2248,81 @@ main { padding-bottom: 5.2rem; }
   .body-scan-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
+/* ===== 健康データ スパークライン + 変動値 (v2.16 / 2026-05-17) ===== */
+.yomu-health-card.has-spark {
+  padding: 0.8rem 0.95rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.yhi-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.yhi-change {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.1rem 0.4rem;
+  border-radius: 2px;
+  letter-spacing: 0.03em;
+}
+.yhi-change.pos { color: #e07070; background: rgba(224, 92, 92, 0.1); }
+.yhi-change.neg { color: #6bff95; background: rgba(107, 255, 149, 0.08); }
+.yhi-change.zero { color: var(--dim); }
+.health-spark {
+  width: 100%;
+  height: 32px;
+  margin-top: 0.25rem;
+  display: block;
+}
+.yhi-meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.7rem;
+  color: var(--dim);
+  margin-top: 0.15rem;
+}
+.yhi-avg {
+  font-family: var(--mono);
+  color: var(--gold);
+}
+
+/* ===== 自撮りランクバッジ (v2.16 / 2026-05-17) ===== */
+.rank-badge {
+  display: inline-block;
+  padding: 0.1rem 0.45rem;
+  border-radius: 3px;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  margin-right: 0.4rem;
+}
+.rank-A, .rank-A\+ { background: rgba(201,168,76,0.85); color: #1a1a1a; }
+.rank-B, .rank-B\+ { background: rgba(107,255,149,0.65); color: #0a1f0a; }
+.rank-C, .rank-C\+ { background: rgba(58,111,201,0.55); color: #fff; }
+.rank-D, .rank-D\+ { background: rgba(255,154,76,0.6); color: #1a0a00; }
+.rank-E { background: rgba(224,92,92,0.6); color: #fff; }
+.rank-factors {
+  font-size: 0.68rem;
+  color: rgba(255,255,255,0.75);
+  margin-top: 0.25rem;
+  line-height: 1.4;
+}
+.rank-factors span {
+  display: inline-block;
+  margin-right: 0.5rem;
+  white-space: nowrap;
+}
+.rank-factors strong {
+  color: var(--gold);
+  font-family: var(--mono);
+  margin-left: 0.1rem;
+}
+
 /* ===== セクション折りたたみトグル (v2.12 / 2026-05-17) ===== */
 .yomu-section > h3 {
   cursor: pointer;
@@ -3097,15 +3172,60 @@ UIKI.yomu = (function() {
     if (eh) eh.textContent = h;
   }
 
+  // v2.16: スパークライン SVG 生成
+  function renderSparkline(values) {
+    if (!values || values.length < 2) return '';
+    const w = 120, h = 32, pad = 3;
+    const min = Math.min.apply(null, values);
+    const max = Math.max.apply(null, values);
+    const range = (max - min) || 1;
+    const pts = values.map((v, i) => {
+      const x = pad + (i / (values.length - 1)) * (w - pad * 2);
+      const y = h - pad - ((v - min) / range) * (h - pad * 2);
+      return x.toFixed(1) + ',' + y.toFixed(1);
+    }).join(' ');
+    const lastX = pad + (w - pad * 2);
+    const lastY = h - pad - ((values[values.length - 1] - min) / range) * (h - pad * 2);
+    // エリア塗りつぶし用パス
+    const areaPts = pts + ' ' + lastX + ',' + (h - pad) + ' ' + pad + ',' + (h - pad);
+    return '<svg viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none" class="health-spark" aria-hidden="true">' +
+      '<polygon points="' + areaPts + '" fill="rgba(58,111,201,0.15)"/>' +
+      '<polyline points="' + pts + '" stroke="#3a6fc9" stroke-width="1.5" fill="none"/>' +
+      '<circle cx="' + lastX.toFixed(1) + '" cy="' + lastY.toFixed(1) + '" r="2.2" fill="#c9a84c"/>' +
+      '</svg>';
+  }
+
+  // v2.16: 変動値計算（前回比 + 週平均）
+  function calcChange(entries) {
+    if (!entries || entries.length < 2) return null;
+    const sorted = entries.slice().sort((a, b) => {
+      const ta = (a.date || '') + (a.time || '') + (a.created_at || '');
+      const tb = (b.date || '') + (b.time || '') + (b.created_at || '');
+      return ta.localeCompare(tb);
+    });
+    const latest = sorted[sorted.length - 1];
+    const prev = sorted[sorted.length - 2];
+    const v1 = parseFloat(latest.value);
+    const v2 = parseFloat(prev.value);
+    if (isNaN(v1) || isNaN(v2)) return null;
+    const diff = v1 - v2;
+    const arrow = diff > 0 ? '↑' : diff < 0 ? '↓' : '→';
+    // 直近 7 件の平均
+    const recent7 = sorted.slice(-7).map(e => parseFloat(e.value)).filter(v => !isNaN(v));
+    const avg = recent7.length ? recent7.reduce((a, b) => a + b, 0) / recent7.length : null;
+    return { diff: Math.abs(diff).toFixed(1), arrow, signClass: diff > 0 ? 'pos' : diff < 0 ? 'neg' : 'zero', avg: avg != null ? avg.toFixed(1) : null };
+  }
+
   function renderHealth() {
     const wrap = document.getElementById('yomu-health');
     if (!wrap) return;
-    const health = byType('health');
+    // health のうち body_scan を除外（数値系のみ）
+    const health = byType('health').filter(e => e.metric !== 'body_scan');
     if (!health.length) {
       wrap.innerHTML = '<div class="yomu-empty">読雨にまだ健康データが届いていない。<br>UwikiAI 経由で「体重 68.5kg」「睡眠 7h」等を投稿してください。</div>';
       return;
     }
-    // メトリクス別に最新 1 件
+    // メトリクス別に集計
     const byMetric = {};
     for (const e of health) {
       if (!e.metric) continue;
@@ -3113,14 +3233,33 @@ UIKI.yomu = (function() {
       byMetric[e.metric].push(e);
     }
     const items = Object.entries(byMetric).map(([metric, entries]) => {
-      entries.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-      const latest = entries[0];
+      entries.sort((a, b) => {
+        const ta = (a.date || '') + (a.time || '') + (a.created_at || '');
+        const tb = (b.date || '') + (b.time || '') + (b.created_at || '');
+        return ta.localeCompare(tb);
+      });
+      const latest = entries[entries.length - 1];
       const valStr = latest.value + (latest.unit ? ' ' + latest.unit : '');
-      const meta = formatDate(latest.date) + (latest.time ? ' ' + latest.time : '') + ' ／ 計 ' + entries.length + ' 件';
-      return '<div class="yomu-health-card">' +
-        '<span class="yhi-metric">' + escapeHtml(metric) + '</span>' +
+      const change = calcChange(entries);
+      const sparkValues = entries.slice(-30).map(e => parseFloat(e.value)).filter(v => !isNaN(v));
+      const spark = renderSparkline(sparkValues);
+      const changeHtml = change
+        ? '<span class="yhi-change ' + change.signClass + '">' + change.arrow + ' ' + change.diff + (latest.unit || '') + '</span>'
+        : '<span class="yhi-change zero">初回</span>';
+      const avgHtml = change && change.avg
+        ? '<span class="yhi-avg">週平均: ' + change.avg + (latest.unit || '') + '</span>'
+        : '';
+      return '<div class="yomu-health-card has-spark">' +
+        '<div class="yhi-top">' +
+          '<span class="yhi-metric">' + escapeHtml(metric) + '</span>' +
+          changeHtml +
+        '</div>' +
         '<span class="yhi-value">' + escapeHtml(valStr) + '</span>' +
-        '<span class="yhi-meta">' + escapeHtml(meta) + '</span>' +
+        spark +
+        '<div class="yhi-meta-row">' +
+          '<span class="yhi-meta">' + escapeHtml(formatDate(latest.date) + ' ／ 計 ' + entries.length + ' 件') + '</span>' +
+          avgHtml +
+        '</div>' +
         '</div>';
     }).join('');
     wrap.innerHTML = items;
@@ -3194,7 +3333,7 @@ UIKI.yomu = (function() {
     if (!wrap) return;
     const scans = byType('health').filter(e => e.metric === 'body_scan' && e.image_url);
     if (!scans.length) {
-      wrap.innerHTML = '<div class="yomu-empty">まだ身体スキャンが届いていない。<br>UwikiAI で「自撮り [Google Drive 共有 URL] / 朝・体調普通」と投稿。<br>Drive URL は自動で <code>drive.google.com/thumbnail?id=...</code> に変換される。</div>';
+      wrap.innerHTML = '<div class="yomu-empty">まだ身体スキャンが届いていない。<br>UwikiAI で「自撮り [Google Drive 共有 URL] / 朝・体調普通」と投稿すると、Vision でランク評価＋メモ付きで記録されます。</div>';
       return;
     }
     scans.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
@@ -3202,12 +3341,25 @@ UIKI.yomu = (function() {
     wrap.innerHTML = top.map(s => {
       const date = formatDate(s.date);
       const src = normalizeImageUrl(s.image_url);
-      const memo = s.memo ? '<div class="bs-memo">' + escapeHtml(s.memo) + '</div>' : '';
-      return '<a class="body-scan-card" href="' + escapeHtml(s.image_url) + '" target="_blank" rel="noopener" title="' + escapeHtml(date + (s.memo ? ' ／ ' + s.memo : '')) + '">' +
+      // v2.16: rank バッジ + rank_factors 表示
+      const rankBadge = s.rank
+        ? '<span class="rank-badge rank-' + escapeHtml(String(s.rank).replace('+', '\\+')) + '">' + escapeHtml(s.rank) + '</span>'
+        : '';
+      let factorsHtml = '';
+      if (s.rank_factors && typeof s.rank_factors === 'object') {
+        const factorLabel = { skin: '肌', edema: 'むくみ', fatigue: '疲労', energy: '覚醒' };
+        const parts = Object.entries(s.rank_factors).map(([k, v]) =>
+          '<span>' + escapeHtml(factorLabel[k] || k) + ':<strong>' + escapeHtml(String(v)) + '</strong></span>'
+        );
+        factorsHtml = '<div class="rank-factors">' + parts.join('') + '</div>';
+      }
+      const memo = s.memo ? '<div class="bs-memo">' + rankBadge + escapeHtml(s.memo) + '</div>' : (rankBadge ? '<div class="bs-memo">' + rankBadge + '</div>' : '');
+      return '<a class="body-scan-card" href="' + escapeHtml(s.image_url) + '" target="_blank" rel="noopener" title="' + escapeHtml(date + (s.rank ? ' [' + s.rank + ']' : '') + (s.memo ? ' ／ ' + s.memo : '')) + '">' +
         '<img src="' + escapeHtml(src) + '" alt="body scan ' + escapeHtml(date) + '" loading="lazy" onerror="this.style.display=\'none\'; this.parentNode.classList.add(\'bs-broken\');">' +
         '<div class="bs-meta">' +
           '<div class="bs-date">' + escapeHtml(date) + '</div>' +
           memo +
+          factorsHtml +
         '</div>' +
       '</a>';
     }).join('');
@@ -3416,7 +3568,7 @@ UIKI.yomu = (function() {
       if (!entries.length) return Promise.reject(new Error('health_full には少なくとも 1 つの metric が必要'));
       return addEntriesBatch(entries);
     } else if (type === 'body_scan') {
-      // 自撮り画像保存（type=health, metric=body_scan の特殊形）
+      // 自撮り画像保存（type=health, metric=body_scan の特殊形・v2.16 で rank 対応）
       const bs = {
         type: 'health',
         metric: 'body_scan',
@@ -3427,6 +3579,15 @@ UIKI.yomu = (function() {
       if (urlParams.has('image_url')) bs.image_url = urlParams.get('image_url');
       if (urlParams.has('memo')) bs.memo = urlParams.get('memo');
       if (urlParams.has('time')) bs.time = urlParams.get('time');
+      // v2.16: ランク評価
+      if (urlParams.has('rank')) bs.rank = urlParams.get('rank');
+      // rank_factors は個別キーで受け取る（skin/edema/fatigue/energy）
+      const factorKeys = ['skin', 'edema', 'fatigue', 'energy'];
+      const factors = {};
+      factorKeys.forEach(k => {
+        if (urlParams.has(k)) factors[k] = urlParams.get(k);
+      });
+      if (Object.keys(factors).length) bs.rank_factors = factors;
       const tg = csv('tags'); if (tg) bs.tags = tg;
       if (!bs.image_url) return Promise.reject(new Error('body_scan には image_url が必須'));
       return addEntry(bs);
