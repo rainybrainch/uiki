@@ -1994,9 +1994,9 @@ main { padding-bottom: 5.2rem; }
 <main>
 
   <div class="tab-page" data-tab="home">
-  <!-- Hero -->
+  <!-- Hero（v2.4：重力雨域に書き換え） -->
   <section class="hero">
-    <h1>雨域図<span class="subtitle-roman">UIKI</span></h1>
+    <h1 style="color: var(--gold);">重力雨域<span class="subtitle-roman" style="color: var(--dim);">Internal</span></h1>
     <p class="tagline">
       <span>降った雨は、還らない。</span>
       <span>その事実だけが、ここに積もる。</span>
@@ -2004,6 +2004,30 @@ main { padding-bottom: 5.2rem; }
     <div class="hero-meta">
       <div id="rainfall-today">今日はまだ、降っていない</div>
       <div class="sync-status" id="sync-status" data-state="loading">読み込み中…</div>
+    </div>
+  </section>
+
+  <!-- 砂のログ（v2.4：雨域メインから移動 ── 重力的活動として統合） -->
+  <section class="uwiki-pane gravity-pane sand-section reveal" style="margin: 1.5rem 0 2rem;">
+    <div class="pane-header">
+      <span class="pane-icon">✨</span>
+      <h2>砂のログ</h2>
+      <span class="pane-role">メンター（重力AI）</span>
+    </div>
+    <p class="pane-desc">思考の断片を、その場で。タスクではなく、内面の「砂」として堆積させる場所。</p>
+    <div class="sand-input">
+      <textarea id="sand-text" placeholder="今、感じていることを「砂の一粒」として（280字以内）" maxlength="280"></textarea>
+      <div class="sand-input-row">
+        <div class="weight-control" role="group" aria-label="熱量">
+          <button class="weight-btn active" data-weight="1">軽</button>
+          <button class="weight-btn" data-weight="3">重</button>
+          <button class="weight-btn" data-weight="5">超重力</button>
+        </div>
+        <button class="sand-submit" id="sand-submit">沈める</button>
+      </div>
+    </div>
+    <div class="sand-log" id="sand-log">
+      <div class="sand-empty">まだ、砂は降っていない</div>
     </div>
   </section>
 
@@ -2161,28 +2185,17 @@ main { padding-bottom: 5.2rem; }
       </button>
     </div>
 
-    <!-- 砂のログ（軽量・雨域メインに常駐） -->
-    <div class="uwiki-pane gravity-pane sand-section">
-      <div class="pane-header">
-        <span class="pane-icon">✨</span>
-        <h2>砂のログ</h2>
-        <span class="pane-role">クイック投稿</span>
+    <!-- 成長の可視化（v2.4：引力タブから移動 ── 重力↔引力の対比は全体可視化が筋） -->
+    <div class="growth-section">
+      <h3>成長の可視化 ── 重力と引力の均衡</h3>
+      <svg class="growth-chart" id="growth-chart" viewBox="0 0 600 220" preserveAspectRatio="none" aria-label="重力と引力の成長グラフ"></svg>
+      <div class="growth-legend">
+        <span><span class="lg-dot lg-gold"></span>内面の熱量（重力）</span>
+        <span><span class="lg-dot lg-blue"></span>外面の成果（引力）</span>
       </div>
-      <p class="pane-desc">思考の断片を、その場で。熱量ボタンで重さを設定。</p>
-      <div class="sand-input">
-        <textarea id="sand-text" placeholder="今、感じていることを「砂の一粒」として（280字以内）" maxlength="280"></textarea>
-        <div class="sand-input-row">
-          <div class="weight-control" role="group" aria-label="熱量">
-            <button class="weight-btn active" data-weight="1">軽</button>
-            <button class="weight-btn" data-weight="3">重</button>
-            <button class="weight-btn" data-weight="5">超重力</button>
-          </div>
-          <button class="sand-submit" id="sand-submit">沈める</button>
-        </div>
-      </div>
-      <div class="sand-log" id="sand-log">
-        <div class="sand-empty">まだ、砂は降っていない</div>
-      </div>
+      <p class="pane-desc" style="text-align:center; margin-top:0.8rem;">
+        内面の熱量（金）と外面の成果（青）が、バランスよく成長しているかをAIが分析します。
+      </p>
     </div>
 
     <!-- AI 役割分担 -->
@@ -2217,26 +2230,13 @@ main { padding-bottom: 5.2rem; }
       <div class="pane-header">
         <span class="pane-icon">👁</span>
         <h2>客観指標</h2>
-        <span class="pane-role">アナリスト</span>
+        <span class="pane-role">アナリスト（引力AI）</span>
       </div>
-      <p class="pane-desc">数値で測られる現実。最大 10 項目まで。タップで現在値を記録。</p>
+      <p class="pane-desc">数値で測られる現実。最大 10 項目まで。タップで現在値を記録。<br>※成長グラフ（重力↔引力の対比）は <strong>雨域メイン</strong> で確認できます。</p>
       <div class="attraction-items" id="attraction-items">
         <!-- JS で動的描画 -->
       </div>
       <button class="attraction-add-btn" id="attraction-add">＋ 項目を追加（最大10）</button>
-    </div>
-
-    <!-- 成長の可視化 -->
-    <div class="growth-section">
-      <h3>成長の可視化 ── 重力と引力の均衡</h3>
-      <svg class="growth-chart" id="growth-chart" viewBox="0 0 600 220" preserveAspectRatio="none" aria-label="重力と引力の成長グラフ"></svg>
-      <div class="growth-legend">
-        <span><span class="lg-dot lg-gold"></span>内面の熱量（重力）</span>
-        <span><span class="lg-dot lg-blue"></span>外面の成果（引力）</span>
-      </div>
-      <p class="pane-desc" style="text-align:center; margin-top:1rem;">
-        内面の熱量（金）と外面の成果（青）が、バランスよく成長しているかをAIが分析します。
-      </p>
     </div>
   </div><!-- /tab uwiki (引力雨域) -->
 
