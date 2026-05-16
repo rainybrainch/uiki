@@ -4627,24 +4627,32 @@ UIKI.config = (() => {
     const pat = document.getElementById('cfg-pat').value.trim();
     const gistId = document.getElementById('cfg-gistid').value.trim();
     const notifEnabled = document.getElementById('cfg-notif').checked;
-    if (!pat) { showToast('PAT は必須'); return; }
-    showToast('PAT を確認中…');
-    const ok = await UIKI.sync.validatePAT(pat);
-    if (!ok) { showToast('PAT が無効'); return; }
-    if (notifEnabled) await UIKI.notify.requestPermission();
-    // savedAt を記録：fine-grained PAT は最大365日。期限切れ前に警告を出すため。
     const dkEl = document.getElementById('cfg-drive-key');
     const dfEl = document.getElementById('cfg-drive-folder');
     const driveKey = dkEl ? dkEl.value.trim() : '';
     const driveFolderId = dfEl ? dfEl.value.trim() : '';
+
+    // v2.8 緩和：PAT または Drive キーのどちらかがあれば保存可
+    if (!pat && !driveKey) {
+      showToast('PAT または Drive API キーのどちらかが必要');
+      return;
+    }
+    // PAT が入力されている時だけ検証
+    if (pat) {
+      showToast('PAT を確認中…');
+      const ok = await UIKI.sync.validatePAT(pat);
+      if (!ok) { showToast('PAT が無効'); return; }
+    }
+    if (notifEnabled) await UIKI.notify.requestPermission();
+    // savedAt を記録：fine-grained PAT は最大365日。期限切れ前に警告を出すため。
     UIKI.store.set('config', {
       pat, gistId, notifEnabled,
       driveKey, driveFolderId,
       savedAt: new Date().toISOString()
     });
-    showToast('設定を保存した');
+    showToast(pat ? '設定を保存した' : 'Drive 連携のみで保存した（PAT 未登録）');
     close();
-    UIKI.sync.start();
+    if (pat) UIKI.sync.start();
     // Drive 連携が有効なら即 fetch
     if (driveKey && driveFolderId && UIKI.drive) {
       UIKI.drive.fetch().catch(e => console.warn('drive fetch failed', e));
