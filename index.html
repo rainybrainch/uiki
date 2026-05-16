@@ -1980,6 +1980,195 @@ main { padding-bottom: 5.2rem; }
   .bigcard-icon { font-size: 2.2rem; }
   .bigcard-title { font-size: 1.4rem; }
 }
+
+/* ===== 読雨 (YOMU) 統合（v2.5 / 2026-05-16） ===== */
+.yomu-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.4rem;
+  margin: 1.5rem 0 2rem;
+  background: rgba(58,111,201,0.05);
+  border: 1px solid rgba(58,111,201,0.25);
+  border-radius: 4px;
+}
+.yomu-banner-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.yomu-banner-title {
+  color: var(--rain-blue);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+.yomu-banner-stats {
+  display: flex;
+  gap: 1rem;
+  color: var(--text);
+  font-size: 0.88rem;
+}
+.yomu-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-family: var(--mono);
+}
+.yomu-stat .yo-count {
+  color: var(--gold);
+  font-weight: 600;
+}
+.yomu-banner a.yomu-link {
+  padding: 0.45rem 1rem;
+  background: transparent;
+  border: 1px solid var(--rain-blue);
+  border-radius: 999px;
+  color: var(--rain-blue);
+  text-decoration: none;
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  transition: all 0.25s ease;
+}
+.yomu-banner a.yomu-link:hover {
+  background: var(--rain-blue);
+  color: var(--bg);
+}
+.yomu-section {
+  border: 1px solid var(--faint);
+  border-left: 3px solid var(--rain-blue);
+  border-radius: 4px;
+  padding: 1.2rem;
+  margin: 1.5rem 0;
+  background: rgba(255,255,255,0.015);
+}
+.yomu-section h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  color: rgba(255,255,255,0.85);
+  margin-bottom: 0.6rem;
+}
+.yomu-section h3 .yomu-from {
+  margin-left: auto;
+  font-size: 0.7rem;
+  color: var(--dim);
+  letter-spacing: 0.1em;
+  font-weight: 400;
+}
+.yomu-section .yomu-desc {
+  font-size: 0.82rem;
+  color: var(--dim);
+  margin-bottom: 0.9rem;
+  line-height: 1.6;
+}
+.yomu-health-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 0.7rem;
+}
+.yomu-health-card {
+  padding: 0.7rem 0.9rem;
+  background: rgba(58,111,201,0.06);
+  border-radius: 3px;
+  border-left: 2px solid var(--rain-blue);
+}
+.yhi-metric {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--dim);
+  letter-spacing: 0.1em;
+  margin-bottom: 0.2rem;
+  text-transform: uppercase;
+}
+.yhi-value {
+  display: block;
+  font-family: var(--mono);
+  font-size: 1.05rem;
+  color: var(--text);
+  font-weight: 600;
+}
+.yhi-meta {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--dim);
+  margin-top: 0.2rem;
+}
+.yomu-quote-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+.yomu-quote-item {
+  margin: 0;
+  padding: 0.8rem 1rem;
+  background: rgba(201,168,76,0.05);
+  border-left: 2px solid var(--gold);
+  border-radius: 3px;
+  font-family: var(--serif);
+}
+.yomu-quote-item p {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--text);
+  margin: 0;
+}
+.yomu-quote-item footer {
+  margin-top: 0.4rem;
+  font-size: 0.75rem;
+  color: var(--dim);
+  letter-spacing: 0.05em;
+}
+.yomu-book-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.yomu-book-item {
+  padding: 0.7rem 0.9rem;
+  background: rgba(255,255,255,0.025);
+  border-radius: 3px;
+  border-left: 2px solid var(--sand);
+}
+.yomu-book-item strong { color: var(--text); font-size: 0.92rem; }
+.yomu-book-item .yb-meta {
+  color: var(--dim);
+  font-size: 0.75rem;
+  margin-left: 0.5rem;
+}
+.yomu-book-item p {
+  margin-top: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--text);
+  line-height: 1.5;
+}
+.yomu-empty {
+  text-align: center;
+  padding: 1rem;
+  color: var(--dim);
+  font-size: 0.85rem;
+  font-style: italic;
+}
+.yomu-loading { color: var(--rain-blue); }
+.yomu-error {
+  color: var(--error);
+  font-size: 0.8rem;
+  background: rgba(224,92,92,0.08);
+  padding: 0.5rem;
+  border-radius: 2px;
+}
+
+@media (max-width: 700px) {
+  .yomu-banner { flex-direction: column; align-items: stretch; gap: 0.6rem; }
+  .yomu-banner-stats { justify-content: space-around; }
+  .yomu-banner a.yomu-link { text-align: center; }
+}
 </style>
 </head>
 <body>
@@ -2028,6 +2217,24 @@ main { padding-bottom: 5.2rem; }
     </div>
     <div class="sand-log" id="sand-log">
       <div class="sand-empty">まだ、砂は降っていない</div>
+    </div>
+  </section>
+
+  <!-- 読雨統合：名言（v2.5 / 重力雨域は内向き活動なので名言を表示） -->
+  <section class="yomu-section reveal">
+    <h3>✨ 読雨から ── 最近の名言 <span class="yomu-from">type=quote</span></h3>
+    <p class="yomu-desc">読雨に「刻んだ」名言の最近 5 件。UwikiAI 経由 or 直接 読雨で記録できる。</p>
+    <div class="yomu-quote-list" id="yomu-quotes">
+      <div class="yomu-loading yomu-empty">読み込み中…</div>
+    </div>
+  </section>
+
+  <!-- 読雨統合：読書 -->
+  <section class="yomu-section reveal">
+    <h3>📖 読雨から ── 最近の読書 <span class="yomu-from">type=book</span></h3>
+    <p class="yomu-desc">読書感想の最近 5 件。RAINA・服牢井像への素材候補。</p>
+    <div class="yomu-book-list" id="yomu-books">
+      <div class="yomu-loading yomu-empty">読み込み中…</div>
     </div>
   </section>
 
@@ -2167,6 +2374,19 @@ main { padding-bottom: 5.2rem; }
       <div class="jh-text" id="jh-text">情報の「滴」が、あなたの未来を形作る砂となりますように。</div>
     </div>
 
+    <!-- 読雨統合バナー（v2.5 / 2026-05-16） -->
+    <div class="yomu-banner">
+      <div class="yomu-banner-info">
+        <div class="yomu-banner-title">📡 読雨 統合データ</div>
+        <div class="yomu-banner-stats" id="yomu-stats">
+          <span class="yomu-stat">📖 <span class="yo-count" id="yo-book-count">…</span></span>
+          <span class="yomu-stat">✨ <span class="yo-count" id="yo-quote-count">…</span></span>
+          <span class="yomu-stat">💧 <span class="yo-count" id="yo-health-count">…</span></span>
+        </div>
+      </div>
+      <a class="yomu-link" href="https://rainybrainch.github.io/yomu/" target="_blank" rel="noopener">読雨を開く →</a>
+    </div>
+
     <!-- PDF Page 2 風の 2 大カード -->
     <div class="uwiki-bigcards">
       <button class="uwiki-bigcard gravity-bigcard" data-go="home" aria-label="重力雨域を開く">
@@ -2225,14 +2445,23 @@ main { padding-bottom: 5.2rem; }
       <p>External ── 他者から見えた自分・客観的な数値</p>
     </div>
 
-    <!-- 引力雨域：項目別ゲージ -->
+    <!-- 読雨統合：健康データ（v2.5 / 引力雨域は外向き数値なので health を表示） -->
+    <section class="yomu-section reveal">
+      <h3>💧 読雨から ── 健康データ <span class="yomu-from">type=health</span></h3>
+      <p class="yomu-desc">UwikiAI 経由で投稿された weight / sleep / exercise / mood の最新値。各メトリクスごとに最新 1 件を表示。</p>
+      <div class="yomu-health-list" id="yomu-health">
+        <div class="yomu-loading yomu-empty">読み込み中…</div>
+      </div>
+    </section>
+
+    <!-- 引力雨域：手動ゲージ（読雨が空でも使える独立機能） -->
     <div class="uwiki-pane attraction-pane attraction-section">
       <div class="pane-header">
         <span class="pane-icon">👁</span>
-        <h2>客観指標</h2>
+        <h2>客観指標（手動）</h2>
         <span class="pane-role">アナリスト（引力AI）</span>
       </div>
-      <p class="pane-desc">数値で測られる現実。最大 10 項目まで。タップで現在値を記録。<br>※成長グラフ（重力↔引力の対比）は <strong>雨域メイン</strong> で確認できます。</p>
+      <p class="pane-desc">読雨に依存しない手動ゲージ。最大 10 項目まで・タップで現在値を記録。<br>※成長グラフ（重力↔引力の対比）は <strong>雨域メイン</strong> で確認できます。</p>
       <div class="attraction-items" id="attraction-items">
         <!-- JS で動的描画 -->
       </div>
@@ -2326,6 +2555,161 @@ main { padding-bottom: 5.2rem; }
 'use strict';
 
 const UIKI = {};
+
+// ─────────────────────────────────────────────────────────
+// yomu: 読雨 (YOMU) Gist との統合 (v2.5 / 2026-05-16)
+// 読み取り専用・5分 polling・各タブのセクションへ振り分け描画
+// ─────────────────────────────────────────────────────────
+UIKI.yomu = (function() {
+  const YOMU_GIST_ID = 'cffc5abcf62103b27effe2efba25ca6a';
+  const POLL_MS = 5 * 60 * 1000;
+  let state = { entries: [], loaded: false, error: null };
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  async function fetchYomu() {
+    try {
+      const res = await fetch('https://api.github.com/gists/' + YOMU_GIST_ID, {
+        headers: { 'Accept': 'application/vnd.github+json' }
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      const file = data.files && data.files['yomu-data.json'];
+      if (!file) throw new Error('yomu-data.json not found');
+      const parsed = JSON.parse(file.content);
+      state.entries = Array.isArray(parsed.entries) ? parsed.entries : [];
+      state.loaded = true;
+      state.error = null;
+      renderAll();
+    } catch (e) {
+      state.error = String(e && e.message || e);
+      console.warn('yomu fetch failed', e);
+      renderError();
+    }
+  }
+
+  function byType(type) {
+    return state.entries.filter(e => e && e.type === type);
+  }
+
+  function formatDate(d) {
+    if (!d) return '';
+    // YYYYMMDD → YYYY/MM/DD ／ ISO → MM/DD
+    if (/^\d{8}$/.test(d)) return d.slice(0,4) + '/' + d.slice(4,6) + '/' + d.slice(6,8);
+    if (/^\d{4}-\d{2}-\d{2}/.test(d)) {
+      const m = d.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      return m ? (m[2] + '/' + m[3]) : d;
+    }
+    return d;
+  }
+
+  function renderStats() {
+    const b = byType('book').length;
+    const q = byType('quote').length;
+    const h = byType('health').length;
+    const eb = document.getElementById('yo-book-count');
+    const eq = document.getElementById('yo-quote-count');
+    const eh = document.getElementById('yo-health-count');
+    if (eb) eb.textContent = b;
+    if (eq) eq.textContent = q;
+    if (eh) eh.textContent = h;
+  }
+
+  function renderHealth() {
+    const wrap = document.getElementById('yomu-health');
+    if (!wrap) return;
+    const health = byType('health');
+    if (!health.length) {
+      wrap.innerHTML = '<div class="yomu-empty">読雨にまだ健康データが届いていない。<br>UwikiAI 経由で「体重 68.5kg」「睡眠 7h」等を投稿してください。</div>';
+      return;
+    }
+    // メトリクス別に最新 1 件
+    const byMetric = {};
+    for (const e of health) {
+      if (!e.metric) continue;
+      if (!byMetric[e.metric]) byMetric[e.metric] = [];
+      byMetric[e.metric].push(e);
+    }
+    const items = Object.entries(byMetric).map(([metric, entries]) => {
+      entries.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+      const latest = entries[0];
+      const valStr = latest.value + (latest.unit ? ' ' + latest.unit : '');
+      const meta = formatDate(latest.date) + (latest.time ? ' ' + latest.time : '') + ' ／ 計 ' + entries.length + ' 件';
+      return '<div class="yomu-health-card">' +
+        '<span class="yhi-metric">' + escapeHtml(metric) + '</span>' +
+        '<span class="yhi-value">' + escapeHtml(valStr) + '</span>' +
+        '<span class="yhi-meta">' + escapeHtml(meta) + '</span>' +
+        '</div>';
+    }).join('');
+    wrap.innerHTML = items;
+  }
+
+  function renderQuotes() {
+    const wrap = document.getElementById('yomu-quotes');
+    if (!wrap) return;
+    const quotes = byType('quote');
+    if (!quotes.length) {
+      wrap.innerHTML = '<div class="yomu-empty">読雨にまだ名言が届いていない。<br>UwikiAI で「刻んで：〇〇」と投稿、または PC で手仕事で清書。</div>';
+      return;
+    }
+    quotes.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+    const top = quotes.slice(0, 5);
+    wrap.innerHTML = top.map(q => {
+      const src = q.source ? '── ' + escapeHtml(q.source) : '';
+      const core = q.core ? ' ｜ 核' + q.core : '';
+      return '<blockquote class="yomu-quote-item">' +
+        '<p>' + escapeHtml(q.quote || '') + '</p>' +
+        '<footer>' + src + escapeHtml(core) + '</footer>' +
+        '</blockquote>';
+    }).join('');
+  }
+
+  function renderBooks() {
+    const wrap = document.getElementById('yomu-books');
+    if (!wrap) return;
+    const books = byType('book');
+    if (!books.length) {
+      wrap.innerHTML = '<div class="yomu-empty">読雨にまだ読書記録が届いていない。<br>UwikiAI で「〇〇読んだ。〇〇推し」と投稿。</div>';
+      return;
+    }
+    books.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+    const top = books.slice(0, 5);
+    wrap.innerHTML = top.map(b => {
+      const star = b.stars ? '★'.repeat(b.stars) : '';
+      const chap = b.chapter ? '第' + b.chapter + '話' : '';
+      const meta = [chap, star].filter(Boolean).join(' ／ ');
+      return '<div class="yomu-book-item">' +
+        '<strong>' + escapeHtml(b.title || '無題') + '</strong>' +
+        (meta ? '<span class="yb-meta">' + escapeHtml(meta) + '</span>' : '') +
+        (b.raw ? '<p>' + escapeHtml(b.raw) + '</p>' : '') +
+        '</div>';
+    }).join('');
+  }
+
+  function renderError() {
+    const msg = '<div class="yomu-error">読雨 fetch 失敗：' + escapeHtml(state.error || '不明') + '</div>';
+    ['yomu-health', 'yomu-quotes', 'yomu-books'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el && el.querySelector('.yomu-loading')) el.innerHTML = msg;
+    });
+  }
+
+  function renderAll() {
+    renderStats();
+    renderHealth();
+    renderQuotes();
+    renderBooks();
+  }
+
+  function init() {
+    fetchYomu();
+    setInterval(fetchYomu, POLL_MS);
+  }
+
+  return { init, fetch: fetchYomu, state: () => state };
+})();
 
 // ─────────────────────────────────────────────────────────
 // uwiki: 雨域タブ（v2.3 / 2026-05-16 / Claude Design 統合）
@@ -3837,6 +4221,9 @@ function bootstrap() {
 
   // ③ 雨域タブ（v2.3 / Claude Design 統合 / 2026-05-16）
   try { UIKI.uwiki.init(); } catch(e) { console.warn('uwiki init failed', e); }
+
+  // ④ 読雨統合（v2.5 / 2026-05-16 / Gist 読取・5分polling）
+  try { UIKI.yomu.init(); } catch(e) { console.warn('yomu init failed', e); }
 
   if (seeded) showToast('集水域を開いた ── RBAI 8域');
   if (consumed > 0) showToast('☂ ' + consumed + ' 粒、外から降った');
