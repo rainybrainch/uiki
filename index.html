@@ -1550,6 +1550,329 @@ main { padding-bottom: 5.2rem; }
   .hero h1 { font-size: 1.7rem; letter-spacing: 0.12em; }
   .tab-bar button .tab-label { font-size: 0.58rem; }
 }
+
+/* ───── 雨域タブ（v2.3 / 2026-05-16 / Claude Design 統合） ───── */
+.uwiki-hero {
+  padding: 2rem 0 2.5rem;
+  text-align: center;
+  border-bottom: 1px solid var(--faint);
+  margin-bottom: 2rem;
+}
+.uwiki-hero h1 {
+  font-family: var(--serif);
+  font-size: 2rem;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.92);
+}
+.uwiki-hero h1 .uwiki-en {
+  color: var(--gold);
+  margin-left: 0.4em;
+  font-weight: 500;
+}
+.uwiki-hero p {
+  margin-top: 0.6rem;
+  color: var(--dim);
+  font-size: 0.92rem;
+  letter-spacing: 0.08em;
+}
+.journey-hint {
+  margin: 1.2rem auto 2.5rem;
+  max-width: 720px;
+  padding: 1rem 1.4rem;
+  background: rgba(201,168,76,0.05);
+  border: 1px solid rgba(201,168,76,0.25);
+  border-radius: 4px;
+  text-align: center;
+}
+.journey-hint .jh-time {
+  color: var(--gold);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  font-size: 0.85rem;
+  margin-bottom: 0.4rem;
+}
+.journey-hint .jh-text {
+  color: var(--text);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+.uwiki-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.8rem;
+  margin-bottom: 2.5rem;
+}
+.uwiki-pane {
+  border: 1px solid var(--faint);
+  border-radius: 4px;
+  padding: 1.4rem;
+  backdrop-filter: blur(6px);
+  background: rgba(255,255,255,0.02);
+  transition: border-color 0.3s ease;
+}
+.uwiki-pane:hover { border-color: rgba(255,255,255,0.32); }
+.gravity-pane { border-left: 3px solid var(--gold); }
+.attraction-pane { border-left: 3px solid var(--rain-blue); }
+.pane-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.8rem;
+  border-bottom: 1px solid var(--faint);
+}
+.pane-header .pane-icon { font-size: 1.4rem; }
+.pane-header h2 {
+  font-family: var(--serif);
+  font-size: 1.2rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+}
+.gravity-pane .pane-header h2 { color: var(--gold); }
+.attraction-pane .pane-header h2 { color: var(--rain-blue); }
+.pane-header .pane-role {
+  margin-left: auto;
+  font-size: 0.72rem;
+  color: var(--dim);
+  letter-spacing: 0.08em;
+}
+.pane-desc {
+  font-size: 0.85rem;
+  color: var(--dim);
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+.sand-input {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+.sand-input textarea {
+  width: 100%;
+  min-height: 64px;
+  padding: 0.7rem;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid var(--faint);
+  border-radius: 3px;
+  color: var(--text);
+  font-family: var(--serif);
+  font-size: 0.92rem;
+  resize: vertical;
+}
+.sand-input textarea:focus {
+  outline: none;
+  border-color: var(--gold);
+}
+.sand-input-row {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+}
+.weight-control {
+  display: flex;
+  gap: 0.3rem;
+  flex: 1;
+}
+.weight-btn {
+  flex: 1;
+  padding: 0.3rem;
+  background: transparent;
+  border: 1px solid var(--faint);
+  color: var(--dim);
+  border-radius: 2px;
+  cursor: pointer;
+  font-size: 0.72rem;
+  transition: all 0.2s ease;
+}
+.weight-btn.active {
+  background: rgba(201,168,76,0.15);
+  border-color: var(--gold);
+  color: var(--gold);
+}
+.sand-submit {
+  padding: 0.5rem 1.2rem;
+  background: var(--gold);
+  color: var(--bg);
+  border: none;
+  border-radius: 2px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+}
+.sand-submit:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+.sand-log {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  max-height: 360px;
+  overflow-y: auto;
+  padding-right: 0.4rem;
+}
+.sand-item {
+  padding: 0.7rem 0.9rem;
+  background: rgba(201,168,76,0.04);
+  border-left: 2px solid var(--gold);
+  border-radius: 2px;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+.sand-item .sand-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  color: var(--dim);
+  margin-top: 0.4rem;
+}
+.sand-item.weight-3 { background: rgba(201,168,76,0.08); border-left-width: 3px; }
+.sand-item.weight-5 { background: rgba(201,168,76,0.14); border-left-width: 4px; box-shadow: 0 0 12px rgba(201,168,76,0.1); }
+.sand-empty {
+  text-align: center;
+  padding: 1.5rem;
+  color: var(--dim);
+  font-size: 0.85rem;
+  font-style: italic;
+}
+.attraction-items {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.attraction-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.attraction-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+.attraction-item-name {
+  font-size: 0.92rem;
+  color: var(--text);
+  font-weight: 500;
+}
+.attraction-item-value {
+  color: var(--rain-blue);
+  font-family: var(--mono);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+.attraction-item-bar {
+  position: relative;
+  height: 6px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.attraction-item-fill {
+  position: absolute;
+  top: 0; left: 0; bottom: 0;
+  background: linear-gradient(90deg, var(--rain-blue), rgba(58,111,201,0.6));
+  border-radius: 3px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.attraction-item-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  color: var(--dim);
+}
+.attraction-add-btn {
+  margin-top: 0.6rem;
+  padding: 0.5rem;
+  background: transparent;
+  border: 1px dashed var(--faint);
+  color: var(--dim);
+  border-radius: 2px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
+  transition: all 0.2s ease;
+}
+.attraction-add-btn:hover {
+  border-color: var(--rain-blue);
+  color: var(--rain-blue);
+}
+.growth-section {
+  margin-bottom: 2.5rem;
+}
+.growth-section h3 {
+  font-family: var(--serif);
+  font-size: 1.1rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.8rem;
+  color: rgba(255,255,255,0.85);
+}
+.growth-chart {
+  width: 100%;
+  height: 220px;
+  background: rgba(0,0,0,0.25);
+  border: 1px solid var(--faint);
+  border-radius: 4px;
+  padding: 0.8rem;
+}
+.growth-legend {
+  display: flex;
+  justify-content: center;
+  gap: 1.6rem;
+  margin-top: 0.6rem;
+  font-size: 0.82rem;
+  color: var(--dim);
+}
+.growth-legend .lg-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 0.4rem;
+  vertical-align: middle;
+}
+.growth-legend .lg-gold { background: var(--gold); }
+.growth-legend .lg-blue { background: var(--rain-blue); }
+.ai-roles {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+.ai-role {
+  padding: 1rem;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--faint);
+  border-radius: 4px;
+  text-align: center;
+}
+.ai-role .ai-icon { font-size: 1.6rem; margin-bottom: 0.5rem; }
+.ai-role .ai-name {
+  color: var(--gold);
+  font-weight: 600;
+  font-size: 0.9rem;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.3rem;
+}
+.ai-role .ai-desc {
+  color: var(--dim);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+/* スマホレスポンシブ */
+@media (max-width: 700px) {
+  .uwiki-grid { grid-template-columns: 1fr; gap: 1.2rem; }
+  .uwiki-hero h1 { font-size: 1.6rem; }
+  .ai-roles { grid-template-columns: 1fr; }
+  .sand-log { max-height: 280px; }
+  .growth-chart { height: 180px; }
+}
 </style>
 </head>
 <body>
@@ -1701,6 +2024,88 @@ main { padding-bottom: 5.2rem; }
   </footer>
   </div><!-- /tab log -->
 
+  <!-- ===== 雨域タブ（v2.3 / Claude Design 統合 / 2026-05-16） ===== -->
+  <div class="tab-page" data-tab="uwiki" hidden>
+    <div class="uwiki-hero">
+      <h1>雨域 <span class="uwiki-en">Uwiki</span></h1>
+      <p>重力と引力の二重奏 ── 内に降り、外で測られる</p>
+    </div>
+
+    <div class="journey-hint" id="journey-hint">
+      <div class="jh-time" id="jh-time">— 雨域 —</div>
+      <div class="jh-text" id="jh-text">情報の「滴」が、あなたの未来を形作る砂となりますように。</div>
+    </div>
+
+    <div class="uwiki-grid">
+      <!-- 重力雨域 -->
+      <div class="uwiki-pane gravity-pane">
+        <div class="pane-header">
+          <span class="pane-icon">⏳</span>
+          <h2>重力雨域</h2>
+          <span class="pane-role">Internal ／ メンター</span>
+        </div>
+        <p class="pane-desc">内向きの引力。自分の星、熱量、理想、夢。砂のように沈潜していく創造の領域。</p>
+        <div class="sand-input">
+          <textarea id="sand-text" placeholder="思考の断片を「砂の一粒」として投稿（280字以内）" maxlength="280"></textarea>
+          <div class="sand-input-row">
+            <div class="weight-control" role="group" aria-label="熱量">
+              <button class="weight-btn active" data-weight="1">軽</button>
+              <button class="weight-btn" data-weight="3">重</button>
+              <button class="weight-btn" data-weight="5">超重力</button>
+            </div>
+            <button class="sand-submit" id="sand-submit">沈める</button>
+          </div>
+        </div>
+        <div class="sand-log" id="sand-log">
+          <div class="sand-empty">まだ、砂は降っていない</div>
+        </div>
+      </div>
+
+      <!-- 引力雨域 -->
+      <div class="uwiki-pane attraction-pane">
+        <div class="pane-header">
+          <span class="pane-icon">👁</span>
+          <h2>引力雨域</h2>
+          <span class="pane-role">External ／ アナリスト</span>
+        </div>
+        <p class="pane-desc">外向きの引力。他者から見えた自分。客観的な数値、ステータス。冷徹に測られる現実の姿。</p>
+        <div class="attraction-items" id="attraction-items">
+          <!-- JS で動的描画 -->
+        </div>
+        <button class="attraction-add-btn" id="attraction-add">＋ 項目を追加（最大10）</button>
+      </div>
+    </div>
+
+    <!-- 成長の可視化 -->
+    <div class="growth-section">
+      <h3>成長の可視化 ── 重力と引力の均衡</h3>
+      <svg class="growth-chart" id="growth-chart" viewBox="0 0 600 220" preserveAspectRatio="none" aria-label="重力と引力の成長グラフ"></svg>
+      <div class="growth-legend">
+        <span><span class="lg-dot lg-gold"></span>内面の熱量（重力）</span>
+        <span><span class="lg-dot lg-blue"></span>外面の成果（引力）</span>
+      </div>
+    </div>
+
+    <!-- AI 役割分担 -->
+    <div class="ai-roles">
+      <div class="ai-role">
+        <div class="ai-icon">✨</div>
+        <div class="ai-name">メンター（重力）</div>
+        <div class="ai-desc">夢や熱量を肯定し、言葉を砂として堆積させる</div>
+      </div>
+      <div class="ai-role">
+        <div class="ai-icon">📊</div>
+        <div class="ai-name">アナリスト（引力）</div>
+        <div class="ai-desc">数値から冷徹に現状を測定する</div>
+      </div>
+      <div class="ai-role">
+        <div class="ai-icon">🌧</div>
+        <div class="ai-name">演出家（システム）</div>
+        <div class="ai-desc">時刻と環境に合わせ、雨の強さを調律する</div>
+      </div>
+    </div>
+  </div><!-- /tab uwiki -->
+
 </main>
 
 <!-- ボトムタブナビ -->
@@ -1721,6 +2126,10 @@ main { padding-bottom: 5.2rem; }
     <span class="tab-icon">📅</span>
     <span class="tab-label">記録</span>
   </button>
+  <button data-tab="uwiki">
+    <span class="tab-icon">🌧</span>
+    <span class="tab-label">雨域</span>
+  </button>
 </nav>
 
 <!-- ドロワーメニュー -->
@@ -1734,6 +2143,7 @@ main { padding-bottom: 5.2rem; }
     <li><a data-tab="tasks"><span class="dr-icon">📋</span><span>タスク</span></a></li>
     <li><a data-tab="projects"><span class="dr-icon">📁</span><span>プロジェクト</span></a></li>
     <li><a data-tab="log"><span class="dr-icon">📅</span><span>365日の記録</span></a></li>
+    <li><a data-tab="uwiki"><span class="dr-icon">🌧</span><span>雨域（重力／引力）</span></a></li>
     <li><a id="dr-add"><span class="dr-icon">➕</span><span>タスクを追加</span></a></li>
     <li><a id="dr-config"><span class="dr-icon">⚙️</span><span>設定（PAT・通知）</span></a></li>
     <li><a href="claude-mobile-prompt.md" target="_blank" rel="noopener"><span class="dr-icon">🤖</span><span>Claude モバイル連携テンプレ</span></a></li>
@@ -1789,6 +2199,276 @@ main { padding-bottom: 5.2rem; }
 'use strict';
 
 const UIKI = {};
+
+// ─────────────────────────────────────────────────────────
+// uwiki: 雨域タブ（v2.3 / 2026-05-16 / Claude Design 統合）
+// 重力雨域＝砂のログ／引力雨域＝項目別ゲージ／成長グラフ／ジャーニーヒント
+// shared_rb_* プレフィックスで既存 uiki_* と完全分離
+// ─────────────────────────────────────────────────────────
+UIKI.uwiki = (function() {
+  const K_GRAV = 'shared_rb_gravity';
+  const K_ATTR = 'shared_rb_attraction';
+
+  let state = {
+    gravity: [],     // [{id, text, weight, createdAt}]
+    attraction: {
+      items: {},     // { name: [{value, at}, ...] }
+      config: {}     // { name: {unit, color, goal} }
+    },
+    currentWeight: 1
+  };
+
+  function load() {
+    try {
+      const g = localStorage.getItem(K_GRAV);
+      state.gravity = g ? JSON.parse(g) : [];
+    } catch(e) { state.gravity = []; }
+    try {
+      const a = localStorage.getItem(K_ATTR);
+      const parsed = a ? JSON.parse(a) : null;
+      state.attraction = parsed && parsed.items ? parsed : { items: {}, config: {} };
+    } catch(e) { state.attraction = { items: {}, config: {} }; }
+  }
+  function saveGrav() {
+    try { localStorage.setItem(K_GRAV, JSON.stringify(state.gravity)); } catch(e) {}
+  }
+  function saveAttr() {
+    try { localStorage.setItem(K_ATTR, JSON.stringify(state.attraction)); } catch(e) {}
+  }
+
+  // ── 重力：砂のログ ──
+  function addSand(text, weight) {
+    const t = (text || '').trim();
+    if (!t) return;
+    state.gravity.unshift({
+      id: 'gr_' + Date.now().toString(36) + Math.random().toString(36).slice(2,6),
+      text: t.slice(0, 280),
+      weight: weight || 1,
+      createdAt: new Date().toISOString()
+    });
+    // 最大 200 件まで保持（古いものは消えない、ただ表示で truncate）
+    if (state.gravity.length > 500) state.gravity = state.gravity.slice(0, 500);
+    saveGrav();
+    renderGravity();
+    renderGrowthChart();
+  }
+  function renderGravity() {
+    const el = document.getElementById('sand-log');
+    if (!el) return;
+    if (!state.gravity.length) {
+      el.innerHTML = '<div class="sand-empty">まだ、砂は降っていない</div>';
+      return;
+    }
+    const shown = state.gravity.slice(0, 30);
+    el.innerHTML = shown.map(g => {
+      const d = new Date(g.createdAt);
+      const dateStr = d.getMonth()+1 + '/' + d.getDate() + ' ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+      const w = g.weight || 1;
+      return '<div class="sand-item weight-' + w + '">' +
+        escapeHtml(g.text) +
+        '<div class="sand-meta"><span>熱量 ' + (w === 5 ? '超重力' : w === 3 ? '重' : '軽') + '</span><span>' + dateStr + '</span></div>' +
+        '</div>';
+    }).join('');
+  }
+
+  // ── 引力：項目ゲージ ──
+  function addAttractionItem() {
+    const name = prompt('項目名（例：貯金 / 体重 / 読了冊数）：');
+    if (!name) return;
+    const key = name.trim();
+    if (!key) return;
+    if (state.attraction.items[key]) { alert('その項目はもうあります'); return; }
+    if (Object.keys(state.attraction.items).length >= 10) {
+      alert('引力項目は最大 10 項目までです');
+      return;
+    }
+    const unit = prompt('単位（例：円 / kg / 冊 ／ 空欄可）：', '') || '';
+    const goalStr = prompt('目標値（数値・空欄可）：', '');
+    const goal = goalStr ? parseFloat(goalStr) : null;
+    state.attraction.items[key] = [];
+    state.attraction.config[key] = { unit: unit.trim(), color: '#3a6fc9', goal: goal };
+    saveAttr();
+    renderAttraction();
+  }
+  function recordAttraction(name) {
+    const valStr = prompt(name + ' の現在値：');
+    if (valStr === null) return;
+    const v = parseFloat(valStr);
+    if (isNaN(v)) { alert('数値を入力してください'); return; }
+    if (!state.attraction.items[name]) state.attraction.items[name] = [];
+    state.attraction.items[name].push({ value: v, at: new Date().toISOString() });
+    saveAttr();
+    renderAttraction();
+    renderGrowthChart();
+  }
+  function renderAttraction() {
+    const el = document.getElementById('attraction-items');
+    if (!el) return;
+    const names = Object.keys(state.attraction.items);
+    if (!names.length) {
+      el.innerHTML = '<div class="sand-empty">引力項目を追加して、客観的な自分を測ろう</div>';
+      return;
+    }
+    el.innerHTML = names.map(name => {
+      const history = state.attraction.items[name] || [];
+      const latest = history.length ? history[history.length - 1] : null;
+      const cfg = state.attraction.config[name] || {};
+      const unit = cfg.unit || '';
+      const goal = cfg.goal;
+      let pct = 0;
+      if (latest && goal) {
+        pct = Math.max(0, Math.min(100, (latest.value / goal) * 100));
+      } else if (latest) {
+        pct = 50; // ゴール未設定なら中央
+      }
+      const valDisplay = latest ? (latest.value + (unit ? ' ' + unit : '')) : '未記録';
+      const goalDisplay = goal ? '目標 ' + goal + (unit ? ' ' + unit : '') : 'ゴール未設定';
+      const histCount = history.length;
+      return '<div class="attraction-item" data-name="' + escapeHtml(name) + '">' +
+        '<div class="attraction-item-header">' +
+          '<span class="attraction-item-name">' + escapeHtml(name) + '</span>' +
+          '<span class="attraction-item-value">' + escapeHtml(valDisplay) + '</span>' +
+        '</div>' +
+        '<div class="attraction-item-bar"><div class="attraction-item-fill" style="width:' + pct.toFixed(1) + '%"></div></div>' +
+        '<div class="attraction-item-meta"><span>' + escapeHtml(goalDisplay) + '</span><span>記録 ' + histCount + ' 回 / 📊 タップで記録</span></div>' +
+        '</div>';
+    }).join('');
+    // 各項目にタップで記録イベント
+    el.querySelectorAll('.attraction-item').forEach(item => {
+      item.addEventListener('click', () => recordAttraction(item.dataset.name));
+    });
+  }
+
+  // ── 成長グラフ（SVG 折れ線・重力↔引力の対比） ──
+  function renderGrowthChart() {
+    const svg = document.getElementById('growth-chart');
+    if (!svg) return;
+    const W = 600, H = 220, P = 24;
+    // 過去 14 日の日別集計
+    const days = 14;
+    const today = new Date(); today.setHours(0,0,0,0);
+    const labels = [];
+    const gravSeries = []; // 1 日あたりの重力エントリの weight 合計
+    const attrSeries = []; // 1 日あたりの引力記録数（正規化用に件数）
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date(today); d.setDate(today.getDate() - i);
+      const next = new Date(d); next.setDate(d.getDate() + 1);
+      labels.push((d.getMonth()+1) + '/' + d.getDate());
+      const gSum = state.gravity.reduce((s, g) => {
+        const t = new Date(g.createdAt).getTime();
+        return (t >= d.getTime() && t < next.getTime()) ? s + (g.weight || 1) : s;
+      }, 0);
+      const aCount = Object.values(state.attraction.items).reduce((s, hist) => {
+        return s + hist.filter(h => {
+          const t = new Date(h.at).getTime();
+          return t >= d.getTime() && t < next.getTime();
+        }).length;
+      }, 0);
+      gravSeries.push(gSum);
+      attrSeries.push(aCount);
+    }
+    const gMax = Math.max(1, ...gravSeries, ...attrSeries);
+    const xStep = (W - P*2) / (days - 1);
+    const y = v => H - P - (v / gMax) * (H - P*2);
+    const path = (series) => series.map((v, i) => (i === 0 ? 'M' : 'L') + (P + i * xStep).toFixed(1) + ',' + y(v).toFixed(1)).join(' ');
+    const areaPath = (series) => path(series) + ' L' + (W - P).toFixed(1) + ',' + (H - P) + ' L' + P + ',' + (H - P) + ' Z';
+    // 軸
+    const axisY = '<line x1="' + P + '" y1="' + P + '" x2="' + P + '" y2="' + (H - P) + '" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>';
+    const axisX = '<line x1="' + P + '" y1="' + (H - P) + '" x2="' + (W - P) + '" y2="' + (H - P) + '" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>';
+    // ラベル（左端と右端のみ）
+    const labelL = '<text x="' + P + '" y="' + (H - P + 14) + '" fill="rgba(255,255,255,0.45)" font-size="10" text-anchor="middle">' + labels[0] + '</text>';
+    const labelR = '<text x="' + (W - P) + '" y="' + (H - P + 14) + '" fill="rgba(255,255,255,0.45)" font-size="10" text-anchor="middle">' + labels[days-1] + '</text>';
+    svg.innerHTML =
+      axisY + axisX + labelL + labelR +
+      // 引力（青・下層）
+      '<path d="' + areaPath(attrSeries) + '" fill="rgba(58,111,201,0.18)"/>' +
+      '<path d="' + path(attrSeries) + '" stroke="#3a6fc9" stroke-width="2" fill="none"/>' +
+      // 重力（金・上層）
+      '<path d="' + areaPath(gravSeries) + '" fill="rgba(201,168,76,0.18)"/>' +
+      '<path d="' + path(gravSeries) + '" stroke="#c9a84c" stroke-width="2" fill="none"/>';
+  }
+
+  // ── ジャーニーヒント（時刻ベース・PDF p8 由来） ──
+  function renderJourney() {
+    const t = document.getElementById('jh-time');
+    const x = document.getElementById('jh-text');
+    if (!t || !x) return;
+    const h = new Date().getHours();
+    let time, text;
+    if (h >= 5 && h < 11) {
+      time = '🌅 朝 ── 引力の時刻';
+      text = '客観的な自分を測ろう。引力雨域に数値を記録する時間。';
+    } else if (h >= 11 && h < 17) {
+      time = '☀️ 昼 ── 行動の時刻';
+      text = '今日のタスクを動かそう。引力の数値を積み上げる時間。';
+    } else if (h >= 17 && h < 22) {
+      time = '🌆 夕 ── 重力の時刻';
+      text = 'ふとした思考を「砂」として投稿しよう。熱量を記録する時間。';
+    } else {
+      time = '🌙 夜 ── 内省の時刻';
+      text = '雨の音と共に、今日積もった砂と光を眺めよう。';
+    }
+    t.textContent = time;
+    x.textContent = text;
+  }
+
+  // ── ユーティリティ ──
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  // ── イベント結線 ──
+  function bindEvents() {
+    // 熱量ボタン
+    document.querySelectorAll('.weight-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.weight-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        state.currentWeight = parseInt(btn.dataset.weight, 10) || 1;
+      });
+    });
+    // 沈めるボタン
+    const submitBtn = document.getElementById('sand-submit');
+    const textarea = document.getElementById('sand-text');
+    if (submitBtn && textarea) {
+      submitBtn.addEventListener('click', () => {
+        const v = textarea.value;
+        if (!v.trim()) return;
+        addSand(v, state.currentWeight);
+        textarea.value = '';
+      });
+      // Cmd/Ctrl + Enter で投稿
+      textarea.addEventListener('keydown', (e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+          submitBtn.click();
+        }
+      });
+    }
+    // 引力項目追加
+    const addBtn = document.getElementById('attraction-add');
+    if (addBtn) addBtn.addEventListener('click', addAttractionItem);
+  }
+
+  function init() {
+    load();
+    bindEvents();
+    renderGravity();
+    renderAttraction();
+    renderGrowthChart();
+    renderJourney();
+    // 時刻が変わったらジャーニー再描画（10分ごと）
+    setInterval(renderJourney, 10 * 60 * 1000);
+  }
+
+  return {
+    init,
+    addSand,
+    renderGravity,
+    renderAttraction,
+    renderGrowthChart,
+    state: () => state
+  };
+})();
 
 // ─────────────────────────────────────────────────────────
 // store: localStorage と uiki_* キーの取扱
@@ -3027,6 +3707,9 @@ function bootstrap() {
 
   UIKI.rain.init();
   UIKI.render.all();
+
+  // ③ 雨域タブ（v2.3 / Claude Design 統合 / 2026-05-16）
+  try { UIKI.uwiki.init(); } catch(e) { console.warn('uwiki init failed', e); }
 
   if (seeded) showToast('集水域を開いた ── RBAI 8域');
   if (consumed > 0) showToast('☂ ' + consumed + ' 粒、外から降った');
