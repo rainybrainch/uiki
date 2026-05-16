@@ -2703,12 +2703,117 @@ UIKI.yomu = (function() {
     renderBooks();
   }
 
+  // 読雨Gist への書き込み（PAT 必須）
+  async function addEntry(entry) {
+    const cfg = UIKI.store.get('config', null);
+    if (!cfg || !cfg.pat) {
+      throw new Error('PAT 未設定（設定モーダルで GitHub Personal Access Token を登録してください）');
+    }
+    // 1. 現在の Gist を取得（書き込み権限つきで）
+    const fetchRes = await fetch('https://api.github.com/gists/' + YOMU_GIST_ID, {
+      headers: { 'Authorization': 'Bearer ' + cfg.pat, 'Accept': 'application/vnd.github+json' }
+    });
+    if (!fetchRes.ok) throw new Error('読雨Gist fetch失敗: HTTP ' + fetchRes.status);
+    const data = await fetchRes.json();
+    const file = data.files && data.files['yomu-data.json'];
+    if (!file) throw new Error('yomu-data.json not found in gist');
+    let parsed;
+    try { parsed = JSON.parse(file.content); } catch(e) { throw new Error('yomu-data.json 解析失敗'); }
+
+    // 2. ID 生成・タイムスタンプ付与
+    const now = new Date();
+    const ymd = now.toISOString().slice(0,10).replace(/-/g, '');
+    const rand = Math.random().toString(36).slice(2, 6);
+    const id = entry.id || ('y_' + ymd + '_' + (entry.type || 'x') + '_' + rand);
+    const newEntry = Object.assign({}, entry, { id, created_at: now.toISOString() });
+
+    // 3. entries に prepend（新しいものを先頭に）
+    if (!Array.isArray(parsed.entries)) parsed.entries = [];
+    parsed.entries.unshift(newEntry);
+    parsed.updatedAt = now.toISOString();
+    if (parsed.version == null) parsed.version = 1;
+
+    // 4. PATCH で書き戻し
+    const patchRes = await fetch('https://api.github.com/gists/' + YOMU_GIST_ID, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': 'Bearer ' + cfg.pat,
+        'Accept': 'application/vnd.github+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        files: {
+          'yomu-data.json': { content: JSON.stringify(parsed, null, 2) }
+        }
+      })
+    });
+    if (!patchRes.ok) {
+      const errText = await patchRes.text().catch(() => '');
+      throw new Error('読雨 PATCH失敗: HTTP ' + patchRes.status + ' ' + errText.slice(0, 100));
+    }
+
+    // 5. ローカル state も更新して即時描画
+    state.entries = parsed.entries;
+    renderAll();
+    return newEntry;
+  }
+
+  // URL クエリ ?type=book/health/quote を受信して読雨にエントリ投入
+  function ingestFromQuery(urlParams) {
+    if (!urlParams.has('type')) return Promise.resolve(null);
+    const type = urlParams.get('type');
+    if (!['book', 'health', 'quote'].includes(type)) return Promise.resolve(null);
+
+    const entry = { type };
+    const num = (k) => {
+      const v = urlParams.get(k);
+      if (v == null) return null;
+      const n = parseFloat(v);
+      return isNaN(n) ? null : n;
+    };
+    const csv = (k) => {
+      const v = urlParams.get(k);
+      if (!v) return null;
+      return v.split(',').map(s => s.trim()).filter(Boolean);
+    };
+
+    if (type === 'book') {
+      ['title', 'raw', 'series', 'site', 'url'].forEach(k => {
+        if (urlParams.has(k)) entry[k] = urlParams.get(k);
+      });
+      const ch = num('chapter'); if (ch != null) entry.chapter = ch;
+      const st = num('stars'); if (st != null) entry.stars = Math.max(1, Math.min(5, Math.round(st)));
+      const tg = csv('tags'); if (tg) entry.tags = tg;
+    } else if (type === 'health') {
+      ['metric', 'unit', 'date', 'time', 'memo'].forEach(k => {
+        if (urlParams.has(k)) entry[k] = urlParams.get(k);
+      });
+      const v = num('value'); if (v != null) entry.value = v;
+      const tg = csv('tags'); if (tg) entry.tags = tg;
+      if (!entry.date) entry.date = new Date().toISOString().slice(0,10).replace(/-/g, '');
+    } else if (type === 'quote') {
+      ['quote', 'source', 'explain', 'char'].forEach(k => {
+        if (urlParams.has(k)) entry[k] = urlParams.get(k);
+      });
+      const c = num('core'); if (c != null) entry.core = Math.max(1, Math.min(5, Math.round(c)));
+      const tg = csv('tags'); if (tg) entry.tags = tg;
+      entry.is_draft = true; // 走り書きは必ず is_draft: true（読雨ルール）
+    }
+
+    // 必須フィールドの最低限チェック
+    if (type === 'book' && !entry.title && !entry.raw) return Promise.reject(new Error('book には title か raw が必須'));
+    if (type === 'health' && (!entry.metric || entry.value == null)) return Promise.reject(new Error('health には metric と value が必須'));
+    if (type === 'quote' && !entry.quote) return Promise.reject(new Error('quote には quote が必須'));
+
+    return addEntry(entry);
+  }
+
   function init() {
     fetchYomu();
     setInterval(fetchYomu, POLL_MS);
   }
 
-  return { init, fetch: fetchYomu, state: () => state };
+  return { init, fetch: fetchYomu, addEntry, ingestFromQuery, state: () => state };
 })();
 
 // ─────────────────────────────────────────────────────────
@@ -4406,6 +4511,38 @@ function bootstrap() {
       }, 400);
     }
     window.history.replaceState({}, '', window.location.pathname);
+  }
+
+  // ───── URL クエリで読雨にエントリ投入（v2.6 / 2026-05-16） ─────
+  // UwikiAI が生成する URL を雨域 UIKI で受信し、読雨 Gist へ自動 PATCH
+  // 受信形式：
+  //   ?type=book&title=<>&raw=<>&chapter=<>&stars=<>&tags=<>
+  //   ?type=health&metric=<>&value=<>&unit=<>&date=<>&memo=<>
+  //   ?type=quote&quote=<>&core=<>&source=<>&tags=<>
+  if (urlParams.has('type')) {
+    const t = urlParams.get('type');
+    if (['book', 'health', 'quote'].includes(t)) {
+      const cfg = UIKI.store.get('config', null);
+      if (cfg && cfg.pat) {
+        UIKI.yomu.ingestFromQuery(urlParams).then(entry => {
+          if (entry) {
+            const label = t === 'book' ? (entry.title || entry.raw || '').slice(0, 24)
+                       : t === 'health' ? (entry.metric + ' ' + entry.value + (entry.unit || ''))
+                       : (entry.quote || '').slice(0, 24);
+            showToast('☔ 読雨に刻んだ：' + label);
+            // 受信タイプに応じてタブを切り替えてフィードバック
+            if (t === 'health') switchTab('uwiki');
+            else if (t === 'book' || t === 'quote') switchTab('home');
+          }
+        }).catch(err => {
+          showToast('読雨投入失敗：' + (err.message || String(err)).slice(0, 60));
+          console.warn('yomu ingest failed', err);
+        });
+      } else {
+        showToast('読雨投入には PAT 設定が必要（設定モーダルから登録）');
+      }
+      window.history.replaceState({}, '', window.location.pathname);
+    }
   }
 
   // ───── フィルタバー初期化（ホーム・タスク両方を同期） ─────
