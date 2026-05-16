@@ -2247,6 +2247,31 @@ main { padding-bottom: 5.2rem; }
 @media (max-width: 700px) {
   .body-scan-grid { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* ===== セクション折りたたみトグル (v2.12 / 2026-05-17) ===== */
+.yomu-section > h3 {
+  cursor: pointer;
+  user-select: none;
+  transition: opacity 0.2s ease;
+}
+.yomu-section > h3:hover { opacity: 0.85; }
+.section-toggle-arrow {
+  display: inline-block;
+  margin-right: 0.5rem;
+  font-size: 0.72em;
+  color: var(--gold);
+  transition: transform 0.2s ease;
+  vertical-align: middle;
+}
+.yomu-section.collapsed .section-toggle-arrow {
+  transform: rotate(-90deg);
+}
+.yomu-section.collapsed > :not(h3) {
+  display: none !important;
+}
+.yomu-section.collapsed {
+  padding-bottom: 0.6rem;
+}
 </style>
 </head>
 <body>
@@ -5014,6 +5039,47 @@ function bootstrap() {
   }
   bindUploadButton('drive-upload-btn', 'drive-upload-input', 'drive-upload-status', 'body');
   bindUploadButton('drive-upload-meal-btn', 'drive-upload-meal-input', 'drive-upload-meal-status', 'meal');
+
+  // セクション折りたたみトグル（v2.12 / 2026-05-17）
+  (function setupSectionToggle() {
+    const COLLAPSE_KEY = 'uiki_collapsed_sections';
+    let collapsed = [];
+    try { collapsed = JSON.parse(localStorage.getItem(COLLAPSE_KEY) || '[]'); } catch(e) {}
+    if (!Array.isArray(collapsed)) collapsed = [];
+
+    const sections = document.querySelectorAll('.yomu-section');
+    sections.forEach(sec => {
+      const h3 = sec.querySelector('h3');
+      if (!h3) return;
+      // 一意ID（h3 のテキストから生成）
+      const txt = h3.textContent || '';
+      const secId = (sec.id || txt.replace(/\s+/g, '').replace(/[^\w぀-ゟ゠-ヿ一-鿿]/g, '')).slice(0, 30);
+      sec.dataset.secId = secId;
+
+      // トグル矢印を h3 先頭に追加
+      const arrow = document.createElement('span');
+      arrow.className = 'section-toggle-arrow';
+      arrow.textContent = '▼';
+      arrow.setAttribute('aria-hidden', 'true');
+      h3.insertBefore(arrow, h3.firstChild);
+
+      // 初期状態（localStorage から復元）
+      if (collapsed.includes(secId)) {
+        sec.classList.add('collapsed');
+      }
+
+      h3.addEventListener('click', (e) => {
+        // h3 内のリンク・ボタンクリックはトグルしない
+        if (e.target.closest('button') || e.target.closest('a')) return;
+        sec.classList.toggle('collapsed');
+        // 状態保存
+        const current = Array.from(document.querySelectorAll('.yomu-section.collapsed'))
+          .map(s => s.dataset.secId)
+          .filter(Boolean);
+        try { localStorage.setItem(COLLAPSE_KEY, JSON.stringify(current)); } catch(e) {}
+      });
+    });
+  })();
 
   if (seeded) showToast('集水域を開いた ── RBAI 8域');
   if (consumed > 0) showToast('☂ ' + consumed + ' 粒、外から降った');
