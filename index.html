@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#07090f">
 <meta name="description" content="降った雨は、還らない。雨域図 UIKI ── 全プロジェクト横断の記録。">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data:; connect-src https://api.github.com;">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https:; connect-src https://api.github.com;">
 <link rel="manifest" href="manifest.json">
 <title>雨域図 UIKI</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -2169,6 +2169,84 @@ main { padding-bottom: 5.2rem; }
   .yomu-banner-stats { justify-content: space-around; }
   .yomu-banner a.yomu-link { text-align: center; }
 }
+
+/* 身体スキャン画像グリッド（v2.7 / 2026-05-16） */
+.yomu-section code {
+  background: rgba(255,255,255,0.06);
+  padding: 0.15em 0.4em;
+  border-radius: 2px;
+  font-size: 0.78em;
+  color: var(--gold);
+  font-family: var(--mono);
+}
+.body-scan-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.7rem;
+}
+.body-scan-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border-radius: 4px;
+  overflow: hidden;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--faint);
+  text-decoration: none;
+  transition: all 0.3s ease;
+  aspect-ratio: 3/4;
+}
+.body-scan-card:hover {
+  border-color: var(--rain-blue);
+  transform: scale(1.02);
+}
+.body-scan-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.body-scan-card.bs-broken {
+  align-items: center;
+  justify-content: center;
+  color: var(--dim);
+  font-size: 0.8rem;
+}
+.body-scan-card.bs-broken::after {
+  content: "🚫 画像読込失敗";
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.body-scan-card .bs-meta {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  padding: 0.4rem 0.5rem;
+  background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.85) 100%);
+  color: #fff;
+  font-size: 0.75rem;
+}
+.body-scan-card .bs-date {
+  font-family: var(--mono);
+  font-weight: 600;
+  color: var(--gold);
+  font-size: 0.78rem;
+}
+.body-scan-card .bs-memo {
+  font-size: 0.72rem;
+  opacity: 0.9;
+  margin-top: 0.2rem;
+  line-height: 1.3;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+@media (max-width: 700px) {
+  .body-scan-grid { grid-template-columns: repeat(2, 1fr); }
+}
 </style>
 </head>
 <body>
@@ -2448,8 +2526,17 @@ main { padding-bottom: 5.2rem; }
     <!-- 読雨統合：健康データ（v2.5 / 引力雨域は外向き数値なので health を表示） -->
     <section class="yomu-section reveal">
       <h3>💧 読雨から ── 健康データ <span class="yomu-from">type=health</span></h3>
-      <p class="yomu-desc">UwikiAI 経由で投稿された weight / sleep / exercise / mood の最新値。各メトリクスごとに最新 1 件を表示。</p>
+      <p class="yomu-desc">体組成計の全項目（体重・体脂肪・筋肉量・水分・基礎代謝・BMI 等）。各 metric ごとに最新 1 件。<br>一括投入：<code>?type=health_full&weight=68.5&body_fat=18.5&muscle=52.3&water=58.4...</code></p>
       <div class="yomu-health-list" id="yomu-health">
+        <div class="yomu-loading yomu-empty">読み込み中…</div>
+      </div>
+    </section>
+
+    <!-- 読雨統合：身体スキャン履歴（v2.7 / 自撮り画像で日々の変化を記録） -->
+    <section class="yomu-section reveal">
+      <h3>🤳 読雨から ── 身体スキャン履歴 <span class="yomu-from">type=body_scan</span></h3>
+      <p class="yomu-desc">自撮り画像を毎日記録。Google Drive 共有 URL を UwikiAI に渡す。<br>投入：<code>?type=body_scan&image_url=...&memo=...&date=YYYYMMDD</code></p>
+      <div class="body-scan-grid" id="yomu-body-scans">
         <div class="yomu-loading yomu-empty">読み込み中…</div>
       </div>
     </section>
@@ -2696,9 +2783,47 @@ UIKI.yomu = (function() {
     });
   }
 
+  // Google Drive 共有URLを img タグで表示可能な直リンクに変換
+  function normalizeImageUrl(url) {
+    if (!url) return url;
+    // Drive 共有 URL の各パターンを thumbnail API に変換（個人専用・「リンクを知っている全員」前提）
+    let m = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
+    if (m) return 'https://drive.google.com/thumbnail?id=' + m[1] + '&sz=w800';
+    m = url.match(/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/);
+    if (m) return 'https://drive.google.com/thumbnail?id=' + m[1] + '&sz=w800';
+    m = url.match(/drive\.google\.com\/uc\?(?:export=[a-z]+&)?id=([a-zA-Z0-9_-]+)/);
+    if (m) return 'https://drive.google.com/thumbnail?id=' + m[1] + '&sz=w800';
+    return url;
+  }
+
+  function renderBodyScans() {
+    const wrap = document.getElementById('yomu-body-scans');
+    if (!wrap) return;
+    const scans = byType('health').filter(e => e.metric === 'body_scan' && e.image_url);
+    if (!scans.length) {
+      wrap.innerHTML = '<div class="yomu-empty">まだ身体スキャンが届いていない。<br>UwikiAI で「自撮り [Google Drive 共有 URL] / 朝・体調普通」と投稿。<br>Drive URL は自動で <code>drive.google.com/thumbnail?id=...</code> に変換される。</div>';
+      return;
+    }
+    scans.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    const top = scans.slice(0, 24);
+    wrap.innerHTML = top.map(s => {
+      const date = formatDate(s.date);
+      const src = normalizeImageUrl(s.image_url);
+      const memo = s.memo ? '<div class="bs-memo">' + escapeHtml(s.memo) + '</div>' : '';
+      return '<a class="body-scan-card" href="' + escapeHtml(s.image_url) + '" target="_blank" rel="noopener" title="' + escapeHtml(date + (s.memo ? ' ／ ' + s.memo : '')) + '">' +
+        '<img src="' + escapeHtml(src) + '" alt="body scan ' + escapeHtml(date) + '" loading="lazy" onerror="this.style.display=\'none\'; this.parentNode.classList.add(\'bs-broken\');">' +
+        '<div class="bs-meta">' +
+          '<div class="bs-date">' + escapeHtml(date) + '</div>' +
+          memo +
+        '</div>' +
+      '</a>';
+    }).join('');
+  }
+
   function renderAll() {
     renderStats();
     renderHealth();
+    renderBodyScans();
     renderQuotes();
     renderBooks();
   }
@@ -2758,11 +2883,79 @@ UIKI.yomu = (function() {
     return newEntry;
   }
 
-  // URL クエリ ?type=book/health/quote を受信して読雨にエントリ投入
+  // 一括 PATCH（複数エントリを 1 回の Gist 書き込みで投入）── 体組成計の多項目向け
+  async function addEntriesBatch(entries) {
+    const cfg = UIKI.store.get('config', null);
+    if (!cfg || !cfg.pat) throw new Error('PAT 未設定');
+    if (!Array.isArray(entries) || entries.length === 0) throw new Error('entries が空');
+
+    const fetchRes = await fetch('https://api.github.com/gists/' + YOMU_GIST_ID, {
+      headers: { 'Authorization': 'Bearer ' + cfg.pat, 'Accept': 'application/vnd.github+json' }
+    });
+    if (!fetchRes.ok) throw new Error('読雨Gist fetch失敗: HTTP ' + fetchRes.status);
+    const data = await fetchRes.json();
+    const file = data.files && data.files['yomu-data.json'];
+    if (!file) throw new Error('yomu-data.json not found');
+    let parsed;
+    try { parsed = JSON.parse(file.content); } catch(e) { throw new Error('yomu-data.json 解析失敗'); }
+    if (!Array.isArray(parsed.entries)) parsed.entries = [];
+
+    const now = new Date();
+    const ymd = now.toISOString().slice(0,10).replace(/-/g, '');
+    const newEntries = entries.map((e) => Object.assign({}, e, {
+      id: 'y_' + ymd + '_' + (e.type || 'x') + '_' + (e.metric || 'x') + '_' + Math.random().toString(36).slice(2, 6),
+      created_at: now.toISOString()
+    }));
+    // 新しいものを先頭に（順序維持）
+    parsed.entries = newEntries.concat(parsed.entries);
+    parsed.updatedAt = now.toISOString();
+    if (parsed.version == null) parsed.version = 1;
+
+    const patchRes = await fetch('https://api.github.com/gists/' + YOMU_GIST_ID, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': 'Bearer ' + cfg.pat,
+        'Accept': 'application/vnd.github+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        files: { 'yomu-data.json': { content: JSON.stringify(parsed, null, 2) } }
+      })
+    });
+    if (!patchRes.ok) {
+      const t = await patchRes.text().catch(() => '');
+      throw new Error('PATCH失敗: HTTP ' + patchRes.status + ' ' + t.slice(0, 100));
+    }
+    state.entries = parsed.entries;
+    renderAll();
+    return newEntries;
+  }
+
+  // 体組成計の全項目マップ（metric -> 単位）
+  const HEALTH_METRICS = {
+    weight: 'kg',
+    body_fat: '%',
+    muscle_mass: 'kg',
+    muscle: 'kg',          // muscle_mass のエイリアス
+    visceral_fat: 'level',
+    bone_mass: 'kg',
+    water: '%',
+    basal_metabolism: 'kcal',
+    bmi: '',
+    body_age: 'years',
+    sleep: 'hours',
+    exercise: 'minutes',
+    mood: 'score',
+    heart_rate: 'bpm',
+    blood_pressure_high: 'mmHg',
+    blood_pressure_low: 'mmHg'
+  };
+
+  // URL クエリ ?type=book/health/quote/health_full を受信して読雨にエントリ投入
   function ingestFromQuery(urlParams) {
     if (!urlParams.has('type')) return Promise.resolve(null);
     const type = urlParams.get('type');
-    if (!['book', 'health', 'quote'].includes(type)) return Promise.resolve(null);
+    if (!['book', 'health', 'quote', 'health_full'].includes(type)) return Promise.resolve(null);
 
     const entry = { type };
     const num = (k) => {
@@ -2784,6 +2977,8 @@ UIKI.yomu = (function() {
       const ch = num('chapter'); if (ch != null) entry.chapter = ch;
       const st = num('stars'); if (st != null) entry.stars = Math.max(1, Math.min(5, Math.round(st)));
       const tg = csv('tags'); if (tg) entry.tags = tg;
+      if (!entry.title && !entry.raw) return Promise.reject(new Error('book には title か raw が必須'));
+      return addEntry(entry);
     } else if (type === 'health') {
       ['metric', 'unit', 'date', 'time', 'memo'].forEach(k => {
         if (urlParams.has(k)) entry[k] = urlParams.get(k);
@@ -2791,6 +2986,8 @@ UIKI.yomu = (function() {
       const v = num('value'); if (v != null) entry.value = v;
       const tg = csv('tags'); if (tg) entry.tags = tg;
       if (!entry.date) entry.date = new Date().toISOString().slice(0,10).replace(/-/g, '');
+      if (!entry.metric || entry.value == null) return Promise.reject(new Error('health には metric と value が必須'));
+      return addEntry(entry);
     } else if (type === 'quote') {
       ['quote', 'source', 'explain', 'char'].forEach(k => {
         if (urlParams.has(k)) entry[k] = urlParams.get(k);
@@ -2798,14 +2995,50 @@ UIKI.yomu = (function() {
       const c = num('core'); if (c != null) entry.core = Math.max(1, Math.min(5, Math.round(c)));
       const tg = csv('tags'); if (tg) entry.tags = tg;
       entry.is_draft = true; // 走り書きは必ず is_draft: true（読雨ルール）
+      if (!entry.quote) return Promise.reject(new Error('quote には quote が必須'));
+      return addEntry(entry);
+    } else if (type === 'health_full') {
+      // 体組成計の全項目を一括投入（個別 health エントリを複数生成）
+      const baseDate = urlParams.get('date') || new Date().toISOString().slice(0,10).replace(/-/g, '');
+      const baseTime = urlParams.get('time');
+      const baseMemo = urlParams.get('memo');
+      const baseTags = csv('tags');
+      const entries = [];
+      for (const [metric, defaultUnit] of Object.entries(HEALTH_METRICS)) {
+        if (!urlParams.has(metric)) continue;
+        const v = parseFloat(urlParams.get(metric));
+        if (isNaN(v)) continue;
+        const e = {
+          type: 'health',
+          metric: metric === 'muscle' ? 'muscle_mass' : metric,
+          value: v,
+          unit: urlParams.get(metric + '_unit') || defaultUnit,
+          date: baseDate
+        };
+        if (baseTime) e.time = baseTime;
+        if (baseMemo) e.memo = baseMemo;
+        if (baseTags) e.tags = baseTags;
+        entries.push(e);
+      }
+      if (!entries.length) return Promise.reject(new Error('health_full には少なくとも 1 つの metric が必要'));
+      return addEntriesBatch(entries);
+    } else if (type === 'body_scan') {
+      // 自撮り画像保存（type=health, metric=body_scan の特殊形）
+      const bs = {
+        type: 'health',
+        metric: 'body_scan',
+        value: 1,
+        unit: 'photo',
+        date: urlParams.get('date') || new Date().toISOString().slice(0,10).replace(/-/g, '')
+      };
+      if (urlParams.has('image_url')) bs.image_url = urlParams.get('image_url');
+      if (urlParams.has('memo')) bs.memo = urlParams.get('memo');
+      if (urlParams.has('time')) bs.time = urlParams.get('time');
+      const tg = csv('tags'); if (tg) bs.tags = tg;
+      if (!bs.image_url) return Promise.reject(new Error('body_scan には image_url が必須'));
+      return addEntry(bs);
     }
-
-    // 必須フィールドの最低限チェック
-    if (type === 'book' && !entry.title && !entry.raw) return Promise.reject(new Error('book には title か raw が必須'));
-    if (type === 'health' && (!entry.metric || entry.value == null)) return Promise.reject(new Error('health には metric と value が必須'));
-    if (type === 'quote' && !entry.quote) return Promise.reject(new Error('quote には quote が必須'));
-
-    return addEntry(entry);
+    return Promise.reject(new Error('未対応のtype: ' + type));
   }
 
   function init() {
