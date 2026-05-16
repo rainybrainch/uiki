@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#07090f">
 <meta name="description" content="降った雨は、還らない。雨域図 UIKI ── 全プロジェクト横断の記録。">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https:; connect-src https://api.github.com;">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https:; connect-src https://api.github.com https://www.googleapis.com;">
 <link rel="manifest" href="manifest.json">
 <title>雨域図 UIKI</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -2532,10 +2532,19 @@ main { padding-bottom: 5.2rem; }
       </div>
     </section>
 
-    <!-- 読雨統合：身体スキャン履歴（v2.7 / 自撮り画像で日々の変化を記録） -->
+    <!-- Drive 自動表示（v2.8 / Drive API で公開フォルダの画像を自動取得） -->
+    <section class="yomu-section reveal">
+      <h3>📁 Drive フォルダ自動表示 <span class="yomu-from" id="drive-meta">読み込み中…</span></h3>
+      <p class="yomu-desc">設定した Drive フォルダ内の画像を 5 分ごとに自動取得。<br>スマホで撮影 → Drive アップ → 自動で表示。UwikiAI 経由不要。<br><button class="attraction-add-btn" id="drive-refresh-btn" style="margin-top: 0.5rem; padding: 0.4rem 1rem;">🔄 今すぐ再読込</button></p>
+      <div class="body-scan-grid" id="drive-grid">
+        <div class="yomu-loading yomu-empty">読み込み中…</div>
+      </div>
+    </section>
+
+    <!-- 読雨統合：身体スキャン履歴（v2.7 / UwikiAI 経由・メモ付き） -->
     <section class="yomu-section reveal">
       <h3>🤳 読雨から ── 身体スキャン履歴 <span class="yomu-from">type=body_scan</span></h3>
-      <p class="yomu-desc">自撮り画像を毎日記録。Google Drive 共有 URL を UwikiAI に渡す。<br>投入：<code>?type=body_scan&image_url=...&memo=...&date=YYYYMMDD</code></p>
+      <p class="yomu-desc">UwikiAI 経由で「画像 URL ＋ Vision メモ」付きで記録した画像。<br>投入：<code>?type=body_scan&image_url=...&memo=...&date=YYYYMMDD</code></p>
       <div class="body-scan-grid" id="yomu-body-scans">
         <div class="yomu-loading yomu-empty">読み込み中…</div>
       </div>
@@ -2621,6 +2630,20 @@ main { padding-bottom: 5.2rem; }
       <a href="https://github.com/settings/tokens?type=beta" target="_blank" rel="noopener">GitHub → Fine-grained tokens</a><br>
       Permissions: Gists (Read and Write) のみを選択
     </p>
+    <hr style="border: none; border-top: 1px solid var(--faint); margin: 1.2rem 0;">
+    <h3 style="font-size: 1rem; color: var(--gold); margin-bottom: 0.5rem;">Google Drive 連携（任意・v2.8 / 2026-05-16）</h3>
+    <label>Google Drive API キー
+      <input type="password" id="cfg-drive-key" autocomplete="off">
+      <small>公開 Drive フォルダの一覧取得用。<a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener">Google Cloud Console</a> で API キー作成（無料）→ Drive API を有効化。</small>
+    </label>
+    <label>Drive フォルダ ID（身体スキャン用）
+      <input type="text" id="cfg-drive-folder" autocomplete="off" placeholder="例: 1qCu88aJG93g5BMzUd6sVhXUpxy94Ehgk">
+      <small>共有 URL の末尾の文字列。フォルダは「リンクを知っている全員」に設定すること。</small>
+    </label>
+    <p class="cfg-help" style="font-size: 0.78rem;">
+      <strong>取得手順</strong>：① <a href="https://console.cloud.google.com/projectcreate" target="_blank">新規プロジェクト作成</a> → ② <a href="https://console.cloud.google.com/apis/library/drive.googleapis.com" target="_blank">Drive API を有効化</a> → ③ <a href="https://console.cloud.google.com/apis/credentials" target="_blank">認証情報 → API キー作成</a>。<br>
+      API キー制限：HTTP リファラ「https://rainybrainch.github.io/*」推奨。
+    </p>
     <div class="modal-buttons">
       <button id="cfg-cancel">閉じる</button>
       <button id="cfg-save">保存</button>
@@ -2642,6 +2665,110 @@ main { padding-bottom: 5.2rem; }
 'use strict';
 
 const UIKI = {};
+
+// ─────────────────────────────────────────────────────────
+// drive: Google Drive 公開フォルダ自動表示 (v2.8 / 2026-05-16)
+// API キー方式（OAuth 不要・公開フォルダ専用）
+// フォルダに画像をアップロードすると、雨域引力タブで自動表示される
+// ─────────────────────────────────────────────────────────
+UIKI.drive = (function() {
+  const POLL_MS = 5 * 60 * 1000;
+  let state = { files: [], loaded: false, error: null, fetchedAt: null };
+  let pollTimer = null;
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  async function fetchDrive() {
+    const cfg = UIKI.store.get('config', null);
+    if (!cfg || !cfg.driveKey || !cfg.driveFolderId) {
+      state.error = '未設定';
+      renderEmpty();
+      return;
+    }
+    try {
+      // Drive API v3: files.list with q parameter
+      const q = encodeURIComponent("'" + cfg.driveFolderId + "' in parents and trashed=false and (mimeType contains 'image/')");
+      const fields = encodeURIComponent('files(id,name,createdTime,modifiedTime,mimeType,thumbnailLink,webViewLink,imageMediaMetadata(time))');
+      const url = 'https://www.googleapis.com/drive/v3/files?q=' + q + '&fields=' + fields + '&orderBy=modifiedTime%20desc&pageSize=100&key=' + encodeURIComponent(cfg.driveKey);
+      const res = await fetch(url);
+      if (!res.ok) {
+        const txt = await res.text().catch(() => '');
+        throw new Error('HTTP ' + res.status + ' ' + txt.slice(0, 80));
+      }
+      const data = await res.json();
+      state.files = Array.isArray(data.files) ? data.files : [];
+      state.loaded = true;
+      state.error = null;
+      state.fetchedAt = new Date().toISOString();
+      renderDrive();
+    } catch (e) {
+      state.error = String(e && e.message || e);
+      console.warn('drive fetch failed', e);
+      renderError();
+    }
+  }
+
+  function renderEmpty() {
+    const wrap = document.getElementById('drive-grid');
+    if (!wrap) return;
+    wrap.innerHTML = '<div class="yomu-empty">Drive 連携が未設定。<br>設定モーダル → 「Google Drive API キー」と「フォルダ ID」を登録すると、フォルダ内の画像が自動表示されます。</div>';
+    const meta = document.getElementById('drive-meta');
+    if (meta) meta.textContent = '未連携';
+  }
+
+  function renderError() {
+    const wrap = document.getElementById('drive-grid');
+    if (!wrap) return;
+    wrap.innerHTML = '<div class="yomu-error">Drive fetch 失敗：' + escapeHtml(state.error || '不明') + '<br><small>API キー・フォルダ ID・共有設定（「リンクを知っている全員」）を確認してください。</small></div>';
+  }
+
+  function renderDrive() {
+    const wrap = document.getElementById('drive-grid');
+    if (!wrap) return;
+    const meta = document.getElementById('drive-meta');
+    if (!state.files.length) {
+      wrap.innerHTML = '<div class="yomu-empty">Drive フォルダはまだ空。<br>スマホで撮影 → Drive フォルダに画像をアップロードすると、次の同期で自動表示されます（5分以内・「再読込」で即時可）。</div>';
+      if (meta) meta.textContent = '0 枚';
+      return;
+    }
+    // 撮影日時優先（imageMediaMetadata.time）、なければ modifiedTime
+    state.files.sort((a, b) => {
+      const ta = (a.imageMediaMetadata && a.imageMediaMetadata.time) || a.modifiedTime || '';
+      const tb = (b.imageMediaMetadata && b.imageMediaMetadata.time) || b.modifiedTime || '';
+      return tb.localeCompare(ta);
+    });
+    const top = state.files.slice(0, 60);
+    wrap.innerHTML = top.map(f => {
+      // thumbnailLink は size 制限あり・自分で size 指定する場合は別 URL
+      const thumb = f.thumbnailLink
+        ? f.thumbnailLink.replace(/=s\d+/, '=s400')
+        : 'https://drive.google.com/thumbnail?id=' + f.id + '&sz=w400';
+      const view = f.webViewLink || ('https://drive.google.com/file/d/' + f.id + '/view');
+      const dt = (f.imageMediaMetadata && f.imageMediaMetadata.time) || f.modifiedTime || '';
+      const dateStr = dt ? dt.slice(0, 10) + ' ' + dt.slice(11, 16) : '';
+      return '<a class="body-scan-card" href="' + escapeHtml(view) + '" target="_blank" rel="noopener" title="' + escapeHtml(f.name + ' / ' + dateStr) + '">' +
+        '<img src="' + escapeHtml(thumb) + '" alt="' + escapeHtml(f.name) + '" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display=\'none\'; this.parentNode.classList.add(\'bs-broken\');">' +
+        '<div class="bs-meta">' +
+          '<div class="bs-date">' + escapeHtml(dateStr) + '</div>' +
+        '</div>' +
+      '</a>';
+    }).join('');
+    if (meta) {
+      const fetchedAt = state.fetchedAt ? new Date(state.fetchedAt).toLocaleTimeString('ja-JP', {hour:'2-digit', minute:'2-digit'}) : '';
+      meta.textContent = state.files.length + ' 枚（同期: ' + fetchedAt + '）';
+    }
+  }
+
+  function init() {
+    fetchDrive();
+    if (pollTimer) clearInterval(pollTimer);
+    pollTimer = setInterval(fetchDrive, POLL_MS);
+  }
+
+  return { init, fetch: fetchDrive, state: () => state };
+})();
 
 // ─────────────────────────────────────────────────────────
 // yomu: 読雨 (YOMU) Gist との統合 (v2.5 / 2026-05-16)
@@ -4487,6 +4614,10 @@ UIKI.config = (() => {
     document.getElementById('cfg-pat').value = cfg.pat || '';
     document.getElementById('cfg-gistid').value = cfg.gistId || '';
     document.getElementById('cfg-notif').checked = !!cfg.notifEnabled;
+    const dk = document.getElementById('cfg-drive-key');
+    const df = document.getElementById('cfg-drive-folder');
+    if (dk) dk.value = cfg.driveKey || '';
+    if (df) df.value = cfg.driveFolderId || '1qCu88aJG93g5BMzUd6sVhXUpxy94Ehgk';
     document.getElementById('config-modal').hidden = false;
   }
   function close() {
@@ -4502,13 +4633,22 @@ UIKI.config = (() => {
     if (!ok) { showToast('PAT が無効'); return; }
     if (notifEnabled) await UIKI.notify.requestPermission();
     // savedAt を記録：fine-grained PAT は最大365日。期限切れ前に警告を出すため。
+    const dkEl = document.getElementById('cfg-drive-key');
+    const dfEl = document.getElementById('cfg-drive-folder');
+    const driveKey = dkEl ? dkEl.value.trim() : '';
+    const driveFolderId = dfEl ? dfEl.value.trim() : '';
     UIKI.store.set('config', {
       pat, gistId, notifEnabled,
+      driveKey, driveFolderId,
       savedAt: new Date().toISOString()
     });
     showToast('設定を保存した');
     close();
     UIKI.sync.start();
+    // Drive 連携が有効なら即 fetch
+    if (driveKey && driveFolderId && UIKI.drive) {
+      UIKI.drive.fetch().catch(e => console.warn('drive fetch failed', e));
+    }
   }
   // PAT の経過日数チェック（330日経過で警告、365日超で error）
   function checkPATAge() {
@@ -4562,6 +4702,22 @@ function bootstrap() {
 
   // ④ 読雨統合（v2.5 / 2026-05-16 / Gist 読取・5分polling）
   try { UIKI.yomu.init(); } catch(e) { console.warn('yomu init failed', e); }
+
+  // ⑤ Drive 自動表示（v2.8 / 2026-05-16 / API キー方式・5分polling）
+  try { UIKI.drive.init(); } catch(e) { console.warn('drive init failed', e); }
+
+  // Drive 再読込ボタン
+  const driveRefresh = document.getElementById('drive-refresh-btn');
+  if (driveRefresh) {
+    driveRefresh.addEventListener('click', () => {
+      driveRefresh.textContent = '🔄 同期中…';
+      driveRefresh.disabled = true;
+      UIKI.drive.fetch().finally(() => {
+        driveRefresh.textContent = '🔄 今すぐ再読込';
+        driveRefresh.disabled = false;
+      });
+    });
+  }
 
   if (seeded) showToast('集水域を開いた ── RBAI 8域');
   if (consumed > 0) showToast('☂ ' + consumed + ' 粒、外から降った');
