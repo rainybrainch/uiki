@@ -2572,6 +2572,21 @@ main { padding-bottom: 5.2rem; }
       </div>
     </section>
 
+    <!-- Drive 体組成計 画面写真自動表示（v2.13 / 2026-05-17） -->
+    <section class="yomu-section reveal">
+      <h3>⚖️ 体組成計（画面写真） <span class="yomu-from" id="drive-meta-scale">読み込み中…</span></h3>
+      <p class="yomu-desc">体組成計の表示画面を撮った写真を Drive 経由で記録。数値入力が面倒な日に。日付アイコン：📁ファイル名 / 📷EXIF / ☁️アップ時刻</p>
+      <div class="drive-actions" style="display:flex; gap:0.6rem; flex-wrap:wrap; margin-bottom:0.8rem;">
+        <input type="file" id="drive-upload-scale-input" accept="image/*" capture="environment" style="display:none;">
+        <button class="sand-submit" id="drive-upload-scale-btn" style="background: var(--rain-blue); color: #fff;">⚖️ 体組成計を追加（OAuth）</button>
+        <button class="attraction-add-btn" id="drive-refresh-scale-btn" style="margin: 0; padding: 0.4rem 1rem;">🔄 今すぐ再読込</button>
+        <span id="drive-upload-scale-status" style="font-size:0.78rem; color: var(--dim); align-self:center;"></span>
+      </div>
+      <div class="body-scan-grid" id="drive-grid-scale">
+        <div class="yomu-loading yomu-empty">読み込み中…</div>
+      </div>
+    </section>
+
     <!-- Drive 食事ログ自動表示（v2.10 / 2026-05-17） -->
     <section class="yomu-section reveal">
       <h3>🍽 食事ログ自動表示 <span class="yomu-from" id="drive-meta-meal">読み込み中…</span></h3>
@@ -2689,6 +2704,10 @@ main { padding-bottom: 5.2rem; }
     <label>Drive フォルダ ID（食事ログ用）
       <input type="text" id="cfg-drive-folder-meal" autocomplete="off" placeholder="食事用の別フォルダID">
       <small>食事画像専用のフォルダID。身体スキャンと分けて管理。空欄の場合は食事ログ機能はオフ。</small>
+    </label>
+    <label>Drive フォルダ ID（体組成計用）
+      <input type="text" id="cfg-drive-folder-scale" autocomplete="off" placeholder="体組成計用の別フォルダID">
+      <small>体組成計の画面写真専用フォルダ。空欄なら体組成計機能はオフ。</small>
     </label>
     <label>OAuth クライアント ID（画像アップロード用・任意）
       <input type="text" id="cfg-drive-oauth" autocomplete="off" placeholder="例: 123456789-abc...apps.googleusercontent.com">
@@ -2845,10 +2864,11 @@ UIKI.upload = (function() {
 // ─────────────────────────────────────────────────────────
 UIKI.drive = (function() {
   const POLL_MS = 5 * 60 * 1000;
-  // v2.10: 複数フォルダ対応（身体スキャン body / 食事ログ meal）
+  // v2.10/2.13: 複数フォルダ対応（身体スキャン body / 食事ログ meal / 体組成計 scale）
   const STATES = {
     body: { files: [], loaded: false, error: null, fetchedAt: null, gridId: 'drive-grid', metaId: 'drive-meta', label: '身体スキャン' },
-    meal: { files: [], loaded: false, error: null, fetchedAt: null, gridId: 'drive-grid-meal', metaId: 'drive-meta-meal', label: '食事ログ' }
+    meal: { files: [], loaded: false, error: null, fetchedAt: null, gridId: 'drive-grid-meal', metaId: 'drive-meta-meal', label: '食事ログ' },
+    scale: { files: [], loaded: false, error: null, fetchedAt: null, gridId: 'drive-grid-scale', metaId: 'drive-meta-scale', label: '体組成計' }
   };
   let pollTimer = null;
 
@@ -2898,7 +2918,10 @@ UIKI.drive = (function() {
 
   async function fetchOne(kind) {
     const cfg = UIKI.store.get('config', null);
-    const folderId = kind === 'meal' ? (cfg && cfg.driveFolderIdMeal) : (cfg && cfg.driveFolderId);
+    const folderId =
+      kind === 'meal' ? (cfg && cfg.driveFolderIdMeal) :
+      kind === 'scale' ? (cfg && cfg.driveFolderIdScale) :
+      (cfg && cfg.driveFolderId);
     const st = STATES[kind];
     if (!st) return;
     if (!cfg || !cfg.driveKey || !folderId) {
@@ -2929,7 +2952,7 @@ UIKI.drive = (function() {
   }
 
   async function fetchDrive() {
-    await Promise.all([fetchOne('body'), fetchOne('meal')]);
+    await Promise.all([fetchOne('body'), fetchOne('meal'), fetchOne('scale')]);
   }
 
   function renderEmpty(kind) {
@@ -2937,7 +2960,10 @@ UIKI.drive = (function() {
     const wrap = document.getElementById(st.gridId);
     if (!wrap) return;
     const cfg = UIKI.store.get('config', null);
-    const folderId = kind === 'meal' ? (cfg && cfg.driveFolderIdMeal) : (cfg && cfg.driveFolderId);
+    const folderId =
+      kind === 'meal' ? (cfg && cfg.driveFolderIdMeal) :
+      kind === 'scale' ? (cfg && cfg.driveFolderIdScale) :
+      (cfg && cfg.driveFolderId);
     const reason = !cfg ? '設定未保存' : !cfg.driveKey ? 'API キー未設定' : !folderId ? 'フォルダ ID 未設定' : '未連携';
     wrap.innerHTML = '<div class="yomu-empty">' + escapeHtml(reason) + '。<br>設定モーダルで Drive 連携を登録すると自動表示されます。</div>';
     const meta = document.getElementById(st.metaId);
@@ -4853,10 +4879,12 @@ UIKI.config = (() => {
     const dk = document.getElementById('cfg-drive-key');
     const df = document.getElementById('cfg-drive-folder');
     const dfm = document.getElementById('cfg-drive-folder-meal');
+    const dfs = document.getElementById('cfg-drive-folder-scale');
     const doEl2 = document.getElementById('cfg-drive-oauth');
     if (dk) dk.value = cfg.driveKey || '';
     if (df) df.value = cfg.driveFolderId || '1qCu88aJG93g5BMzUd6sVhXUpxy94Ehgk';
     if (dfm) dfm.value = cfg.driveFolderIdMeal || '129gwV0ySQjJBBTOb-tc2QnDt7xMPRM3v';
+    if (dfs) dfs.value = cfg.driveFolderIdScale || '1J387p557UDXODfVu-4bksPkd1lGBXcOV';
     if (doEl2) doEl2.value = cfg.driveOauthClientId || '';
     document.getElementById('config-modal').hidden = false;
   }
@@ -4870,10 +4898,12 @@ UIKI.config = (() => {
     const dkEl = document.getElementById('cfg-drive-key');
     const dfEl = document.getElementById('cfg-drive-folder');
     const dfmEl = document.getElementById('cfg-drive-folder-meal');
+    const dfsEl = document.getElementById('cfg-drive-folder-scale');
     const doEl = document.getElementById('cfg-drive-oauth');
     const driveKey = dkEl ? dkEl.value.trim() : '';
     const driveFolderId = dfEl ? dfEl.value.trim() : '';
     const driveFolderIdMeal = dfmEl ? dfmEl.value.trim() : '';
+    const driveFolderIdScale = dfsEl ? dfsEl.value.trim() : '';
     const driveOauthClientId = doEl ? doEl.value.trim() : '';
 
     // v2.8 緩和：PAT または Drive キーのどちらかがあれば保存可
@@ -4891,7 +4921,7 @@ UIKI.config = (() => {
     // savedAt を記録：fine-grained PAT は最大365日。期限切れ前に警告を出すため。
     UIKI.store.set('config', {
       pat, gistId, notifEnabled,
-      driveKey, driveFolderId, driveFolderIdMeal, driveOauthClientId,
+      driveKey, driveFolderId, driveFolderIdMeal, driveFolderIdScale, driveOauthClientId,
       savedAt: new Date().toISOString()
     });
     showToast(pat ? '設定を保存した' : 'Drive 連携のみで保存した（PAT 未登録）');
@@ -4991,19 +5021,25 @@ function bootstrap() {
     const status = document.getElementById(statusId);
     if (!btn || !input) return;
     const labels = {
-      body: { idle: '📷 画像を追加（OAuth）', toastPrefix: '🤳 Drive に保存：' },
-      meal: { idle: '📷 食事を追加（OAuth）', toastPrefix: '🍽 食事を Drive に保存：' }
+      body: { idle: '📷 画像を追加（OAuth）', toastPrefix: '🤳 Drive に保存：', folderLabel: '身体スキャン用' },
+      meal: { idle: '📷 食事を追加（OAuth）', toastPrefix: '🍽 食事を Drive に保存：', folderLabel: '食事用' },
+      scale: { idle: '⚖️ 体組成計を追加（OAuth）', toastPrefix: '⚖️ 体組成計を Drive に保存：', folderLabel: '体組成計用' }
     };
     const lbl = labels[kind] || labels.body;
+    function getFolderId(cfg) {
+      if (kind === 'meal') return cfg && cfg.driveFolderIdMeal;
+      if (kind === 'scale') return cfg && cfg.driveFolderIdScale;
+      return cfg && cfg.driveFolderId;
+    }
     btn.addEventListener('click', () => {
       const cfg = UIKI.store.get('config', null);
       if (!cfg || !cfg.driveOauthClientId) {
         showToast('OAuth クライアント ID を設定モーダルで登録してください');
         return;
       }
-      const folderId = kind === 'meal' ? (cfg && cfg.driveFolderIdMeal) : (cfg && cfg.driveFolderId);
+      const folderId = getFolderId(cfg);
       if (!folderId) {
-        showToast((kind === 'meal' ? '食事用' : '身体スキャン用') + 'フォルダ ID が未設定');
+        showToast(lbl.folderLabel + 'フォルダ ID が未設定');
         return;
       }
       input.click();
@@ -5012,8 +5048,8 @@ function bootstrap() {
       const file = input.files && input.files[0];
       if (!file) return;
       const cfg = UIKI.store.get('config', null);
-      const folderId = kind === 'meal' ? cfg.driveFolderIdMeal : cfg.driveFolderId;
-      const prefix = kind === 'meal' ? 'meal' : 'scan';
+      const folderId = getFolderId(cfg);
+      const prefix = kind === 'meal' ? 'meal' : kind === 'scale' ? 'scale' : 'scan';
       const sizeMB = (file.size / 1024 / 1024).toFixed(1);
       btn.disabled = true;
       btn.textContent = '📤 アップロード中…';
@@ -5039,6 +5075,20 @@ function bootstrap() {
   }
   bindUploadButton('drive-upload-btn', 'drive-upload-input', 'drive-upload-status', 'body');
   bindUploadButton('drive-upload-meal-btn', 'drive-upload-meal-input', 'drive-upload-meal-status', 'meal');
+  bindUploadButton('drive-upload-scale-btn', 'drive-upload-scale-input', 'drive-upload-scale-status', 'scale');
+
+  // 体組成計 再読込ボタン
+  const driveRefreshScale = document.getElementById('drive-refresh-scale-btn');
+  if (driveRefreshScale) {
+    driveRefreshScale.addEventListener('click', () => {
+      driveRefreshScale.textContent = '🔄 同期中…';
+      driveRefreshScale.disabled = true;
+      UIKI.drive.fetchOne('scale').finally(() => {
+        driveRefreshScale.textContent = '🔄 今すぐ再読込';
+        driveRefreshScale.disabled = false;
+      });
+    });
+  }
 
   // セクション折りたたみトグル（v2.12 / 2026-05-17）
   (function setupSectionToggle() {
