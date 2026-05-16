@@ -2557,13 +2557,13 @@ main { padding-bottom: 5.2rem; }
       </div>
     </section>
 
-    <!-- Drive 自動表示（v2.8 / Drive API で公開フォルダの画像を自動取得） -->
+    <!-- 自撮り画像（v2.14 / 名称変更 ── Drive フォルダ直接連携） -->
     <section class="yomu-section reveal">
-      <h3>📁 Drive フォルダ自動表示 <span class="yomu-from" id="drive-meta">読み込み中…</span></h3>
-      <p class="yomu-desc">設定した Drive フォルダ内の画像を 5 分ごとに自動取得。<br>スマホで撮影 → Drive アップ → 自動で表示。</p>
+      <h3>🤳 自撮り画像 <span class="yomu-from" id="drive-meta">読み込み中…</span></h3>
+      <p class="yomu-desc">自撮り用 Drive フォルダ内の画像を 5 分ごとに自動取得。<br>スマホで撮影 → Drive アップ → 自動で表示。日付アイコン：📁ファイル名 / 📷EXIF / ☁️アップ時刻</p>
       <div class="drive-actions" style="display:flex; gap:0.6rem; flex-wrap:wrap; margin-bottom:0.8rem;">
         <input type="file" id="drive-upload-input" accept="image/*" capture="user" style="display:none;">
-        <button class="sand-submit" id="drive-upload-btn" style="background: var(--rain-blue); color: #fff;">📷 画像を追加（OAuth）</button>
+        <button class="sand-submit" id="drive-upload-btn" style="background: var(--rain-blue); color: #fff;">🤳 自撮りを追加（OAuth）</button>
         <button class="attraction-add-btn" id="drive-refresh-btn" style="margin: 0; padding: 0.4rem 1rem;">🔄 今すぐ再読込</button>
         <span id="drive-upload-status" style="font-size:0.78rem; color: var(--dim); align-self:center;"></span>
       </div>
@@ -2697,7 +2697,7 @@ main { padding-bottom: 5.2rem; }
       <input type="password" id="cfg-drive-key" autocomplete="off">
       <small>公開 Drive フォルダの一覧取得用。<a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener">Google Cloud Console</a> で API キー作成（無料）→ Drive API を有効化。</small>
     </label>
-    <label>Drive フォルダ ID（身体スキャン用）
+    <label>Drive フォルダ ID（自撮り用）
       <input type="text" id="cfg-drive-folder" autocomplete="off" placeholder="例: 1qCu88aJG93g5BMzUd6sVhXUpxy94Ehgk">
       <small>共有 URL の末尾の文字列。フォルダは「リンクを知っている全員」に設定すること。</small>
     </label>
@@ -5021,7 +5021,7 @@ function bootstrap() {
     const status = document.getElementById(statusId);
     if (!btn || !input) return;
     const labels = {
-      body: { idle: '📷 画像を追加（OAuth）', toastPrefix: '🤳 Drive に保存：', folderLabel: '身体スキャン用' },
+      body: { idle: '🤳 自撮りを追加（OAuth）', toastPrefix: '🤳 自撮りを Drive に保存：', folderLabel: '自撮り用' },
       meal: { idle: '📷 食事を追加（OAuth）', toastPrefix: '🍽 食事を Drive に保存：', folderLabel: '食事用' },
       scale: { idle: '⚖️ 体組成計を追加（OAuth）', toastPrefix: '⚖️ 体組成計を Drive に保存：', folderLabel: '体組成計用' }
     };
