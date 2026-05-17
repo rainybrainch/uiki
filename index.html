@@ -3313,6 +3313,10 @@ main { padding-bottom: 5.2rem; }
     <label>内容
       <input type="text" id="qf-task-text" autocomplete="off" placeholder="例: ぽもじかんの XP 表示確認">
     </label>
+    <div style="display:flex; gap:0.4rem; margin: 0.4rem 0;">
+      <button type="button" id="qf-task-ai-classify" class="attraction-add-btn" style="margin:0; padding:0.35rem 0.8rem; font-size:0.76rem;" title="内容から AI がプロジェクト・デバイスを推定">🤖 AI に推定させる</button>
+      <span id="qf-task-ai-result" style="font-size:0.74rem; color:var(--dim); align-self:center;"></span>
+    </div>
     <label>プロジェクト
       <select id="qf-task-project">
         <option value="p_rbai_inc">RBAI Inc.（既定）</option>
@@ -3477,6 +3481,14 @@ main { padding-bottom: 5.2rem; }
       <button id="cfg-save">保存</button>
     </div>
   </div>
+</div>
+
+<!-- v2.36 PWA インストールバナー -->
+<div id="pwa-install-banner" hidden style="position:fixed; bottom:140px; left:16px; right:16px; max-width:520px; margin:0 auto; background:rgba(7,9,15,0.95); color:#fff; padding:0.7rem 1rem; border-radius:0.5rem; border:1px solid var(--gold); display:flex; align-items:center; gap:0.6rem; z-index:50; backdrop-filter: blur(8px); box-shadow:0 4px 16px rgba(0,0,0,0.4);">
+  <span style="font-size:1.2rem;">📱</span>
+  <span style="flex:1; font-size:0.82rem; line-height:1.5;">ホーム画面に追加 ── ネイティブアプリのように使えます</span>
+  <button id="pwa-install-btn" style="background:var(--gold); color:#07090f; border:none; padding:0.4rem 0.9rem; border-radius:999px; font-size:0.78rem; font-weight:600; cursor:pointer;">追加</button>
+  <button id="pwa-install-dismiss" style="background:transparent; border:1px solid rgba(255,255,255,0.3); color:#fff; padding:0.4rem 0.7rem; border-radius:999px; font-size:0.78rem; cursor:pointer;">×</button>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -7318,6 +7330,39 @@ function bootstrap() {
     document.body.classList.add('public-mode');
   }
 
+  // v2.36 PWA インストールバナー
+  let deferredPrompt = null;
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredPrompt = e;
+    // 拒否済みなら表示しない
+    if (UIKI.store.get('pwa_install_dismissed', false)) return;
+    const banner = document.getElementById('pwa-install-banner');
+    if (banner) banner.hidden = false;
+  });
+  const pwaInstallBtn = document.getElementById('pwa-install-btn');
+  const pwaInstallDismiss = document.getElementById('pwa-install-dismiss');
+  if (pwaInstallBtn) {
+    pwaInstallBtn.addEventListener('click', async () => {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      const choice = await deferredPrompt.userChoice;
+      if (choice.outcome === 'accepted') showToast('📱 ホームに追加した');
+      document.getElementById('pwa-install-banner').hidden = true;
+      deferredPrompt = null;
+    });
+  }
+  if (pwaInstallDismiss) {
+    pwaInstallDismiss.addEventListener('click', () => {
+      UIKI.store.set('pwa_install_dismissed', true);
+      document.getElementById('pwa-install-banner').hidden = true;
+    });
+  }
+  window.addEventListener('appinstalled', () => {
+    document.getElementById('pwa-install-banner').hidden = true;
+    showToast('✓ ホーム画面に追加されました');
+  });
+
   // v2.33 削除モード反映
   const cfg33 = UIKI.store.get('config', {});
   if (cfg33.deleteMode) document.body.classList.add('delete-mode');
@@ -7601,6 +7646,60 @@ function bootstrap() {
   if (qfTaskText) {
     qfTaskText.addEventListener('keydown', e => {
       if (e.key === 'Enter') { e.preventDefault(); qfTaskAdd.click(); }
+    });
+  }
+
+  // v2.36 AI に projectId / device を推定させる
+  const qfAiBtn = document.getElementById('qf-task-ai-classify');
+  if (qfAiBtn) {
+    qfAiBtn.addEventListener('click', async () => {
+      const text = (qfTaskText.value || '').trim();
+      if (!text) { showToast('内容を入力してから AI 推定'); return; }
+      const cfg = UIKI.store.get('config', {});
+      if (!cfg.geminiKey) { showToast('Gemini キー必要'); setTimeout(()=>UIKI.config.open(),1200); return; }
+      const result = document.getElementById('qf-task-ai-result');
+      qfAiBtn.disabled = true;
+      const orig = qfAiBtn.textContent;
+      qfAiBtn.textContent = '🤖 考え中…';
+      result.textContent = '';
+      try {
+        const prompt = `次のタスク内容から、最も適切なプロジェクト ID とデバイスを JSON で返してください。説明禁止。\n\nタスク: ${text}\n\nプロジェクト ID 候補:\n- p_rbai_inc: RBAI Inc.（社内・思想・全般）\n- p_uiki: UIKI/雨域（自己管理アプリ）\n- p_zaitoku: ぽもじかん（時間管理ゲーム）\n- p_shinmane: 新マネぼう（経済学習メタゲーム）\n- p_manebou: マネぼう塾HP（公開サイト）\n- p_shonigan: 小児がんAIコーチ（母上案件）\n- p_raina: RAINA（物語）\n- p_amesekai: 雨と世界（創作）\n- p_fukurouzo: 服牢井像（思想サイト）\n- p_story: 物語工房\n- p_atelier: 電脳工房\n- p_askup: ASK-UP（質問道場）\n- p_sasuke: SASUKE 系\n- p_omasasu: OMASASU\n\nデバイス候補:\n- any: 思考・判断のみ\n- pc: コード/編集が必要\n- mobile: 連絡/確認/移動中\n\nJSON 形式:\n{ "projectId": "<id>", "device": "<any|pc|mobile>", "reason": "<理由 20 字以内>" }`;
+        const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=' + encodeURIComponent(cfg.geminiKey);
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { temperature: 0.1, response_mime_type: 'application/json', maxOutputTokens: 200 }
+          })
+        });
+        if (!res.ok) throw new Error('Gemini ' + res.status);
+        const resp = await res.json();
+        const respText = resp?.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+        let parsed;
+        try { parsed = JSON.parse(respText); } catch(e) {
+          const m = respText.match(/\{[\s\S]*\}/);
+          if (m) parsed = JSON.parse(m[0]);
+        }
+        if (parsed && parsed.projectId) {
+          const projSel = document.getElementById('qf-task-project');
+          const devSel = document.getElementById('qf-task-device');
+          if (projSel && Array.from(projSel.options).some(o => o.value === parsed.projectId)) {
+            projSel.value = parsed.projectId;
+          }
+          if (devSel && parsed.device && ['any','pc','mobile'].includes(parsed.device)) {
+            devSel.value = parsed.device;
+          }
+          result.textContent = '✓ ' + parsed.projectId + ' / ' + parsed.device + (parsed.reason ? ' ── ' + parsed.reason : '');
+        } else {
+          result.textContent = '⚠ 推定不能';
+        }
+      } catch(e) {
+        result.textContent = '✗ ' + (e.message || '失敗').slice(0, 60);
+      } finally {
+        qfAiBtn.disabled = false;
+        qfAiBtn.textContent = orig;
+      }
     });
   }
 
