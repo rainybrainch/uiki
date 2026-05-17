@@ -39,6 +39,66 @@
   --tab-accent-rgb: 36, 86, 184;
 }
 
+/* モバイル下部クイック FAB（v2.31 / 2026-05-17） */
+.quick-fab {
+  position: fixed;
+  bottom: 80px;
+  right: 16px;
+  z-index: 60;
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: flex-end;
+  gap: 0.5rem;
+  pointer-events: none;
+}
+.quick-fab > * { pointer-events: auto; }
+.qf-main {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  background: var(--tab-accent);
+  color: #fff;
+  font-size: 1.8rem;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  transition: transform 0.2s ease;
+  display: grid;
+  place-items: center;
+}
+.qf-main:hover { transform: rotate(45deg); }
+.quick-fab.open .qf-main { transform: rotate(45deg); }
+.qf-menu {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 0.4rem;
+  align-items: flex-end;
+}
+.qf-menu[hidden] { display: none; }
+.qf-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(7,9,15,0.92);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 999px;
+  padding: 0.5rem 1rem 0.5rem 0.7rem;
+  cursor: pointer;
+  font-family: var(--sans);
+  font-size: 0.82rem;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.25);
+  backdrop-filter: blur(8px);
+}
+.qf-item span:first-child { font-size: 1.1rem; }
+.qf-item:hover { border-color: var(--tab-accent); }
+body.tab-uwiki .qf-item {
+  background: rgba(255,255,255,0.95);
+  color: rgba(0,0,0,0.85);
+  border-color: rgba(0,0,0,0.12);
+}
+body.public-mode .quick-fab { display: none !important; }
+
 /* Vision 進捗バー（v2.28 / 2026-05-17） */
 .vision-progress {
   display: none;
@@ -2956,10 +3016,12 @@ main { padding-bottom: 5.2rem; }
       <div class="ts-header">
         <h3>📊 今日のサマリー</h3>
         <div style="display:flex; gap:0.4rem; align-items:center; flex-wrap:wrap;">
+          <button id="ts-ai-comment" class="attraction-add-btn" style="margin:0; padding:0.3rem 0.8rem; font-size:0.78rem;">💬 AI に 1 行コメントさせる</button>
           <button id="ts-analyze-now" class="attraction-add-btn" style="margin:0; padding:0.3rem 0.8rem; font-size:0.78rem;">🔍 今すぐ全て分析</button>
           <span class="ts-auto-chip" id="ts-auto-chip" title="設定の「自動分析を有効にする」">自動分析: 確認中…</span>
         </div>
       </div>
+      <div id="ts-ai-comment-out" style="margin-bottom: 0.8rem; padding: 0.6rem 0.9rem; background: rgba(var(--tab-accent-rgb), 0.08); border-left: 3px solid var(--tab-accent); border-radius: 0.3rem; font-size: 0.86rem; line-height: 1.6; color: rgba(var(--tab-accent-rgb), 0.95); display: none;"></div>
       <div class="ts-grid">
         <div class="ts-card ts-rank">
           <div class="ts-label">🤳 今日のランク</div>
@@ -3127,6 +3189,18 @@ main { padding-bottom: 5.2rem; }
     <span class="tab-label">引力雨域</span>
   </button>
 </nav>
+
+<!-- モバイル下部クイックアクション（v2.31 / 2026-05-17） -->
+<div class="quick-fab" id="quick-fab" role="toolbar" aria-label="クイックアクション">
+  <button type="button" id="qf-toggle" class="qf-main" aria-label="クイック操作">＋</button>
+  <div class="qf-menu" id="qf-menu" hidden>
+    <button type="button" data-qf="add-task" class="qf-item" title="タスク追加"><span>📝</span><span class="qf-label">タスク</span></button>
+    <button type="button" data-qf="sand" class="qf-item" title="砂を沈める"><span>✨</span><span class="qf-label">砂</span></button>
+    <button type="button" data-qf="quote" class="qf-item" title="名言として刻む"><span>⚡</span><span class="qf-label">名言</span></button>
+    <button type="button" data-qf="analyze" class="qf-item" title="今すぐ全て分析"><span>🔍</span><span class="qf-label">分析</span></button>
+    <button type="button" data-qf="config" class="qf-item" title="設定"><span>⚙️</span><span class="qf-label">設定</span></button>
+  </div>
+</div>
 
 <!-- ドロワーメニュー -->
 <aside class="drawer" id="drawer" hidden>
@@ -6598,6 +6672,62 @@ function bootstrap() {
   if (mPrev) mPrev.addEventListener('click', () => { try { UIKI.yomu.monthlyPrev && UIKI.yomu.monthlyPrev(); } catch(e){} });
   if (mNext) mNext.addEventListener('click', () => { try { UIKI.yomu.monthlyNext && UIKI.yomu.monthlyNext(); } catch(e){} });
 
+  // v2.31 AI 1 行コメント
+  const tsAiBtn = document.getElementById('ts-ai-comment');
+  if (tsAiBtn) {
+    tsAiBtn.addEventListener('click', async () => {
+      const cfg = UIKI.store.get('config', {});
+      if (!cfg.geminiKey) { showToast('Gemini キー必要'); setTimeout(() => UIKI.config.open(), 1200); return; }
+      const out = document.getElementById('ts-ai-comment-out');
+      tsAiBtn.disabled = true;
+      const orig = tsAiBtn.textContent;
+      tsAiBtn.textContent = '💬 考え中…';
+      try {
+        const today = new Date();
+        const todayYmd = today.getFullYear() + ('0' + (today.getMonth() + 1)).slice(-2) + ('0' + today.getDate()).slice(-2);
+        const entries = UIKI.yomu.state ? UIKI.yomu.state().entries || [] : [];
+        const tasks = UIKI.store.get('tasks', []);
+        const todayStr = today.getFullYear() + '-' + ('0' + (today.getMonth() + 1)).slice(-2) + '-' + ('0' + today.getDate()).slice(-2);
+        const tasksDoneToday = tasks.filter(t => t.completed && t.completedAt && t.completedAt.slice(0, 10) === todayStr).length;
+        const tasksRemain = tasks.filter(t => !t.completed && !t.stain).length;
+        const sand = UIKI.store.get('sand_log', []).filter(s => s.date === todayStr);
+        const latestScan = entries.filter(e => e.type === 'body_scan').sort((a,b) => (b.created_at||'').localeCompare(a.created_at||''))[0];
+        const weights = entries.filter(e => e.type === 'health' && e.metric === 'weight').sort((a,b) => (b.date||'').localeCompare(a.date||''));
+        const latestWeight = weights[0];
+        const todayCal = entries.filter(e => e.type === 'health' && e.metric === 'meal_calories' && (e.date === todayYmd || (e.date || '').replace(/-/g, '') === todayYmd))
+          .reduce((s, e) => s + Number(e.value || 0), 0);
+        const data = {
+          today: todayStr,
+          tasks: { done_today: tasksDoneToday, remain: tasksRemain },
+          sand: { count_today: sand.length, total_weight: sand.reduce((s, x) => s + (Number(x.weight)||0), 0) },
+          latest_rank: latestScan ? latestScan.rank : null,
+          latest_weight: latestWeight ? latestWeight.value + 'kg' : null,
+          today_calories: todayCal || null
+        };
+        const prompt = `あなたは服牢井像（円舵）の個人アシスタント「服牢AI」。以下のデータから、創造主の今日 1 日を 1 行（40-60 字）で評し、明日への一言を添えてください。診断・指導は禁止、客観観察と励ましのみ。\n\nデータ:\n` + JSON.stringify(data, null, 2);
+        const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=' + encodeURIComponent(cfg.geminiKey);
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { temperature: 0.7, maxOutputTokens: 200 }
+          })
+        });
+        if (!res.ok) throw new Error('Gemini ' + res.status);
+        const resp = await res.json();
+        const text = resp?.candidates?.[0]?.content?.parts?.[0]?.text || '応答なし';
+        out.style.display = 'block';
+        out.textContent = '💬 ' + text.trim();
+      } catch(e) {
+        showToast('✗ ' + (e.message || '失敗'));
+      } finally {
+        tsAiBtn.disabled = false;
+        tsAiBtn.textContent = orig;
+      }
+    });
+  }
+
   // 「今すぐ全て分析」ボタン
   const tsAnalyzeNow = document.getElementById('ts-analyze-now');
   if (tsAnalyzeNow) {
@@ -6973,6 +7103,94 @@ function bootstrap() {
       } catch(e) { showToast('✗ ' + (e.message || '失敗')); }
     });
   }
+
+  // v2.31 モバイル下部クイック FAB
+  const fab = document.getElementById('quick-fab');
+  const fabBtn = document.getElementById('qf-toggle');
+  const fabMenu = document.getElementById('qf-menu');
+  if (fab && fabBtn && fabMenu) {
+    fabBtn.addEventListener('click', () => {
+      const isOpen = !fabMenu.hasAttribute('hidden');
+      if (isOpen) { fabMenu.setAttribute('hidden', ''); fab.classList.remove('open'); }
+      else { fabMenu.removeAttribute('hidden'); fab.classList.add('open'); }
+    });
+    fabMenu.addEventListener('click', e => {
+      const item = e.target.closest('[data-qf]');
+      if (!item) return;
+      const act = item.dataset.qf;
+      fabMenu.setAttribute('hidden', '');
+      fab.classList.remove('open');
+      if (act === 'add-task') {
+        // 重力タブの「タスク追加」入力欄にフォーカス
+        switchTab('home');
+        setTimeout(() => {
+          const inp = document.querySelector('#home-tasks-list-wrap .task-add-input, #task-add-input, .filter-search');
+          if (inp) { inp.focus(); inp.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+        }, 200);
+      } else if (act === 'sand') {
+        switchTab('home');
+        setTimeout(() => {
+          const t = document.getElementById('sand-text');
+          if (t) { t.focus(); t.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+        }, 200);
+      } else if (act === 'quote') {
+        switchTab('home');
+        setTimeout(() => {
+          const t = document.getElementById('sand-text');
+          if (t) { t.focus(); t.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+          showToast('テキストを入れて「⚡ 名言として刻む」を押す');
+        }, 200);
+      } else if (act === 'analyze') {
+        switchTab('uwiki');
+        setTimeout(() => {
+          const btn = document.getElementById('ts-analyze-now');
+          if (btn) { btn.click(); btn.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+          else showToast('Drive 設定が必要');
+        }, 200);
+      } else if (act === 'config') {
+        UIKI.config.open();
+      }
+    });
+    // 外側クリックで閉じる
+    document.addEventListener('click', e => {
+      if (!fab.contains(e.target) && !fabMenu.hasAttribute('hidden')) {
+        fabMenu.setAttribute('hidden', '');
+        fab.classList.remove('open');
+      }
+    });
+  }
+
+  // v2.31 キーボードショートカット
+  document.addEventListener('keydown', e => {
+    // 入力中（textarea, input）はショートカット無効
+    const tag = (e.target.tagName || '').toLowerCase();
+    if (tag === 'textarea' || tag === 'input' || e.target.isContentEditable) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key === '/') {
+      const search = document.querySelector('.filter-search');
+      if (search) { e.preventDefault(); search.focus(); }
+    } else if (e.key === 'g') {
+      e.preventDefault(); switchTab('home');
+    } else if (e.key === 'u') {
+      e.preventDefault(); switchTab('uwiki');
+    } else if (e.key === 'm') {
+      e.preventDefault(); switchTab('uwiki-main');
+    } else if (e.key === '?') {
+      e.preventDefault();
+      alert('キーボードショートカット\n\n  /  検索にフォーカス\n  g  重力雨域へ\n  u  引力雨域へ\n  m  雨域メインへ\n  ?  このヘルプ\n  Esc 開いているモーダルを閉じる');
+    } else if (e.key === 'Escape') {
+      ['config-modal', 'detail-modal', 'add-modal'].forEach(id => {
+        const m = document.getElementById(id);
+        if (m && !m.hidden) m.hidden = true;
+      });
+      // クイック FAB も閉じる
+      const fm = document.getElementById('qf-menu');
+      if (fm && !fm.hasAttribute('hidden')) {
+        fm.setAttribute('hidden', '');
+        document.getElementById('quick-fab').classList.remove('open');
+      }
+    }
+  });
 
   // v2.30 localStorage 全エクスポート
   const exportLocalBtn = document.getElementById('cfg-export-local');
