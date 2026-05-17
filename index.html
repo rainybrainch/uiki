@@ -2824,6 +2824,7 @@ main { padding-bottom: 5.2rem; }
           <button class="weight-btn" data-weight="5">超重力</button>
         </div>
         <button class="sand-submit" id="sand-submit">沈める</button>
+        <button class="attraction-add-btn" id="sand-mic-btn" style="margin: 0; padding: 0.45rem 0.7rem; font-size: 0.8rem;" title="音声入力で砂を口述">🎤</button>
         <button class="attraction-add-btn" id="sand-quote-btn" style="margin: 0; padding: 0.45rem 0.9rem; font-size: 0.8rem;" title="入力した砂を「名言」として読雨に投入">⚡ 名言として刻む</button>
       </div>
     </div>
@@ -2841,10 +2842,10 @@ main { padding-bottom: 5.2rem; }
     </div>
   </section>
 
-  <!-- 読雨統合：読書 + ブクログ連携（v2.17） -->
+  <!-- 読雨統合：読書 + ブクログ連携（v2.17 / 本棚差分 v2.37） -->
   <section class="yomu-section reveal">
-    <h3>📖 読雨から ── 最近の読書 <span class="yomu-from">type=book</span></h3>
-    <p class="yomu-desc">読書感想の最近 5 件。RAINA・服牢井像への素材候補。</p>
+    <h3>📖 読雨から ── 最近の読書 <span class="yomu-from">type=book</span> <span class="yomu-from" id="yomu-book-stats" style="margin-left:0.4rem;">— 件</span></h3>
+    <p class="yomu-desc">読書感想の最近 5 件。RAINA・服牢井像への素材候補。<br><small id="book-stats-detail" style="color:var(--dim);">本棚プロジェクトで管理中…</small></p>
     <div class="booklog-actions" style="display:flex; gap:0.6rem; flex-wrap:wrap; margin-bottom:0.8rem; align-items:center;">
       <a class="yomu-link" href="honbako/" style="padding: 0.45rem 1rem; border: 1px solid var(--gold); border-radius: 999px; background: var(--gold); color: #07090f; text-decoration: none; font-size: 0.82rem; font-weight: 600;">📚 自分の本棚を開く →</a>
       <a class="yomu-link" href="honbako/?public=1" target="_blank" rel="noopener" style="padding: 0.45rem 1rem; border: 1px solid var(--gold); border-radius: 999px; color: var(--gold); text-decoration: none; font-size: 0.82rem;">🌐 公開本棚（広告塔） →</a>
@@ -4526,6 +4527,17 @@ UIKI.yomu = (function() {
     const wrap = document.getElementById('yomu-books');
     if (!wrap) return;
     const books = byType('book');
+    // v2.37 本棚差分表示
+    const stats = document.getElementById('yomu-book-stats');
+    const detail = document.getElementById('book-stats-detail');
+    if (stats) stats.textContent = books.length + ' 件';
+    if (detail) {
+      const publicCount = books.filter(b => b.is_public).length;
+      const reading = books.filter(b => b.status === 'reading').length;
+      const done = books.filter(b => b.status === 'done').length;
+      const pile = books.filter(b => b.status === 'pile').length;
+      detail.innerHTML = '読了 <b>' + done + '</b> ／ 読み中 <b>' + reading + '</b> ／ 積読 <b>' + pile + '</b> ／ 公開中 <b>' + publicCount + '</b>　<a href="honbako/" style="color:var(--gold); text-decoration:none;">→ 本棚を開く</a>';
+    }
     if (!books.length) {
       wrap.innerHTML = '<div class="yomu-empty">読雨にまだ読書記録が届いていない。<br>UwikiAI で「〇〇読んだ。〇〇推し」と投稿。</div>';
       return;
@@ -5455,6 +5467,59 @@ UIKI.uwiki = (function() {
         }
       });
     }
+    // v2.37 音声入力で砂を口述（Web Speech API）
+    const micBtn = document.getElementById('sand-mic-btn');
+    if (micBtn && textarea) {
+      const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRec) {
+        micBtn.disabled = true;
+        micBtn.title = 'このブラウザは音声入力非対応';
+        micBtn.style.opacity = '0.4';
+      } else {
+        let rec = null;
+        let listening = false;
+        micBtn.addEventListener('click', () => {
+          if (listening) { rec && rec.stop(); return; }
+          rec = new SpeechRec();
+          rec.lang = 'ja-JP';
+          rec.interimResults = true;
+          rec.continuous = true;
+          const baseText = textarea.value;
+          let interim = '';
+          rec.onresult = (e) => {
+            interim = '';
+            let finalText = '';
+            for (let i = e.resultIndex; i < e.results.length; i++) {
+              const r = e.results[i];
+              if (r.isFinal) finalText += r[0].transcript;
+              else interim += r[0].transcript;
+            }
+            if (finalText) {
+              textarea.value = (baseText + (baseText ? ' ' : '') + finalText).slice(0, 280);
+            } else {
+              textarea.value = (baseText + (baseText ? ' ' : '') + interim).slice(0, 280);
+            }
+          };
+          rec.onend = () => {
+            listening = false;
+            micBtn.textContent = '🎤';
+            micBtn.style.background = '';
+          };
+          rec.onerror = (e) => {
+            showToast('音声入力エラー: ' + (e.error || '不明'));
+            listening = false;
+            micBtn.textContent = '🎤';
+          };
+          rec.start();
+          listening = true;
+          micBtn.textContent = '⏹';
+          micBtn.style.background = '#e74c3c';
+          micBtn.style.color = '#fff';
+          showToast('🎤 録音中 ── もう一度押して停止');
+        });
+      }
+    }
+
     // v2.29 Quick Add 名言：砂をそのまま type=quote として読雨へ
     const quoteBtn = document.getElementById('sand-quote-btn');
     if (quoteBtn && textarea) {
