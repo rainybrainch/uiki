@@ -3088,11 +3088,11 @@ main { padding-bottom: 5.2rem; }
         <div style="font-family: var(--serif); font-size: 0.95rem; font-weight: 600; color: var(--tab-accent); margin-bottom: 0.4rem;">🌧 Phase 1（〜2026年末）</div>
         <div style="font-size: 0.78rem; color: rgba(255,255,255,0.85); line-height: 1.7;">
           <strong>基盤構築 ── 資金確保</strong>
-          <div class="rm-item"><span class="rm-label">🍅 ぽもじかん v2.9</span><span class="rm-pct" id="rm-pct-pomo">60%</span><div class="rm-bar"><div class="rm-fill" style="width: 60%;"></div></div></div>
-          <div class="rm-item"><span class="rm-label">📘 マネぼう教科書 + 本編集AI</span><span class="rm-pct" id="rm-pct-mane">5%</span><div class="rm-bar"><div class="rm-fill" style="width: 5%;"></div></div></div>
-          <div class="rm-item"><span class="rm-label">☔ 雨域 UIKI</span><span class="rm-pct" id="rm-pct-uiki">95%</span><div class="rm-bar"><div class="rm-fill" style="width: 95%;"></div></div></div>
-          <div class="rm-item"><span class="rm-label">💧 読雨統合DB</span><span class="rm-pct" id="rm-pct-yomu">90%</span><div class="rm-bar"><div class="rm-fill" style="width: 90%;"></div></div></div>
-          <div class="rm-item"><span class="rm-label">🤲 漫画修行（毎日3-5h）</span><span class="rm-pct" id="rm-pct-manga">継続</span><div class="rm-bar"><div class="rm-fill" style="width: 30%;"></div></div></div>
+          <div class="rm-item" data-rm="pomo"><span class="rm-label">🍅 ぽもじかん v2.9</span><span class="rm-pct" id="rm-pct-pomo" title="クリックで編集" style="cursor:pointer;">60%</span><div class="rm-bar"><div class="rm-fill" id="rm-fill-pomo" style="width: 60%;"></div></div></div>
+          <div class="rm-item" data-rm="mane"><span class="rm-label">📘 マネぼう教科書 + 本編集AI</span><span class="rm-pct" id="rm-pct-mane" title="クリックで編集" style="cursor:pointer;">5%</span><div class="rm-bar"><div class="rm-fill" id="rm-fill-mane" style="width: 5%;"></div></div></div>
+          <div class="rm-item" data-rm="uiki"><span class="rm-label">☔ 雨域 UIKI</span><span class="rm-pct" id="rm-pct-uiki" title="クリックで編集" style="cursor:pointer;">95%</span><div class="rm-bar"><div class="rm-fill" id="rm-fill-uiki" style="width: 95%;"></div></div></div>
+          <div class="rm-item" data-rm="yomu"><span class="rm-label">💧 読雨統合DB</span><span class="rm-pct" id="rm-pct-yomu" title="クリックで編集" style="cursor:pointer;">90%</span><div class="rm-bar"><div class="rm-fill" id="rm-fill-yomu" style="width: 90%;"></div></div></div>
+          <div class="rm-item" data-rm="manga"><span class="rm-label">🤲 漫画修行（毎日3-5h）</span><span class="rm-pct" id="rm-pct-manga" title="クリックで編集" style="cursor:pointer;">継続</span><div class="rm-bar"><div class="rm-fill" id="rm-fill-manga" style="width: 30%;"></div></div></div>
         </div>
       </div>
       <div style="padding: 0.8rem 1rem; border: 1px solid rgba(93,138,209,0.4); border-radius: 0.5rem; background: rgba(93,138,209,0.05);">
@@ -4862,6 +4862,31 @@ UIKI.drive = (function() {
         '</div>' +
       '</a>';
     };
+    // v2.72 該当日付の読雨データを取得（メタ情報併記用）
+    let yomuEntries = [];
+    try { yomuEntries = (UIKI.yomu && UIKI.yomu.state) ? (UIKI.yomu.state().entries || []) : []; } catch(e){}
+    const metaForDate = (dateKey) => {
+      const ymd = dateKey.replace(/-/g, '');
+      const match = e => (e.date === ymd || e.date === dateKey);
+      if (kind === 'body') {
+        const scan = yomuEntries.filter(e => e.type === 'body_scan' && e.rank && match(e))[0];
+        return scan ? '🤳 ランク <strong>' + escapeHtml(scan.rank) + '</strong>' + (scan.memo ? ' ／ ' + escapeHtml(scan.memo.slice(0, 30)) : '') : '';
+      }
+      if (kind === 'scale') {
+        const w = yomuEntries.find(e => e.type === 'health' && e.metric === 'weight' && match(e));
+        const bf = yomuEntries.find(e => e.type === 'health' && e.metric === 'body_fat' && match(e));
+        const parts = [];
+        if (w) parts.push('⚖️ <strong>' + w.value + 'kg</strong>');
+        if (bf) parts.push('体脂肪 ' + bf.value + '%');
+        return parts.join(' ／ ');
+      }
+      if (kind === 'meal') {
+        const cal = yomuEntries.filter(e => e.type === 'health' && e.metric === 'meal_calories' && match(e)).reduce((s,e)=>s+Number(e.value||0), 0);
+        return cal > 0 ? '🍽 合計 <strong>' + cal.toFixed(0) + ' kcal</strong>' : '';
+      }
+      return '';
+    };
+
     let html = '';
     groupKeys.forEach(dateKey => {
       const items = grouped[dateKey];
@@ -4869,7 +4894,11 @@ UIKI.drive = (function() {
       if (dateKey === todayKey) label = '📅 今日 ── ' + dateKey;
       else if (dateKey === yesterdayKey) label = '📆 昨日 ── ' + dateKey;
       else label = '📆 ' + dateKey;
-      html += '<div class="drive-date-group" style="margin: 0.8rem 0 0.4rem; padding: 0.3rem 0.6rem; font-size: 0.78rem; color: rgba(var(--tab-accent-rgb), 0.85); border-bottom: 1px solid rgba(var(--tab-accent-rgb), 0.25); font-weight: 600;">' + label + ' <span style="color: var(--dim); font-weight: 400; margin-left: 0.4rem;">(' + items.length + ' 枚)</span></div>';
+      const metaInfo = metaForDate(dateKey);
+      html += '<div class="drive-date-group" style="margin: 0.8rem 0 0.4rem; padding: 0.3rem 0.6rem; font-size: 0.78rem; color: rgba(var(--tab-accent-rgb), 0.85); border-bottom: 1px solid rgba(var(--tab-accent-rgb), 0.25); font-weight: 600;">' +
+        label + ' <span style="color: var(--dim); font-weight: 400; margin-left: 0.4rem;">(' + items.length + ' 枚)</span>' +
+        (metaInfo ? '<span style="margin-left: 0.6rem; color: rgba(255,255,255,0.7); font-weight: 400; font-size: 0.74rem;">' + metaInfo + '</span>' : '') +
+        '</div>';
       html += '<div class="body-scan-grid">' + items.map(({f, idx}) => buildCard(f, idx)).join('') + '</div>';
     });
     wrap.innerHTML = html;
@@ -8965,6 +8994,31 @@ function bootstrap() {
       document.getElementById('selfie-reminder').hidden = true;
     });
   }
+  // v2.72 ロードマップ進捗％クリックで編集 + localStorage 永続化
+  const rmKeys = ['pomo','mane','uiki','yomu','manga'];
+  const rmDefaults = { pomo: 60, mane: 5, uiki: 95, yomu: 90, manga: 30 };
+  const rmStored = UIKI.store.get('roadmap_progress', null);
+  rmKeys.forEach(k => {
+    const pct = (rmStored && typeof rmStored[k] === 'number') ? rmStored[k] : rmDefaults[k];
+    const pctEl = document.getElementById('rm-pct-' + k);
+    const fillEl = document.getElementById('rm-fill-' + k);
+    if (pctEl) pctEl.textContent = (k === 'manga' ? '継続' : pct + '%');
+    if (fillEl) fillEl.style.width = pct + '%';
+    if (pctEl) {
+      pctEl.addEventListener('click', () => {
+        const cur = (rmStored && typeof rmStored[k] === 'number') ? rmStored[k] : rmDefaults[k];
+        const val = prompt((pctEl.previousElementSibling?.textContent || k) + ' の進捗（0-100）:', cur);
+        if (val == null) return;
+        const num = Math.max(0, Math.min(100, parseInt(val, 10) || 0));
+        const store = UIKI.store.get('roadmap_progress', {}) || {};
+        store[k] = num;
+        UIKI.store.set('roadmap_progress', store);
+        if (pctEl) pctEl.textContent = (k === 'manga' ? '継続' : num + '%');
+        if (fillEl) fillEl.style.width = num + '%';
+      });
+    }
+  });
+
   // v2.62 リマインダー「今から撮る」→ 引力タブ + 自撮りアップロードボタン
   const selfieNow = document.getElementById('selfie-reminder-now');
   if (selfieNow) {
