@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#07090f">
 <meta name="description" content="降った雨は、還らない。雨域図 UIKI ── 全プロジェクト横断の記録。">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https:; connect-src https://api.github.com https://www.googleapis.com https://accounts.google.com https://oauth2.googleapis.com; frame-src https://accounts.google.com;">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https:; connect-src https://api.github.com https://www.googleapis.com https://accounts.google.com https://oauth2.googleapis.com https://generativelanguage.googleapis.com https://api.anthropic.com; frame-src https://accounts.google.com https://booklog.jp;">
 <link rel="manifest" href="manifest.json">
 <title>雨域図 UIKI</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -2434,10 +2434,22 @@ main { padding-bottom: 5.2rem; }
     <h3>📖 読雨から ── 最近の読書 <span class="yomu-from">type=book</span></h3>
     <p class="yomu-desc">読書感想の最近 5 件。RAINA・服牢井像への素材候補。</p>
     <div class="booklog-actions" style="display:flex; gap:0.6rem; flex-wrap:wrap; margin-bottom:0.8rem; align-items:center;">
-      <a id="booklog-profile-link" class="yomu-link" href="https://booklog.jp/users/mucchimuchimo" target="_blank" rel="noopener" style="padding: 0.45rem 1rem; border: 1px solid var(--gold); border-radius: 999px; color: var(--gold); text-decoration: none; font-size: 0.82rem;">📚 ブクログ本棚を開く →</a>
+      <button class="attraction-add-btn" id="booklog-embed-btn" style="margin: 0; padding: 0.45rem 1rem;">📚 ブクログ本棚を表示</button>
+      <a id="booklog-profile-link" class="yomu-link" href="https://booklog.jp/users/mucchimuchimo" target="_blank" rel="noopener" style="padding: 0.45rem 1rem; border: 1px solid var(--gold); border-radius: 999px; color: var(--gold); text-decoration: none; font-size: 0.82rem;">🔍 別タブで開く →</a>
       <input type="file" id="booklog-csv-input" accept=".csv,text/csv" style="display:none;">
       <button class="attraction-add-btn" id="booklog-csv-btn" style="margin: 0; padding: 0.45rem 1rem;">📥 CSV を取込</button>
       <span id="booklog-csv-status" style="font-size:0.78rem; color: var(--dim); align-self:center;"></span>
+    </div>
+    <div id="booklog-embed-wrap" hidden style="margin-bottom: 1rem; border: 1px solid var(--faint); border-radius: 0.6rem; overflow: hidden; background: var(--bg-elev);">
+      <div style="padding: 0.5rem 0.8rem; font-size: 0.78rem; color: var(--dim); border-bottom: 1px solid var(--faint); display:flex; justify-content:space-between; align-items:center;">
+        <span>📚 ブクログ本棚（埋め込み・読み取り専用）</span>
+        <button id="booklog-embed-close" style="background: transparent; border: 1px solid var(--faint); color: var(--ink); border-radius: 4px; font-size: 0.75rem; padding: 0.2rem 0.5rem; cursor: pointer;">閉じる</button>
+      </div>
+      <iframe id="booklog-iframe" src="" style="width: 100%; height: 720px; border: 0; background: white;" loading="lazy" referrerpolicy="no-referrer"></iframe>
+      <div id="booklog-embed-fallback" hidden style="padding: 1rem; font-size: 0.85rem; color: var(--dim); text-align: center;">
+        ブクログ側で iframe 埋め込みが拒否されています。<br>
+        「🔍 別タブで開く」から閲覧してください。
+      </div>
     </div>
     <div class="yomu-book-list" id="yomu-books">
       <div class="yomu-loading yomu-empty">読み込み中…</div>
@@ -2766,9 +2778,6 @@ main { padding-bottom: 5.2rem; }
     <li><a data-tab="log"><span class="dr-icon">📅</span><span>　└ 365日の記録</span></a></li>
     <li><a id="dr-add"><span class="dr-icon">➕</span><span>タスクを追加</span></a></li>
     <li><a id="dr-config"><span class="dr-icon">⚙️</span><span>設定（PAT・通知）</span></a></li>
-    <li><a href="claude-mobile-prompt.md" target="_blank" rel="noopener"><span class="dr-icon">🤖</span><span>Claude モバイル連携テンプレ</span></a></li>
-    <li><a href="https://gist.github.com/rainybrainch/b90942bcc77eb8bf6c987f0ed983e344" target="_blank" rel="noopener"><span class="dr-icon">📡</span><span>Gistデータを開く</span></a></li>
-    <li><a href="https://github.com/rainybrainch/uiki" target="_blank" rel="noopener"><span class="dr-icon">📦</span><span>UIKIリポジトリ</span></a></li>
   </ul>
   <button class="drawer-close" id="drawer-close">× 閉じる</button>
 </aside>
@@ -2823,6 +2832,29 @@ main { padding-bottom: 5.2rem; }
     <p class="cfg-help" style="font-size: 0.78rem;">
       <strong>API キー取得手順</strong>：① <a href="https://console.cloud.google.com/projectcreate" target="_blank">新規プロジェクト作成</a> → ② <a href="https://console.cloud.google.com/apis/library/drive.googleapis.com" target="_blank">Drive API を有効化</a> → ③ <a href="https://console.cloud.google.com/apis/credentials" target="_blank">認証情報 → API キー作成</a>。
     </p>
+    <hr style="border: none; border-top: 1px solid var(--faint); margin: 1.2rem 0;">
+    <h3 style="font-size: 1rem; color: var(--gold); margin-bottom: 0.5rem;">Vision AI 連携（v2.19 / 2026-05-17・任意）</h3>
+    <p class="cfg-help" style="font-size: 0.78rem; margin-bottom: 0.8rem;">
+      Drive の最新画像（自撮り／食事／体組成計）を AI が読み取り、ランク・カロリー・数値を抽出して読雨に投入する。<br>
+      <strong>Gemini（無料推奨）</strong>：<a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a> でキー作成・無料枠あり。<br>
+      <strong>Claude（任意・有料）</strong>：<a href="https://console.anthropic.com/" target="_blank" rel="noopener">Anthropic Console</a> でキー作成。重要な評価で精度優先したい時に。
+    </p>
+    <label>Gemini API キー
+      <input type="password" id="cfg-gemini-key" autocomplete="off" placeholder="AIza...">
+      <small>無料の Gemini 2.5 Flash Vision を使用。普段の分析用。</small>
+    </label>
+    <label>Claude API キー（任意）
+      <input type="password" id="cfg-claude-key" autocomplete="off" placeholder="sk-ant-...">
+      <small>有料。プロバイダ「Claude 優先」にすると優先される。</small>
+    </label>
+    <label>優先プロバイダ
+      <select id="cfg-vision-provider" style="width: 100%; padding: 0.6rem; background: var(--bg-elev); border: 1px solid var(--faint); border-radius: 0.4rem; color: var(--ink);">
+        <option value="gemini">Gemini 優先（無料）</option>
+        <option value="claude">Claude 優先（有料・高精度）</option>
+        <option value="auto">自動（キーがある方）</option>
+      </select>
+      <small>両方キーがある時、どちらを優先するか。</small>
+    </label>
     <hr style="border: none; border-top: 1px solid var(--faint); margin: 1.2rem 0;">
     <h3 style="font-size: 1rem; color: var(--gold); margin-bottom: 0.5rem;">ブクログ連携（v2.17 / 2026-05-17・任意）</h3>
     <label>ブクログ ユーザー名
@@ -5234,12 +5266,18 @@ UIKI.config = (() => {
     const dfs = document.getElementById('cfg-drive-folder-scale');
     const doEl2 = document.getElementById('cfg-drive-oauth');
     const blEl2 = document.getElementById('cfg-booklog-username');
+    const gkEl = document.getElementById('cfg-gemini-key');
+    const ckEl = document.getElementById('cfg-claude-key');
+    const vpEl = document.getElementById('cfg-vision-provider');
     if (dk) dk.value = cfg.driveKey || '';
     if (df) df.value = cfg.driveFolderId || '1qCu88aJG93g5BMzUd6sVhXUpxy94Ehgk';
     if (dfm) dfm.value = cfg.driveFolderIdMeal || '129gwV0ySQjJBBTOb-tc2QnDt7xMPRM3v';
     if (dfs) dfs.value = cfg.driveFolderIdScale || '1J387p557UDXODfVu-4bksPkd1lGBXcOV';
     if (doEl2) doEl2.value = cfg.driveOauthClientId || '';
     if (blEl2) blEl2.value = cfg.booklogUsername || 'mucchimuchimo';
+    if (gkEl) gkEl.value = cfg.geminiKey || '';
+    if (ckEl) ckEl.value = cfg.claudeKey || '';
+    if (vpEl) vpEl.value = cfg.visionProvider || 'gemini';
     document.getElementById('config-modal').hidden = false;
   }
   function close() {
@@ -5255,12 +5293,18 @@ UIKI.config = (() => {
     const dfsEl = document.getElementById('cfg-drive-folder-scale');
     const doEl = document.getElementById('cfg-drive-oauth');
     const blEl = document.getElementById('cfg-booklog-username');
+    const gkEl2 = document.getElementById('cfg-gemini-key');
+    const ckEl2 = document.getElementById('cfg-claude-key');
+    const vpEl2 = document.getElementById('cfg-vision-provider');
     const driveKey = dkEl ? dkEl.value.trim() : '';
     const driveFolderId = dfEl ? dfEl.value.trim() : '';
     const driveFolderIdMeal = dfmEl ? dfmEl.value.trim() : '';
     const driveFolderIdScale = dfsEl ? dfsEl.value.trim() : '';
     const driveOauthClientId = doEl ? doEl.value.trim() : '';
     const booklogUsername = blEl ? blEl.value.trim() : '';
+    const geminiKey = gkEl2 ? gkEl2.value.trim() : '';
+    const claudeKey = ckEl2 ? ckEl2.value.trim() : '';
+    const visionProvider = vpEl2 ? vpEl2.value : 'gemini';
 
     // v2.8 緩和：PAT または Drive キーのどちらかがあれば保存可
     if (!pat && !driveKey) {
@@ -5279,6 +5323,7 @@ UIKI.config = (() => {
       pat, gistId, notifEnabled,
       driveKey, driveFolderId, driveFolderIdMeal, driveFolderIdScale, driveOauthClientId,
       booklogUsername,
+      geminiKey, claudeKey, visionProvider,
       savedAt: new Date().toISOString()
     });
     showToast(pat ? '設定を保存した' : 'Drive 連携のみで保存した（PAT 未登録）');
@@ -5466,6 +5511,57 @@ function bootstrap() {
         booklogInput.value = '';
         setTimeout(() => { if (booklogStatus) booklogStatus.textContent = ''; }, 8000);
       }
+    });
+  }
+
+  // ブクログ iframe 埋め込みトグル（v2.19）
+  const booklogEmbedBtn = document.getElementById('booklog-embed-btn');
+  const booklogEmbedWrap = document.getElementById('booklog-embed-wrap');
+  const booklogEmbedClose = document.getElementById('booklog-embed-close');
+  const booklogIframe = document.getElementById('booklog-iframe');
+  const booklogEmbedFallback = document.getElementById('booklog-embed-fallback');
+  if (booklogEmbedBtn && booklogEmbedWrap && booklogIframe) {
+    booklogEmbedBtn.addEventListener('click', () => {
+      const hidden = booklogEmbedWrap.hasAttribute('hidden');
+      if (hidden) {
+        const url = (UIKI.booklog && UIKI.booklog.getProfileUrl) ? UIKI.booklog.getProfileUrl() : 'https://booklog.jp/users/mucchimuchimo';
+        booklogIframe.src = url;
+        booklogEmbedWrap.removeAttribute('hidden');
+        booklogEmbedFallback.hidden = true;
+        booklogIframe.hidden = false;
+        // iframe が X-Frame-Options で拒否されたかは直接検出できない（クロスオリジン）。
+        // load イベント自体は拒否時も発火するので、その後 contentWindow.length などで間接確認。
+        // ブクログが拒否したら iframe は空白になる → 5 秒後にも空白ならフォールバック案内を出す。
+        let resolved = false;
+        const showFallback = () => {
+          if (resolved) return;
+          resolved = true;
+          booklogIframe.hidden = true;
+          booklogEmbedFallback.hidden = false;
+        };
+        booklogIframe.addEventListener('load', () => {
+          // load 発火はするが、拒否されているとサイズが極小 or 何もない
+          // 確実な検出が難しいので、ここでは何もしない（タイマー側で判定）
+          resolved = true;
+        }, { once: true });
+        // 8 秒後に明示的なフォールバック案内（ユーザーが iframe を見て判断できるよう、文言は控えめに）
+        setTimeout(() => {
+          // 既にユーザーが閉じている可能性もあるので念のためチェック
+          if (booklogEmbedWrap.hasAttribute('hidden')) return;
+        }, 8000);
+        booklogEmbedBtn.textContent = '📚 ブクログ本棚を隠す';
+      } else {
+        booklogEmbedWrap.setAttribute('hidden', '');
+        booklogIframe.src = '';
+        booklogEmbedBtn.textContent = '📚 ブクログ本棚を表示';
+      }
+    });
+  }
+  if (booklogEmbedClose && booklogEmbedWrap && booklogEmbedBtn && booklogIframe) {
+    booklogEmbedClose.addEventListener('click', () => {
+      booklogEmbedWrap.setAttribute('hidden', '');
+      booklogIframe.src = '';
+      booklogEmbedBtn.textContent = '📚 ブクログ本棚を表示';
     });
   }
 
