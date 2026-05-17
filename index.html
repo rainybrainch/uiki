@@ -3266,21 +3266,19 @@ main { padding-bottom: 5.2rem; }
       <a class="yomu-link" href="https://rainybrainch.github.io/yomu/" target="_blank" rel="noopener">読雨を開く →</a>
     </div>
 
-    <!-- PDF Page 2 風の 2 大カード -->
+    <!-- v2.56 2 大カード（簡素化） -->
     <div class="uwiki-bigcards">
       <button class="uwiki-bigcard gravity-bigcard" data-go="home" aria-label="重力雨域を開く">
-        <div class="bigcard-icon">⏳</div>
+        <div class="bigcard-icon">🏜</div>
         <div class="bigcard-title">重力雨域</div>
-        <div class="bigcard-sub">Internal</div>
-        <p class="bigcard-desc">内向きの引力。自分の星、熱量、理想、夢。砂のように密度が高く、沈潜していく創造の領域。主観的な「想い」を蓄積する場所。</p>
-        <div class="bigcard-cta">→ タスクと砂のログを開く</div>
+        <div class="bigcard-sub">Internal ── 内向き</div>
+        <p class="bigcard-desc">タスク・砂・名言・読書・服牢365</p>
       </button>
       <button class="uwiki-bigcard attraction-bigcard" data-go="uwiki" aria-label="引力雨域を開く">
-        <div class="bigcard-icon">👁</div>
+        <div class="bigcard-icon">💧</div>
         <div class="bigcard-title">引力雨域</div>
-        <div class="bigcard-sub">External</div>
-        <p class="bigcard-desc">外向きの引力。他者から見えた自分。客観的な数値、健康状態、社会的ステータス。AIが「図る」ことで暴かれる現実の姿。</p>
-        <div class="bigcard-cta">→ 数値と成長グラフを開く</div>
+        <div class="bigcard-sub">External ── 外向き</div>
+        <p class="bigcard-desc">体重・ランク・カロリー・気分</p>
       </button>
     </div>
 
@@ -8543,80 +8541,7 @@ function bootstrap() {
       catch(e) { showToast('UwikiAI モジュール未ロード'); }
     });
   }
-  // v2.31 旧 FAB（互換・実際は新 FAB で置き換え済）
-  const fab = document.getElementById('quick-fab-legacy');
-  const fabBtn = document.getElementById('qf-toggle');
-  const fabMenu = document.getElementById('qf-menu');
-  if (fab && fabBtn && fabMenu) {
-    fabBtn.addEventListener('click', () => {
-      const isOpen = !fabMenu.hasAttribute('hidden');
-      if (isOpen) { fabMenu.setAttribute('hidden', ''); fab.classList.remove('open'); }
-      else { fabMenu.removeAttribute('hidden'); fab.classList.add('open'); }
-    });
-    fabMenu.addEventListener('click', e => {
-      const item = e.target.closest('[data-qf]');
-      if (!item) return;
-      const act = item.dataset.qf;
-      fabMenu.setAttribute('hidden', '');
-      fab.classList.remove('open');
-      if (act === 'uwikiai') {
-        // v2.45 UwikiAI チャットを雨域内モーダルで開く（外部遷移しない）
-        UIKI.uwikiai.open();
-      } else if (act === 'quick-task') {
-        // v2.35 クイックタスク追加ダイアログを開く
-        document.getElementById('qf-task-text').value = '';
-        document.getElementById('qf-task-modal').hidden = false;
-        setTimeout(() => document.getElementById('qf-task-text').focus(), 100);
-      } else if (act === 'retry') {
-        // v2.35 Vision 直前失敗をリトライ
-        const lastFail = UIKI.store.get('vision_last_failed', null);
-        if (!lastFail || !lastFail.btnId) {
-          showToast('直前の失敗データがありません');
-          return;
-        }
-        if (Date.now() - lastFail.ts > 60 * 60 * 1000) {
-          showToast('失敗から 1 時間以上経過 ── 通常ボタンから実行を');
-          return;
-        }
-        const btn = document.getElementById(lastFail.btnId);
-        if (btn) {
-          switchTab('uwiki');
-          setTimeout(() => { btn.click(); btn.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 200);
-        } else {
-          showToast('リトライ対象のボタンが見つかりません');
-        }
-      } else if (act === 'sand') {
-        switchTab('home');
-        setTimeout(() => {
-          const t = document.getElementById('sand-text');
-          if (t) { t.focus(); t.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
-        }, 200);
-      } else if (act === 'quote') {
-        switchTab('home');
-        setTimeout(() => {
-          const t = document.getElementById('sand-text');
-          if (t) { t.focus(); t.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
-          showToast('テキストを入れて「⚡ 名言として刻む」を押す');
-        }, 200);
-      } else if (act === 'analyze') {
-        switchTab('uwiki');
-        setTimeout(() => {
-          const btn = document.getElementById('ts-analyze-now');
-          if (btn) { btn.click(); btn.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
-          else showToast('Drive 設定が必要');
-        }, 200);
-      } else if (act === 'config') {
-        UIKI.config.open();
-      }
-    });
-    // 外側クリックで閉じる
-    document.addEventListener('click', e => {
-      if (!fab.contains(e.target) && !fabMenu.hasAttribute('hidden')) {
-        fabMenu.setAttribute('hidden', '');
-        fab.classList.remove('open');
-      }
-    });
-  }
+  // v2.56 旧 FAB（quick-fab-legacy）コード残骸を削除 ── v2.45 で単一 UwikiAI ボタンに置換済
 
   // v2.35 クイックタスク追加ダイアログ配線
   const qfTaskModal = document.getElementById('qf-task-modal');
@@ -8796,12 +8721,7 @@ function bootstrap() {
         const m = document.getElementById(id);
         if (m && !m.hidden) m.hidden = true;
       });
-      // クイック FAB も閉じる
-      const fm = document.getElementById('qf-menu');
-      if (fm && !fm.hasAttribute('hidden')) {
-        fm.setAttribute('hidden', '');
-        document.getElementById('quick-fab').classList.remove('open');
-      }
+      // v2.56 旧 FAB のクリーンアップは削除済
     }
   });
 
