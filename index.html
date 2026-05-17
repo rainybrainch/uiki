@@ -2960,7 +2960,7 @@ main { padding-bottom: 5.2rem; }
 <canvas id="rain-canvas"></canvas>
 
 <header class="app-header">
-  <div class="logo">☔ 雨域 <span style="font-size: 0.65rem; letter-spacing: 0.3em; color: var(--dim); margin-left: 0.4em;">UIKI</span></div>
+  <div class="logo" id="header-logo" role="button" tabindex="0" style="cursor: pointer;" title="雨域メインへ">☔ 雨域 <span style="font-size: 0.65rem; letter-spacing: 0.3em; color: var(--dim); margin-left: 0.4em;">UIKI</span></div>
   <div id="header-now" style="margin-left: auto; margin-right: 0.8rem; font-family: var(--mono); font-size: 0.78rem; color: var(--dim); white-space: nowrap;"></div>
   <button id="menu-toggle" class="menu-btn" aria-label="メニュー">☰</button>
 </header>
@@ -3674,14 +3674,16 @@ main { padding-bottom: 5.2rem; }
     <div class="drawer-sub">雨域図 ── 全プロジェクト横断のタスクハブ</div>
   </div>
   <ul class="drawer-list">
-    <li><a data-tab="uwiki-main"><span class="dr-icon">🌧</span><span>雨域（メイン）</span></a></li>
-    <li><a data-tab="home"><span class="dr-icon">⏳</span><span>重力雨域（タスクハブ）</span></a></li>
-    <li><a data-tab="uwiki"><span class="dr-icon">👁</span><span>引力雨域（数値）</span></a></li>
-    <li><a data-tab="tasks"><span class="dr-icon">📋</span><span>　└ タスク一覧</span></a></li>
-    <li><a data-tab="projects"><span class="dr-icon">📁</span><span>　└ プロジェクト</span></a></li>
-    <li><a data-tab="log"><span class="dr-icon">📅</span><span>　└ 365日の記録</span></a></li>
-    <li><a id="dr-add"><span class="dr-icon">➕</span><span>タスクを追加</span></a></li>
-    <li><a id="dr-config"><span class="dr-icon">⚙️</span><span>設定（PAT・通知）</span></a></li>
+    <li><a data-tab="uwiki-main"><span class="dr-icon">🌧</span><span>雨域メイン</span></a></li>
+    <li><a data-tab="home"><span class="dr-icon">🏜</span><span>重力雨域（内向き）</span></a></li>
+    <li><a data-tab="uwiki"><span class="dr-icon">💧</span><span>引力雨域（外向き）</span></a></li>
+    <li style="border-top: 1px solid var(--faint); margin-top: 0.4rem; padding-top: 0.4rem;"><a data-tab="tasks"><span class="dr-icon">📋</span><span>タスク一覧</span></a></li>
+    <li><a data-tab="projects"><span class="dr-icon">📁</span><span>プロジェクト</span></a></li>
+    <li><a data-tab="log"><span class="dr-icon">📅</span><span>365日の記録</span></a></li>
+    <li><a href="honbako/" target="_self"><span class="dr-icon">📚</span><span>本棚（読書管理）</span></a></li>
+    <li style="border-top: 1px solid var(--faint); margin-top: 0.4rem; padding-top: 0.4rem;"><a id="dr-add"><span class="dr-icon">➕</span><span>タスクを追加</span></a></li>
+    <li><a id="dr-uwikiai"><span class="dr-icon">🤖</span><span>UwikiAI チャット</span></a></li>
+    <li><a id="dr-config"><span class="dr-icon">⚙️</span><span>設定</span></a></li>
   </ul>
   <button class="drawer-close" id="drawer-close">× 閉じる</button>
 </aside>
@@ -8434,6 +8436,13 @@ function bootstrap() {
     showToast('✓ ホーム画面に追加されました');
   });
 
+  // v2.60 ロゴクリックで雨域メインへ
+  const headerLogo = document.getElementById('header-logo');
+  if (headerLogo) {
+    headerLogo.addEventListener('click', () => { try { switchTab('uwiki-main'); } catch(e) {} });
+    headerLogo.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); switchTab('uwiki-main'); } });
+  }
+
   // v2.59 ヘッダーに今日の日時表示（1分ごとに更新）
   function updateHeaderTime() {
     const el = document.getElementById('header-now');
@@ -8937,6 +8946,14 @@ function bootstrap() {
     closeDrawer();
     UIKI.config.open();
   });
+  // v2.60 UwikiAI ドロワーから起動
+  const drUwikiai = document.getElementById('dr-uwikiai');
+  if (drUwikiai) {
+    drUwikiai.addEventListener('click', () => {
+      closeDrawer();
+      try { UIKI.uwikiai.open(); } catch(e) { showToast('UwikiAI 未ロード'); }
+    });
+  }
 
   // 初期タブ復元（v2.4：デフォルトは雨域メイン）
   const initialTab = UIKI.store.get('current_tab', 'uwiki-main');
