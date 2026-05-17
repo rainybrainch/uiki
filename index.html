@@ -5620,10 +5620,23 @@ UIKI.uwiki = (function() {
     let yomuEntries = [];
     try { yomuEntries = (UIKI.yomu && UIKI.yomu.state) ? (UIKI.yomu.state().entries || []) : []; } catch(e){}
 
-    // ある日のエントリ数を返すヘルパー
+    // 日付判定ヘルパー（v2.49：entry.date 優先・無ければ created_at）
     const inRange = (tsStr, dStart, dEnd) => {
       if (!tsStr) return false;
       const t = new Date(tsStr).getTime();
+      return t >= dStart && t < dEnd;
+    };
+    // 読雨エントリの実効日：date（YYYYMMDD or YYYY-MM-DD）優先 → created_at
+    const entryEffectiveTime = (e) => {
+      if (e.date) {
+        const d = String(e.date);
+        if (/^\d{8}$/.test(d)) return new Date(+d.slice(0,4), +d.slice(4,6)-1, +d.slice(6,8)).getTime();
+        if (/^\d{4}-\d{2}-\d{2}/.test(d)) return new Date(d.slice(0,10) + 'T00:00:00').getTime();
+      }
+      return e.created_at ? new Date(e.created_at).getTime() : 0;
+    };
+    const entryInRange = (e, dStart, dEnd) => {
+      const t = entryEffectiveTime(e);
       return t >= dStart && t < dEnd;
     };
 
@@ -5633,14 +5646,14 @@ UIKI.uwiki = (function() {
       labels.push((d.getMonth()+1) + '/' + d.getDate());
       const dStart = d.getTime(), dEnd = next.getTime();
 
-      // 重力：砂のログ（weight 合計）+ 完了タスク + 読雨の quote/book/memo
+      // 重力：砂のログ + 完了タスク + 読雨の quote/book/memo（実効日）
       let gSum = 0;
       gSum += sandLog.reduce((s, x) => inRange(x.created_at || x.createdAt, dStart, dEnd) ? s + (Number(x.weight) || 1) : s, 0);
       gSum += tasks.filter(t => t.completed && t.completedAt && inRange(t.completedAt, dStart, dEnd)).length * 2;
-      gSum += yomuEntries.filter(e => ['quote', 'book', 'memo'].includes(e.type) && inRange(e.created_at, dStart, dEnd)).length;
+      gSum += yomuEntries.filter(e => ['quote', 'book', 'memo'].includes(e.type) && entryInRange(e, dStart, dEnd)).length;
 
-      // 引力：読雨の health / body_scan / self
-      let aCount = yomuEntries.filter(e => ['health', 'body_scan', 'self'].includes(e.type) && inRange(e.created_at, dStart, dEnd)).length;
+      // 引力：読雨の health / body_scan / self（実効日）
+      let aCount = yomuEntries.filter(e => ['health', 'body_scan', 'self'].includes(e.type) && entryInRange(e, dStart, dEnd)).length;
 
       gravSeries.push(gSum);
       attrSeries.push(aCount);
