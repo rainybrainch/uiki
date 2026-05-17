@@ -2966,7 +2966,10 @@ main { padding-bottom: 5.2rem; }
 
 <header class="app-header">
   <div class="logo" id="header-logo" role="button" tabindex="0" style="cursor: pointer;" title="雨域メインへ">☔ 雨域 <span style="font-size: 0.65rem; letter-spacing: 0.3em; color: var(--dim); margin-left: 0.4em;">UIKI</span></div>
-  <div id="header-now" style="margin-left: auto; margin-right: 0.8rem; font-family: var(--mono); font-size: 0.78rem; color: var(--dim); white-space: nowrap;"></div>
+  <div style="margin-left: auto; margin-right: 0.8rem; display: flex; flex-direction: column; align-items: flex-end; gap: 0.1rem;">
+    <div id="header-now" style="font-family: var(--mono); font-size: 0.74rem; color: var(--dim); white-space: nowrap;"></div>
+    <div id="header-tab" style="font-family: var(--sans); font-size: 0.68rem; color: var(--tab-accent); white-space: nowrap; font-weight: 600;"></div>
+  </div>
   <button id="menu-toggle" class="menu-btn" aria-label="メニュー">☰</button>
 </header>
 
@@ -8065,9 +8068,15 @@ UIKI.config = (() => {
     const vpEl2 = document.getElementById('cfg-vision-provider');
     const vaEl2 = document.getElementById('cfg-vision-auto');
     const driveKey = dkEl ? dkEl.value.trim() : '';
-    const driveFolderId = dfEl ? dfEl.value.trim() : '';
-    const driveFolderIdMeal = dfmEl ? dfmEl.value.trim() : '';
-    const driveFolderIdScale = dfsEl ? dfsEl.value.trim() : '';
+    // v2.68 Drive フォルダ URL からも ID 抽出可能に
+    const extractDriveFolderId = (val) => {
+      if (!val) return '';
+      const m = val.match(/drive\.google\.com\/drive\/folders\/([a-zA-Z0-9_-]+)/);
+      return m ? m[1] : val.trim();
+    };
+    const driveFolderId = extractDriveFolderId(dfEl ? dfEl.value : '');
+    const driveFolderIdMeal = extractDriveFolderId(dfmEl ? dfmEl.value : '');
+    const driveFolderIdScale = extractDriveFolderId(dfsEl ? dfsEl.value : '');
     const driveOauthClientId = doEl ? doEl.value.trim() : '';
     const booklogUsername = blEl ? blEl.value.trim() : '';
     const geminiKey = gkEl2 ? gkEl2.value.trim() : '';
@@ -8407,6 +8416,13 @@ function bootstrap() {
         const text = resp?.candidates?.[0]?.content?.parts?.[0]?.text || '応答なし';
         out.style.display = 'block';
         out.innerHTML = '<strong>🤖 ' + period + ' の月次総評</strong><br>' + text.replace(/\n/g, '<br>');
+        // v2.68 月次総評を localStorage に保存（最大 12 ヶ月分）
+        try {
+          const history = UIKI.store.get('monthly_summary_history', []);
+          const filtered = history.filter(h => h.period !== period);
+          filtered.unshift({ period, text: text.trim(), ts: new Date().toISOString() });
+          UIKI.store.set('monthly_summary_history', filtered.slice(0, 12));
+        } catch(e) {}
       } catch(e) {
         showToast('✗ ' + (e.message || '失敗'));
       } finally {
@@ -9366,6 +9382,12 @@ function bootstrap() {
       if (visited.date !== todayStr) { visited.date = todayStr; visited.tabs = []; }
       if (!visited.tabs.includes(name)) visited.tabs.push(name);
       UIKI.store.set('tab_visits', visited);
+    } catch(e) {}
+    // v2.68 ヘッダーに現在タブ名表示
+    try {
+      const tabLabel = { 'uwiki-main': '🌧 雨域メイン', 'home': '🏜 重力雨域', 'uwiki': '💧 引力雨域', 'tasks': '📋 タスク', 'projects': '📁 プロジェクト', 'log': '📅 365日記録' };
+      const ht = document.getElementById('header-tab');
+      if (ht) ht.textContent = tabLabel[name] || '';
     } catch(e) {}
     // 2P カラー：body にタブ名のクラスを付与（引力タブで白系テーマに切替）
     document.body.classList.remove('tab-home', 'tab-uwiki', 'tab-tasks', 'tab-projects', 'tab-log');
