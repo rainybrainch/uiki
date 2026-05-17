@@ -104,6 +104,13 @@ body.delete-mode [data-yomu-id]:hover::after { background: rgba(220, 50, 30, 1);
   border-color: var(--tab-accent);
   color: #fff;
 }
+.self-spark {
+  flex: 0 0 80px;
+  height: 20px;
+  margin-left: auto;
+  opacity: 0.7;
+}
+@media (max-width: 600px) { .self-spark { flex: 0 0 60px; } }
 
 /* モバイル下部クイック FAB（v2.31 / 2026-05-17） */
 .quick-fab {
@@ -3100,18 +3107,21 @@ main { padding-bottom: 5.2rem; }
           <div class="self-chips" data-metric="mood">
             <button data-v="1">😞 1</button><button data-v="2">😐 2</button><button data-v="3">🙂 3</button><button data-v="4">😄 4</button><button data-v="5">🤩 5</button>
           </div>
+          <svg class="ts-spark self-spark" id="self-spark-mood" viewBox="0 0 100 20" preserveAspectRatio="none" aria-hidden="true"></svg>
         </div>
         <div class="self-row">
           <span class="self-label">⚡ 疲労</span>
           <div class="self-chips" data-metric="fatigue">
             <button data-v="1">完全 1</button><button data-v="2">回復 2</button><button data-v="3">普通 3</button><button data-v="4">疲労 4</button><button data-v="5">限界 5</button>
           </div>
+          <svg class="ts-spark self-spark" id="self-spark-fatigue" viewBox="0 0 100 20" preserveAspectRatio="none" aria-hidden="true"></svg>
         </div>
         <div class="self-row">
           <span class="self-label">🍽 空腹</span>
           <div class="self-chips" data-metric="hunger">
             <button data-v="1">満腹 1</button><button data-v="2">普通 2</button><button data-v="3">小腹 3</button><button data-v="4">空腹 4</button><button data-v="5">激空 5</button>
           </div>
+          <svg class="ts-spark self-spark" id="self-spark-hunger" viewBox="0 0 100 20" preserveAspectRatio="none" aria-hidden="true"></svg>
         </div>
       </div>
       <div class="ts-grid">
@@ -4288,10 +4298,30 @@ UIKI.yomu = (function() {
       state.entries = Array.isArray(parsed.entries) ? parsed.entries : [];
       state.loaded = true;
       state.error = null;
+      // v2.34 1 日 1 回バックアップを localStorage にミラー
+      try {
+        const lastBackup = UIKI.store.get('yomu_backup_date', null);
+        const today = new Date().toISOString().slice(0, 10);
+        if (lastBackup !== today) {
+          UIKI.store.set('yomu_backup', { date: today, entries: state.entries, ts: new Date().toISOString() });
+          UIKI.store.set('yomu_backup_date', today);
+        }
+      } catch(e) { /* バックアップ失敗は無視 */ }
       renderAll();
     } catch (e) {
       state.error = String(e && e.message || e);
       console.warn('yomu fetch failed', e);
+      // v2.34 fetch 失敗時、バックアップがあれば一時的に表示
+      try {
+        const backup = UIKI.store.get('yomu_backup', null);
+        if (backup && Array.isArray(backup.entries) && backup.entries.length) {
+          state.entries = backup.entries;
+          state.loaded = true;
+          state.error = '⚠ バックアップ表示中（' + (backup.date || '日付不明') + ' 取得）';
+          renderAll();
+          return;
+        }
+      } catch(e2) {}
       renderError();
     }
   }
@@ -4791,6 +4821,17 @@ UIKI.yomu = (function() {
     const linePath = 'M' + points.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' L');
     const fillPath = linePath + ' L' + w + ',' + h + ' L0,' + h + ' Z';
     svg.innerHTML = '<path class="ts-spark-fill" d="' + fillPath + '"/><path d="' + linePath + '"/>';
+
+    // v2.34 自己申告 sparkline：過去 7 日の各 metric 推移
+    ['mood', 'fatigue', 'hunger'].forEach(metric => {
+      const last7 = entries
+        .filter(e => e.type === 'self' && e.metric === metric)
+        .sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''))
+        .slice(0, 7)
+        .reverse()
+        .map(e => Number(e.value));
+      drawSparkline('self-spark-' + metric, last7);
+    });
 
     // v2.32 自己申告チップの状態復元 + クリック配線（renderTodaySummary の度に再配線して状態 sync）
     document.querySelectorAll('.self-chips').forEach(grp => {
@@ -6841,6 +6882,8 @@ function bootstrap() {
         const history = UIKI.store.get('vision_history', []);
         history.unshift({ ok: false, kind, error: msg.slice(0, 80), ts: new Date().toISOString() });
         UIKI.store.set('vision_history', history.slice(0, 20));
+        // v2.34 直前失敗を保存（リトライ用）
+        UIKI.store.set('vision_last_failed', { kind, btnId: btn.id, ts: Date.now() });
         // エラーパターンに応じてヒントを出す
         let hint = '';
         if (/CORS|fetch|画像取得/i.test(msg)) hint = '\n→ Drive API キーがフォルダにアクセス可能か確認';
