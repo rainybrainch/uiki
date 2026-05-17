@@ -172,6 +172,12 @@ body.delete-mode [data-yomu-id]:hover::after { background: rgba(220, 50, 30, 1);
 }
 .qf-item span:first-child { font-size: 1.1rem; }
 .qf-item:hover { border-color: var(--tab-accent); }
+.qf-item.qf-primary {
+  background: linear-gradient(135deg, rgba(212, 145, 92, 0.95) 0%, rgba(58, 111, 201, 0.95) 100%);
+  color: #fff;
+  border-color: rgba(255,255,255,0.3);
+  font-weight: 600;
+}
 body.tab-uwiki .qf-item {
   background: rgba(255,255,255,0.95);
   color: rgba(0,0,0,0.85);
@@ -3437,16 +3443,17 @@ main { padding-bottom: 5.2rem; }
   </button>
 </nav>
 
-<!-- モバイル下部クイックアクション（v2.31 / 2026-05-17） -->
+<!-- モバイル下部クイックアクション（v2.44：UwikiAI 起動追加） -->
 <div class="quick-fab" id="quick-fab" role="toolbar" aria-label="クイックアクション">
   <button type="button" id="qf-toggle" class="qf-main" aria-label="クイック操作">＋</button>
   <div class="qf-menu" id="qf-menu" hidden>
+    <button type="button" data-qf="uwikiai" class="qf-item qf-primary" title="UwikiAI（雨域の AI 管理人）を開く"><span>🤖</span><span class="qf-label">UwikiAI</span></button>
     <button type="button" data-qf="quick-task" class="qf-item" title="タスクを即追加"><span>📝</span><span class="qf-label">タスク追加</span></button>
-    <button type="button" data-qf="sand" class="qf-item" title="砂を沈める"><span>✨</span><span class="qf-label">砂</span></button>
-    <button type="button" data-qf="quote" class="qf-item" title="名言として刻む"><span>⚡</span><span class="qf-label">名言</span></button>
-    <button type="button" data-qf="analyze" class="qf-item" title="今すぐ全て分析"><span>🔍</span><span class="qf-label">分析</span></button>
+    <button type="button" data-qf="sand" class="qf-item" title="砂を沈める（重力雨域へ）"><span>✨</span><span class="qf-label">砂</span></button>
+    <button type="button" data-qf="quote" class="qf-item" title="名言として刻む（読雨へ）"><span>⚡</span><span class="qf-label">名言</span></button>
+    <button type="button" data-qf="analyze" class="qf-item" title="引力雨域の全画像を AI 分析"><span>🔍</span><span class="qf-label">分析</span></button>
     <button type="button" data-qf="retry" class="qf-item" title="Vision 直前失敗をリトライ"><span>🔁</span><span class="qf-label">リトライ</span></button>
-    <button type="button" data-qf="config" class="qf-item" title="設定"><span>⚙️</span><span class="qf-label">設定</span></button>
+    <button type="button" data-qf="config" class="qf-item" title="設定（PAT・キー・テーマ等）"><span>⚙️</span><span class="qf-label">設定</span></button>
   </div>
 </div>
 
@@ -7924,7 +7931,12 @@ function bootstrap() {
       const act = item.dataset.qf;
       fabMenu.setAttribute('hidden', '');
       fab.classList.remove('open');
-      if (act === 'quick-task') {
+      if (act === 'uwikiai') {
+        // v2.44 UwikiAI（Claude プロジェクト）を別タブで開く
+        // ユーザーが Claude モバイルアプリで「UwikiAI」プロジェクトを開く想定
+        window.open('https://claude.ai/projects', '_blank', 'noopener');
+        showToast('🤖 Claude を開きました ── 「UwikiAI」プロジェクトを選択');
+      } else if (act === 'quick-task') {
         // v2.35 クイックタスク追加ダイアログを開く
         document.getElementById('qf-task-text').value = '';
         document.getElementById('qf-task-modal').hidden = false;
