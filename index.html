@@ -3298,6 +3298,12 @@ main { padding-bottom: 5.2rem; }
       <div class="jh-text" id="jh-text">情報の「滴」が、あなたの未来を形作る砂となりますように。</div>
     </div>
 
+    <!-- v2.61 「今日まだ自撮り無い」リマインダー（朝〜昼帯のみ表示） -->
+    <div id="selfie-reminder" hidden style="margin: 0.8rem auto; max-width: 720px; padding: 0.7rem 1.2rem; background: rgba(184,122,58,0.12); border: 1px solid rgba(184,122,58,0.4); border-radius: 0.4rem; font-size: 0.85rem; color: rgba(255,255,255,0.85); display:flex; align-items:center; justify-content:space-between; gap:0.6rem; flex-wrap:wrap;">
+      <span>🤳 <strong>今日まだ自撮りしていない</strong> ── 朝の鏡前で撮影 → Drive → 自動分析</span>
+      <button id="selfie-reminder-dismiss" style="background: transparent; border: 1px solid var(--faint); color: var(--dim); padding: 0.3rem 0.7rem; border-radius: 999px; font-size: 0.74rem; cursor: pointer;">後で</button>
+    </div>
+
     <!-- 読雨統合バナー（v2.5 / 2026-05-16） -->
     <div class="yomu-banner">
       <div class="yomu-banner-info">
@@ -3318,12 +3324,14 @@ main { padding-bottom: 5.2rem; }
         <div class="bigcard-title">重力雨域</div>
         <div class="bigcard-sub">Internal ── 内向き</div>
         <p class="bigcard-desc">タスク・砂・名言・読書・服牢365</p>
+        <div class="bigcard-stats" id="bigcard-stats-gravity" style="font-size: 0.74rem; color: rgba(255,255,255,0.6); margin-top: 0.5rem; line-height: 1.5;">─</div>
       </button>
       <button class="uwiki-bigcard attraction-bigcard" data-go="uwiki" aria-label="引力雨域を開く">
         <div class="bigcard-icon">💧</div>
         <div class="bigcard-title">引力雨域</div>
         <div class="bigcard-sub">External ── 外向き</div>
         <p class="bigcard-desc">体重・ランク・カロリー・気分</p>
+        <div class="bigcard-stats" id="bigcard-stats-attraction" style="font-size: 0.74rem; color: rgba(255,255,255,0.6); margin-top: 0.5rem; line-height: 1.5;">─</div>
       </button>
     </div>
 
@@ -5070,6 +5078,48 @@ UIKI.yomu = (function() {
     renderMonthlyReview();
     renderCalendar();
     renderFukurou365();
+    renderBigcardStats();
+  }
+
+  // v2.61 雨域メインの bigcard に最新サマリーを表示
+  function renderBigcardStats() {
+    const today = new Date();
+    const todayStr = today.toISOString().slice(0, 10);
+    const todayYmd = todayStr.replace(/-/g, '');
+    const entries = state.entries || [];
+    const tasks = UIKI.store.get('tasks', []);
+    const sandLog = UIKI.store.get('sand_log', []);
+
+    // 重力サマリー
+    const gEl = document.getElementById('bigcard-stats-gravity');
+    if (gEl) {
+      const doneToday = tasks.filter(t => t.completed && t.completedAt && t.completedAt.slice(0,10) === todayStr).length;
+      const remain = tasks.filter(t => !t.completed && !t.stain).length;
+      const sandCount = sandLog.filter(s => (s.created_at || s.createdAt || '').slice(0,10) === todayStr).length;
+      const quoteCount = entries.filter(e => e.type === 'quote').length;
+      gEl.innerHTML = '☑ 今日 ' + doneToday + ' / 残り ' + remain + '　✨ 砂 ' + sandCount + '　💬 名言 ' + quoteCount;
+    }
+    // 引力サマリー
+    const aEl = document.getElementById('bigcard-stats-attraction');
+    const scans = entries.filter(e => e.type === 'body_scan').sort((a,b) => (b.created_at||'').localeCompare(a.created_at||''));
+    if (aEl) {
+      const weights = entries.filter(e => e.type === 'health' && e.metric === 'weight').sort((a,b) => (b.date||'').localeCompare(a.date||''));
+      const latestW = weights[0];
+      const latestRank = scans[0] ? scans[0].rank : null;
+      const todayCal = entries.filter(e => e.type === 'health' && e.metric === 'meal_calories' && (e.date === todayYmd || e.date === todayStr)).reduce((s,e) => s + Number(e.value||0), 0);
+      aEl.innerHTML = '⚖️ ' + (latestW ? latestW.value + 'kg' : '—') + '　🤳 ' + (latestRank || '—') + '　🍽 ' + (todayCal ? todayCal.toFixed(0) + 'kcal' : '—');
+    }
+
+    // v2.61 「今日まだ自撮り無い」リマインダー（5-13時帯・拒否済でない時のみ表示）
+    const reminder = document.getElementById('selfie-reminder');
+    if (reminder) {
+      const hour = today.getHours();
+      const dismissed = UIKI.store.get('selfie_reminder_dismissed', '');
+      const todayHasScan = scans.some(s => (s.date === todayYmd) || ((s.created_at||'').slice(0,10) === todayStr));
+      const inMorning = hour >= 5 && hour < 13;
+      const show = inMorning && !todayHasScan && dismissed !== todayStr;
+      reminder.hidden = !show;
+    }
   }
 
   // v2.50/v2.51 カレンダー一覧（全データ対応・両タブ共有）
@@ -8436,6 +8486,16 @@ function bootstrap() {
     showToast('✓ ホーム画面に追加されました');
   });
 
+  // v2.61 自撮りリマインダー dismiss
+  const selfieDismiss = document.getElementById('selfie-reminder-dismiss');
+  if (selfieDismiss) {
+    selfieDismiss.addEventListener('click', () => {
+      const todayStr = new Date().toISOString().slice(0, 10);
+      UIKI.store.set('selfie_reminder_dismissed', todayStr);
+      document.getElementById('selfie-reminder').hidden = true;
+    });
+  }
+
   // v2.60 ロゴクリックで雨域メインへ
   const headerLogo = document.getElementById('header-logo');
   if (headerLogo) {
@@ -8449,7 +8509,10 @@ function bootstrap() {
     if (!el) return;
     const d = new Date();
     const dow = ['日','月','火','水','木','金','土'][d.getDay()];
-    el.textContent = (d.getMonth()+1) + '/' + d.getDate() + ' (' + dow + ') ' + ('0'+d.getHours()).slice(-2) + ':' + ('0'+d.getMinutes()).slice(-2);
+    const h = d.getHours();
+    // v2.61 時刻に応じた絵文字
+    const emoji = h < 5 ? '🌌' : h < 10 ? '🌅' : h < 16 ? '☀️' : h < 19 ? '🌆' : '🌙';
+    el.textContent = emoji + ' ' + (d.getMonth()+1) + '/' + d.getDate() + ' (' + dow + ') ' + ('0'+d.getHours()).slice(-2) + ':' + ('0'+d.getMinutes()).slice(-2);
   }
   updateHeaderTime();
   setInterval(updateHeaderTime, 60000);
