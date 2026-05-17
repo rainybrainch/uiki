@@ -3028,9 +3028,17 @@ main { padding-bottom: 5.2rem; }
   <!-- v2.58 服牢365 + ロードマップを 2 カラムで並べる（モバイルは縦） -->
   <div class="philosophy-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; margin: 1rem 0;">
 
-  <!-- v2.52 服牢365：今日の哲学一言 -->
+  <!-- v2.52/v2.64 服牢365：今日の哲学一言 + 核 1-5 絞り込み -->
   <section class="yomu-section reveal fukurou365-section" style="margin: 0;">
     <h3>📅 服牢365 <span class="yomu-from" id="f365-day">今日</span></h3>
+    <div style="display:flex; gap:0.25rem; margin-bottom: 0.5rem; flex-wrap: wrap;">
+      <button class="f365-core-tab attraction-add-btn active" data-core="all" style="margin: 0; padding: 0.2rem 0.55rem; font-size: 0.7rem;">全て</button>
+      <button class="f365-core-tab attraction-add-btn" data-core="1" style="margin: 0; padding: 0.2rem 0.55rem; font-size: 0.7rem;">核1 創造</button>
+      <button class="f365-core-tab attraction-add-btn" data-core="2" style="margin: 0; padding: 0.2rem 0.55rem; font-size: 0.7rem;">核2 重引</button>
+      <button class="f365-core-tab attraction-add-btn" data-core="3" style="margin: 0; padding: 0.2rem 0.55rem; font-size: 0.7rem;">核3 凝縮</button>
+      <button class="f365-core-tab attraction-add-btn" data-core="4" style="margin: 0; padding: 0.2rem 0.55rem; font-size: 0.7rem;">核4 ｱﾅﾃﾞｼﾞ</button>
+      <button class="f365-core-tab attraction-add-btn" data-core="5" style="margin: 0; padding: 0.2rem 0.55rem; font-size: 0.7rem;">核5 利他愛</button>
+    </div>
     <blockquote style="font-family: var(--serif); font-size: 1.02rem; line-height: 1.7; color: rgba(255,255,255,0.85); padding: 0.6rem 1rem; border-left: 3px solid var(--tab-accent); background: rgba(var(--tab-accent-rgb), 0.06); border-radius: 0.3rem; margin: 0.4rem 0;">
       <p id="f365-text">読み込み中…</p>
       <footer style="font-size: 0.74rem; color: var(--dim); margin-top: 0.4rem;" id="f365-core">── 服牢井像</footer>
@@ -3486,10 +3494,21 @@ main { padding-bottom: 5.2rem; }
         </div>
       </div>
 
-      <!-- v2.63 ランク推移折れ線グラフ -->
+      <!-- v2.63 ランク推移折れ線グラフ + v2.64 凡例 -->
       <div style="margin-bottom: 1rem;">
         <h4 style="font-size:0.88rem; font-family:var(--serif); color: rgba(var(--tab-accent-rgb), 0.85); margin-bottom: 0.5rem;">📈 ランク推移（過去14日）</h4>
         <svg id="rank-trend-chart" viewBox="0 0 600 120" preserveAspectRatio="none" style="width: 100%; height: 100px; background: rgba(255,255,255,0.03); border-radius: 0.4rem; padding: 4px;"></svg>
+        <div style="display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.4rem; font-size: 0.66rem;">
+          <span class="rank-badge rank-S">S</span>
+          <span class="rank-badge rank-A+">A+</span>
+          <span class="rank-badge rank-A">A</span>
+          <span class="rank-badge rank-B+">B+</span>
+          <span class="rank-badge rank-B">B</span>
+          <span class="rank-badge rank-C+">C+</span>
+          <span class="rank-badge rank-C">C</span>
+          <span class="rank-badge rank-D">D</span>
+          <span style="color: var(--dim); align-self: center;">完璧 → 要休養</span>
+        </div>
       </div>
 
       <!-- 身体スキャン履歴（type=body_scan・ランク付き） -->
@@ -5427,7 +5446,8 @@ UIKI.yomu = (function() {
       const last = Number(sorted[sorted.length - 1].value);
       const delta = last - first;
       wAvgEl.textContent = avg.toFixed(1) + ' kg';
-      wDelEl.textContent = (delta >= 0 ? '+' : '') + delta.toFixed(1) + ' kg（月内）';
+      const pct = first ? (delta / first) * 100 : 0;
+      wDelEl.textContent = (delta >= 0 ? '+' : '') + delta.toFixed(1) + ' kg (' + (pct >= 0 ? '+' : '') + pct.toFixed(1) + '%)';
     } else {
       wAvgEl.textContent = '—';
       wDelEl.textContent = '記録なし';
@@ -5535,7 +5555,8 @@ UIKI.yomu = (function() {
     }
   }
 
-  // v2.52 服牢365：今日の核言葉（読雨の type=quote から日替わり選出）
+  // v2.52/v2.64 服牢365：今日の核言葉（読雨の type=quote から日替わり選出 + 核絞り込み）
+  let _f365CoreFilter = 'all';
   function renderFukurou365() {
     const textEl = document.getElementById('f365-text');
     const coreEl = document.getElementById('f365-core');
@@ -5547,7 +5568,12 @@ UIKI.yomu = (function() {
     // 読雨の名言を全件取得（清書層・is_draft=false 優先 → 不足したら draft も含む）
     const quotes = byType('quote');
     const pureQuotes = quotes.filter(q => !q.is_draft);
-    const pool = pureQuotes.length ? pureQuotes : quotes;
+    let pool = pureQuotes.length ? pureQuotes : quotes;
+    // v2.64 核絞り込み
+    if (_f365CoreFilter !== 'all') {
+      const filtered = pool.filter(q => String(q.core) === String(_f365CoreFilter));
+      if (filtered.length) pool = filtered;
+    }
     if (!pool.length) {
       // フォールバック：内蔵 5 言（5 本柱）
       const fallback = [
@@ -5557,9 +5583,11 @@ UIKI.yomu = (function() {
         { text: 'アナログ × デジタルのキメラ。手描き／肉体 × AI／電子。', core: 4 },
         { text: '利他的な愛と大団円。全員等身大の相互干渉。', core: 5 }
       ];
-      const idx = dayOfYear % fallback.length;
-      textEl.textContent = fallback[idx].text;
-      if (coreEl) coreEl.textContent = '── 服牢井像 ／ 核' + fallback[idx].core + '（読雨に名言を貯めるとこちらが優先表示されます）';
+      const filteredFb = _f365CoreFilter === 'all' ? fallback : fallback.filter(f => String(f.core) === String(_f365CoreFilter));
+      const useFb = filteredFb.length ? filteredFb : fallback;
+      const idx = dayOfYear % useFb.length;
+      textEl.textContent = useFb[idx].text;
+      if (coreEl) coreEl.textContent = '── 服牢井像 ／ 核' + useFb[idx].core + '（読雨に名言を貯めるとこちらが優先表示されます）';
       return;
     }
     const idx = dayOfYear % pool.length;
@@ -6029,7 +6057,8 @@ UIKI.yomu = (function() {
     renderCalendar,
     calPrev: () => { _calOffset--; renderCalendar(); },
     calNext: () => { _calOffset++; renderCalendar(); },
-    calToday: () => { _calOffset = 0; renderCalendar(); }
+    calToday: () => { _calOffset = 0; renderCalendar(); },
+    setF365CoreFilter: (core) => { _f365CoreFilter = core; renderFukurou365(); }
   };
 })();
 
@@ -8211,6 +8240,15 @@ function bootstrap() {
       const target = tab.dataset.arc;
       document.querySelectorAll('.archive-tab').forEach(t => t.classList.toggle('active', t.dataset.arc === target));
       document.querySelectorAll('.archive-pane').forEach(p => p.hidden = (p.dataset.arcPane !== target));
+    });
+  });
+
+  // v2.64 服牢365 核絞り込みタブ
+  document.querySelectorAll('.f365-core-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const core = tab.dataset.core;
+      document.querySelectorAll('.f365-core-tab').forEach(t => t.classList.toggle('active', t.dataset.core === core));
+      try { UIKI.yomu.setF365CoreFilter && UIKI.yomu.setF365CoreFilter(core); } catch(e){}
     });
   });
 
