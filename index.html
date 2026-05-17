@@ -3386,24 +3386,11 @@ main { padding-bottom: 5.2rem; }
       <h3>📊 身体データ <span class="yomu-from">type=health / body_scan</span></h3>
       <p class="yomu-desc">体組成計の数値・自撮りランク・最新画像のグラフを一覧。雨域 AI への中核データ。</p>
 
-      <!-- 自撮りランク評価サマリー -->
-      <div class="body-rank-summary" style="padding: 0.8rem 1rem; margin-bottom: 1rem; background: rgba(var(--tab-accent-rgb), 0.06); border-radius: 0.5rem; border-left: 3px solid var(--tab-accent);">
-        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.6rem;">
-          <div>
-            <span style="font-size:0.78rem; color:var(--dim);">🤳 最新の自撮りランク</span>
-            <div style="display:flex; align-items:center; gap:0.6rem; margin-top:0.2rem;">
-              <span id="bd-latest-rank" style="font-family: var(--serif); font-size: 1.8rem; font-weight: 600; color: var(--tab-accent); letter-spacing:0.05em;">—</span>
-              <span id="bd-latest-rank-detail" style="font-size:0.78rem; color:var(--dim); line-height:1.4;">分析待ち</span>
-            </div>
-          </div>
-          <div style="display:flex; gap:0.4rem; flex-wrap:wrap;">
-            <button class="sand-submit ai-analyze-btn" id="drive-analyze-body-btn" style="background: #e74c3c; color: #fff; padding:0.5rem 0.9rem; font-size:0.82rem;" title="最新自撮り画像から S-D 厳格ランクで評価">🔍 ランク評価する</button>
-            <button class="sand-submit ai-analyze-btn" id="drive-analyze-scale-btn" style="background: #e74c3c; color: #fff; padding:0.5rem 0.9rem; font-size:0.82rem;" title="最新体組成計画像から数値抽出">🔍 数値化する</button>
-          </div>
-        </div>
-        <div style="margin-top:0.6rem; font-size:0.72rem; color:var(--dim); line-height:1.5;">
-          <strong>判定基準（厳格）</strong>：S=完璧 / A+=非常に良好 / A=良好 / B+=やや良好 / B=普通 / C+=やや疲労 / C=疲労 / D=要休養
-        </div>
+      <!-- v2.53 簡素化：分析ボタンのみコンパクトに配置（ランク表示は今日のサマリーに集約） -->
+      <div style="display:flex; gap:0.4rem; flex-wrap:wrap; margin-bottom: 1rem;">
+        <button class="sand-submit ai-analyze-btn" id="drive-analyze-body-btn" style="background: #e74c3c; color: #fff; padding:0.5rem 0.9rem; font-size:0.82rem;" title="最新自撮り画像から S-D 厳格ランクで評価（S/A+/A/B+/B/C+/C/D）">🔍 ランク評価する</button>
+        <button class="sand-submit ai-analyze-btn" id="drive-analyze-scale-btn" style="background: #e74c3c; color: #fff; padding:0.5rem 0.9rem; font-size:0.82rem;" title="最新体組成計画像から数値抽出">🔍 数値化する</button>
+        <span style="font-size:0.7rem; color:var(--dim); align-self:center;">S=完璧 / D=要休養（8段階）</span>
       </div>
 
       <!-- 健康データ（読雨 type=health の数値グラフ） -->
@@ -3463,16 +3450,10 @@ main { padding-bottom: 5.2rem; }
       <p class="yomu-desc">食事画像から AI が「何を食べたか」「カロリー・PFC」を推定して記録。<br>
         ※ カロリー推移は <a href="#" id="goto-body-data" style="color: var(--tab-accent);">📊 身体データ</a> の数値推移にも反映され、体組成計の数値と一緒に「食事量 ↔ 体重」の関係が見えます。</p>
 
-      <!-- 今日の食事サマリー -->
-      <div class="meal-today-summary" style="padding: 0.8rem 1rem; margin-bottom: 1rem; background: rgba(var(--tab-accent-rgb), 0.06); border-radius: 0.5rem; border-left: 3px solid var(--tab-accent);">
-        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.6rem;">
-          <div>
-            <span style="font-size:0.78rem; color:var(--dim);">🍽 今日食べたもの</span>
-            <div id="meal-today-items" style="font-size:0.92rem; margin-top:0.2rem; line-height:1.5;">記録なし</div>
-            <div id="meal-today-total" style="font-size:0.78rem; color:var(--dim); margin-top:0.3rem;">カロリー合計: —</div>
-          </div>
-          <button class="sand-submit ai-analyze-btn" id="drive-analyze-meal-btn" style="background: #e74c3c; color: #fff; padding:0.5rem 0.9rem; font-size:0.82rem;" title="最新画像からカロリー・PFC を推定">🔍 AI で食事推定</button>
-        </div>
+      <!-- v2.53 簡素化：分析ボタンのみコンパクト（カロリー合計は今日のサマリーで参照） -->
+      <div style="display:flex; gap:0.4rem; flex-wrap:wrap; margin-bottom: 1rem;">
+        <button class="sand-submit ai-analyze-btn" id="drive-analyze-meal-btn" style="background: #e74c3c; color: #fff; padding:0.5rem 0.9rem; font-size:0.82rem;" title="最新画像からカロリー・PFC を推定">🔍 AI で食事推定</button>
+        <span style="font-size:0.7rem; color:var(--dim); align-self:center;">今日のカロリー合計は上部サマリー参照</span>
       </div>
 
       <!-- 食事履歴（最近 7 食） -->
@@ -3500,15 +3481,16 @@ main { padding-bottom: 5.2rem; }
       </details>
     </section>
 
-    <!-- 月次振り返り（v2.27 / 2026-05-17 / 雨域 AI の前段） -->
+    <!-- 月次振り返り（v2.27 / 2026-05-17 / 雨域 AI の前段・v2.53 で折りたたみデフォルト） -->
     <section class="yomu-section reveal" id="monthly-review">
-      <h3>📅 月次振り返り <span class="yomu-from" id="monthly-period">今月</span></h3>
-      <p class="yomu-desc">今月のデータ集約。雨域 AI への材料。<br>
-        <button class="attraction-add-btn" id="monthly-refresh" style="margin: 0.4rem 0 0; padding: 0.4rem 0.9rem; font-size: 0.78rem;">🔄 集計を更新</button>
-        <button class="attraction-add-btn" id="monthly-prev" style="margin: 0.4rem 0.3rem 0; padding: 0.4rem 0.9rem; font-size: 0.78rem;">← 先月</button>
-        <button class="attraction-add-btn" id="monthly-next" style="margin: 0.4rem 0 0; padding: 0.4rem 0.9rem; font-size: 0.78rem;">来月 →</button>
-      </p>
-      <div class="ts-grid" id="monthly-grid">
+      <details>
+        <summary style="cursor:pointer; font-family: var(--serif); font-size: 1.05rem; font-weight: 500; color: rgba(255,255,255,0.85); padding: 0.4rem 0;">📅 月次振り返り <span class="yomu-from" id="monthly-period" style="margin-left: 0.6rem;">今月</span></summary>
+        <p class="yomu-desc" style="margin-top: 0.6rem;">今月のデータ集約。雨域 AI への材料。<br>
+          <button class="attraction-add-btn" id="monthly-refresh" style="margin: 0.4rem 0 0; padding: 0.4rem 0.9rem; font-size: 0.78rem;">🔄 集計を更新</button>
+          <button class="attraction-add-btn" id="monthly-prev" style="margin: 0.4rem 0.3rem 0; padding: 0.4rem 0.9rem; font-size: 0.78rem;">← 先月</button>
+          <button class="attraction-add-btn" id="monthly-next" style="margin: 0.4rem 0 0; padding: 0.4rem 0.9rem; font-size: 0.78rem;">来月 →</button>
+        </p>
+        <div class="ts-grid" id="monthly-grid">
         <div class="ts-card">
           <div class="ts-label">⚖️ 体重平均</div>
           <div class="ts-value" id="m-weight-avg">—</div>
@@ -3542,6 +3524,7 @@ main { padding-bottom: 5.2rem; }
           <div class="ts-sub" id="m-book-stars">★ 平均 —</div>
         </div>
       </div>
+      </details>
     </section>
 
     <!-- v2.44 客観指標（手動）── 削除：身体データ統合セクションで代替されたため -->
