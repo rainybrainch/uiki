@@ -29,14 +29,21 @@
   --tab-accent-rgb: 201, 168, 76;
 }
 
-/* タブ別アクセント切替（重力＝金／引力＝青の 2P カラー） */
+/* タブ別アクセント切替（v2.43：重力＝砂／引力＝雨青／メイン＝深青） */
 .tab-page[data-tab="home"] {
-  --tab-accent: #c9a84c;
-  --tab-accent-rgb: 201, 168, 76;
+  /* 砂色：温かい橙茶 */
+  --tab-accent: #d4915c;
+  --tab-accent-rgb: 212, 145, 92;
 }
 .tab-page[data-tab="uwiki"] {
+  /* 雨色：青 */
   --tab-accent: #2456b8;
   --tab-accent-rgb: 36, 86, 184;
+}
+.tab-page[data-tab="uwiki-main"] {
+  /* 深青：基幹 */
+  --tab-accent: #5d8ad1;
+  --tab-accent-rgb: 93, 138, 209;
 }
 
 /* 読雨エントリ削除モード（v2.33 / 2026-05-17） */
@@ -226,6 +233,17 @@ body.tab-uwiki-main .tab-page[data-tab="uwiki-main"] {
 body.tab-uwiki-main .uwiki-main-hero h1,
 body.tab-uwiki-main .uwiki-main-hero .uwiki-en {
   color: #d4b86a;
+}
+/* v2.43 重力雨域カード（uwiki-bigcard）のホバー色を砂色に */
+body.tab-uwiki-main .uwiki-bigcard.gravity-bigcard:hover {
+  border-color: #d4915c;
+}
+body.tab-uwiki-main .uwiki-bigcard.gravity-bigcard .bigcard-title {
+  color: #d4915c;
+}
+body.tab-uwiki-main .uwiki-bigcard.gravity-bigcard svg use {
+  color: #d4915c;
+  fill: #d4915c;
 }
 body.tab-uwiki-main .uwiki-main-hero p {
   color: rgba(220, 230, 255, 0.6);
@@ -3366,18 +3384,18 @@ main { padding-bottom: 5.2rem; }
 
 </main>
 
-<!-- ボトムタブナビ（v2.4 / 2026-05-16 / 雨域メイン構造へ転換） -->
+<!-- ボトムタブナビ（v2.43 / 並び順変更：重力（砂）｜雨域｜引力（雨）） -->
 <nav class="tab-bar" id="tab-bar">
+  <button data-tab="home">
+    <span class="tab-icon">🏜</span>
+    <span class="tab-label">重力雨域</span>
+  </button>
   <button data-tab="uwiki-main" class="active">
     <span class="tab-icon">🌧</span>
     <span class="tab-label">雨域</span>
   </button>
-  <button data-tab="home">
-    <span class="tab-icon">⏳</span>
-    <span class="tab-label">重力雨域</span>
-  </button>
   <button data-tab="uwiki">
-    <span class="tab-icon">👁</span>
+    <span class="tab-icon">💧</span>
     <span class="tab-label">引力雨域</span>
   </button>
 </nav>
@@ -3838,10 +3856,11 @@ UIKI.vision = (function() {
   }
 
   // ───── Gemini API 呼び出し ─────
+  // モデル名のフォールバック：新しいもの → 旧いもの の順で試す（404 対策）
+  const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
   async function callGemini(prompt, imageB64, mimeType) {
     const cfg = UIKI.store.get('config', {});
     if (!cfg.geminiKey) throw new Error('Gemini API キー未設定');
-    const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=' + encodeURIComponent(cfg.geminiKey);
     const body = {
       contents: [{
         parts: [
@@ -3854,19 +3873,34 @@ UIKI.vision = (function() {
         response_mime_type: 'application/json'
       }
     };
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-    if (!res.ok) {
-      const err = await res.text();
-      throw new Error('Gemini API エラー: ' + res.status + ' ' + err.slice(0, 120));
+    let lastErr = null;
+    for (const model of GEMINI_MODELS) {
+      try {
+        const url = 'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + encodeURIComponent(cfg.geminiKey);
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        if (!res.ok) {
+          const err = await res.text();
+          // 404（モデル不在）なら次のモデルへ。その他のエラー（429・401等）は即時 throw
+          if (res.status === 404) {
+            lastErr = new Error('Gemini ' + model + ' 404');
+            continue;
+          }
+          throw new Error('Gemini API エラー: ' + res.status + ' ' + err.slice(0, 120));
+        }
+        const data = await res.json();
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!text) throw new Error('Gemini 応答が空');
+        return text;
+      } catch (e) {
+        lastErr = e;
+        if (!/404/.test(String(e.message || ''))) throw e;
+      }
     }
-    const data = await res.json();
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!text) throw new Error('Gemini 応答が空');
-    return text;
+    throw lastErr || new Error('Gemini 全モデルで失敗');
   }
 
   // ───── Claude API 呼び出し ─────
@@ -7256,7 +7290,7 @@ function bootstrap() {
           today_calories: todayCal || null
         };
         const prompt = `あなたは服牢井像（円舵）の個人アシスタント「服牢AI」。以下のデータから、創造主の今日 1 日を 1 行（40-60 字）で評し、明日への一言を添えてください。診断・指導は禁止、客観観察と励ましのみ。\n\nデータ:\n` + JSON.stringify(data, null, 2);
-        const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=' + encodeURIComponent(cfg.geminiKey);
+        const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + encodeURIComponent(cfg.geminiKey);
         const res = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -7311,7 +7345,7 @@ function bootstrap() {
           recent_ai_comments: aiComments
         };
         const prompt = `あなたは服牢井像（円舵）の個人アシスタント「服牢AI」。\n以下のデータから、創造主に対する「明日への具体的な一言助言」を 60-90 字で。\n- 残タスクの優先度に触れる（重要度や期限）\n- 自己申告データ（気分/疲労）から無理しない範囲で\n- 漫画修行・ぽもじかん・マネぼう教科書・雨域完成のうち、明日触れるべきものを 1 つだけ提案\n- 診断・指導は禁止、励まし口調で\n\nデータ:\n` + JSON.stringify(data, null, 2);
-        const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=' + encodeURIComponent(cfg.geminiKey);
+        const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + encodeURIComponent(cfg.geminiKey);
         const res = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -7638,10 +7672,10 @@ function bootstrap() {
     showToast('✓ ホーム画面に追加されました');
   });
 
-  // v2.39 テーマ適用（auto / dark / light）
+  // v2.39 テーマ適用（auto / dark / light）── v2.43: デフォルトを dark に変更
   function applyTheme() {
     const c = UIKI.store.get('config', {});
-    const theme = c.theme || 'auto';
+    const theme = c.theme || 'dark';  // v2.43: 既定を dark に固定（背景不安定の解消）
     document.body.classList.remove('theme-dark', 'theme-light');
     let active = theme;
     if (theme === 'auto') {
@@ -8010,7 +8044,7 @@ function bootstrap() {
       result.textContent = '';
       try {
         const prompt = `次のタスク内容から、最も適切なプロジェクト ID とデバイスを JSON で返してください。説明禁止。\n\nタスク: ${text}\n\nプロジェクト ID 候補:\n- p_rbai_inc: RBAI Inc.（社内・思想・全般）\n- p_uiki: UIKI/雨域（自己管理アプリ）\n- p_zaitoku: ぽもじかん（時間管理ゲーム）\n- p_shinmane: 新マネぼう（経済学習メタゲーム）\n- p_manebou: マネぼう塾HP（公開サイト）\n- p_shonigan: 小児がんAIコーチ（母上案件）\n- p_raina: RAINA（物語）\n- p_amesekai: 雨と世界（創作）\n- p_fukurouzo: 服牢井像（思想サイト）\n- p_story: 物語工房\n- p_atelier: 電脳工房\n- p_askup: ASK-UP（質問道場）\n- p_sasuke: SASUKE 系\n- p_omasasu: OMASASU\n\nデバイス候補:\n- any: 思考・判断のみ\n- pc: コード/編集が必要\n- mobile: 連絡/確認/移動中\n\nJSON 形式:\n{ "projectId": "<id>", "device": "<any|pc|mobile>", "reason": "<理由 20 字以内>" }`;
-        const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=' + encodeURIComponent(cfg.geminiKey);
+        const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + encodeURIComponent(cfg.geminiKey);
         const res = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
