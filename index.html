@@ -2866,6 +2866,7 @@ main { padding-bottom: 5.2rem; }
         <button class="sand-submit" id="sand-submit">沈める</button>
         <button class="attraction-add-btn" id="sand-mic-btn" style="margin: 0; padding: 0.45rem 0.7rem; font-size: 0.8rem;" title="音声入力で砂を口述">🎤</button>
         <button class="attraction-add-btn" id="sand-quote-btn" style="margin: 0; padding: 0.45rem 0.9rem; font-size: 0.8rem;" title="入力した砂を「名言」として読雨に投入">⚡ 名言として刻む</button>
+        <button class="attraction-add-btn" id="sand-memo-btn" style="margin: 0; padding: 0.45rem 0.9rem; font-size: 0.8rem;" title="入力した砂を「メモ」として読雨に投入（type=memo）">📝 メモとして保存</button>
       </div>
     </div>
     <div class="sand-log" id="sand-log">
@@ -5585,6 +5586,43 @@ UIKI.uwiki = (function() {
       }
     }
 
+    // v2.40 メモとして保存（type=memo）
+    const memoBtn = document.getElementById('sand-memo-btn');
+    if (memoBtn && textarea) {
+      memoBtn.addEventListener('click', async () => {
+        const v = (textarea.value || '').trim();
+        if (!v) { showToast('テキストを入力してから「メモとして保存」'); return; }
+        const cfg = UIKI.store.get('config', {});
+        if (!cfg.pat) {
+          showToast('読雨書込には PAT 必要 ── 設定モーダルを開きます');
+          setTimeout(() => UIKI.config.open(), 1200);
+          return;
+        }
+        memoBtn.disabled = true;
+        const orig = memoBtn.textContent;
+        memoBtn.textContent = '📝 保存中…';
+        try {
+          await UIKI.yomu.addEntry({
+            type: 'memo',
+            text: v,
+            tags: [],
+            weight: state.currentWeight || 1,
+            source: 'sand_memo',
+            created_at: new Date().toISOString(),
+            date: new Date().toISOString().slice(0, 10)
+          });
+          showToast('📝 メモとして読雨に保存');
+          textarea.value = '';
+          setTimeout(() => { try { UIKI.yomu.fetch(); } catch(e){} }, 1500);
+        } catch (e) {
+          showToast('✗ ' + (e.message || '失敗').slice(0, 80));
+        } finally {
+          memoBtn.disabled = false;
+          memoBtn.textContent = orig;
+        }
+      });
+    }
+
     // v2.29 Quick Add 名言：砂をそのまま type=quote として読雨へ
     const quoteBtn = document.getElementById('sand-quote-btn');
     if (quoteBtn && textarea) {
@@ -7835,6 +7873,59 @@ function bootstrap() {
     qfTaskText.addEventListener('keydown', e => {
       if (e.key === 'Enter') { e.preventDefault(); qfTaskAdd.click(); }
     });
+  }
+
+  // v2.40 自然言語期限解析（明日/明後日/今週末/来週月曜 等）
+  function parseNaturalDeadline(text) {
+    if (!text) return null;
+    const t = text.toLowerCase();
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const fmt = d => d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+    if (/今日|きょう/.test(t)) return fmt(today);
+    if (/明日|あした|あす/.test(t)) { today.setDate(today.getDate() + 1); return fmt(today); }
+    if (/明後日|あさって/.test(t)) { today.setDate(today.getDate() + 2); return fmt(today); }
+    if (/今週末|今週土|今週日/.test(t)) {
+      const dow = now.getDay();
+      const offset = (6 - dow + 7) % 7 || 7;
+      today.setDate(today.getDate() + offset);
+      return fmt(today);
+    }
+    // 来週X曜
+    const dows = { '月': 1, '火': 2, '水': 3, '木': 4, '金': 5, '土': 6, '日': 0 };
+    const m = t.match(/来週([月火水木金土日])/);
+    if (m) {
+      const target = dows[m[1]];
+      const dow = now.getDay();
+      let diff = target - dow + 7;
+      if (diff <= 7) diff += 7; // 必ず来週
+      today.setDate(today.getDate() + diff);
+      return fmt(today);
+    }
+    // 「X日後」「Xd」「Xw」
+    const days = t.match(/(\d+)\s*日(後|以内)/);
+    if (days) { today.setDate(today.getDate() + Number(days[1])); return fmt(today); }
+    // YYYY-MM-DD or MM/DD
+    const ymd = text.match(/(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
+    if (ymd) return ymd[1] + '-' + ('0' + ymd[2]).slice(-2) + '-' + ('0' + ymd[3]).slice(-2);
+    const md = text.match(/(\d{1,2})\/(\d{1,2})/);
+    if (md) {
+      const d = new Date(now.getFullYear(), Number(md[1]) - 1, Number(md[2]));
+      if (d < today) d.setFullYear(d.getFullYear() + 1);
+      return fmt(d);
+    }
+    return null;
+  }
+  // クイックタスク内容欄に変更があったら期限を自動セット
+  const qfTaskTextEl = document.getElementById('qf-task-text');
+  const qfTaskDeadlineEl = document.getElementById('qf-task-deadline');
+  if (qfTaskTextEl && qfTaskDeadlineEl) {
+    qfTaskTextEl.addEventListener('input', () => {
+      if (qfTaskDeadlineEl.dataset.userSet === '1') return; // ユーザーが手で変えたら触らない
+      const detected = parseNaturalDeadline(qfTaskTextEl.value);
+      if (detected) qfTaskDeadlineEl.value = detected;
+    });
+    qfTaskDeadlineEl.addEventListener('change', () => { qfTaskDeadlineEl.dataset.userSet = '1'; });
   }
 
   // v2.36 AI に projectId / device を推定させる
