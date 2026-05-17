@@ -2781,6 +2781,7 @@ main { padding-bottom: 5.2rem; }
         <input type="file" id="drive-upload-input" accept="image/*" capture="user" style="display:none;">
         <button class="sand-submit" id="drive-upload-btn" style="background: var(--tab-accent); color: #fff;">🤳 自撮りを追加（OAuth）</button>
         <button class="attraction-add-btn" id="drive-refresh-btn" style="margin: 0; padding: 0.4rem 1rem;">🔄 今すぐ再読込</button>
+        <button class="attraction-add-btn" id="drive-analyze-body-btn" style="margin: 0; padding: 0.4rem 1rem;" title="最新画像から S-C ランクと観察メモを抽出して読雨に投入">🔍 最新をランク評価</button>
         <span id="drive-upload-status" style="font-size:0.78rem; color: var(--dim); align-self:center;"></span>
       </div>
       <div class="body-scan-grid" id="drive-grid">
@@ -2796,6 +2797,7 @@ main { padding-bottom: 5.2rem; }
         <input type="file" id="drive-upload-scale-input" accept="image/*" capture="environment" style="display:none;">
         <button class="sand-submit" id="drive-upload-scale-btn" style="background: var(--tab-accent); color: #fff;">⚖️ 体組成計を追加（OAuth）</button>
         <button class="attraction-add-btn" id="drive-refresh-scale-btn" style="margin: 0; padding: 0.4rem 1rem;">🔄 今すぐ再読込</button>
+        <button class="attraction-add-btn" id="drive-analyze-scale-btn" style="margin: 0; padding: 0.4rem 1rem;" title="最新画像から数値を抽出して読雨に投入">🔍 最新を数値化</button>
         <span id="drive-upload-scale-status" style="font-size:0.78rem; color: var(--dim); align-self:center;"></span>
       </div>
       <div class="body-scan-grid" id="drive-grid-scale">
@@ -2811,6 +2813,7 @@ main { padding-bottom: 5.2rem; }
         <input type="file" id="drive-upload-meal-input" accept="image/*" capture="environment" style="display:none;">
         <button class="sand-submit" id="drive-upload-meal-btn" style="background: var(--tab-accent); color: #fff;">🍽 食事を追加（OAuth）</button>
         <button class="attraction-add-btn" id="drive-refresh-meal-btn" style="margin: 0; padding: 0.4rem 1rem;">🔄 今すぐ再読込</button>
+        <button class="attraction-add-btn" id="drive-analyze-meal-btn" style="margin: 0; padding: 0.4rem 1rem;" title="最新画像からカロリー・PFC を推定して読雨に投入">🔍 最新を栄養推定</button>
         <span id="drive-upload-meal-status" style="font-size:0.78rem; color: var(--dim); align-self:center;"></span>
       </div>
       <div class="body-scan-grid" id="drive-grid-meal">
@@ -3141,6 +3144,309 @@ UIKI.booklog = (function() {
   }
 
   return { parseCSV, csvToBookEntries, dedupAgainstYomu, importCSVFile, getProfileUrl };
+})();
+
+// ─────────────────────────────────────────────────────────
+// vision: 画像 AI 分析 (v2.22 / 2026-05-17)
+// Gemini メイン + Claude オプション（プロバイダ切替）
+// 体組成計：数値抽出 → type=health に投入
+// 食事：カロリー・PFC 推定 → type=health に投入
+// 自撮り：S-A-B-C ランク → type=body_scan に投入
+// ─────────────────────────────────────────────────────────
+UIKI.vision = (function() {
+
+  // ───── プロバイダ選択ロジック ─────
+  function getActiveProvider() {
+    const cfg = UIKI.store.get('config', {});
+    const pref = cfg.visionProvider || 'gemini';
+    const hasG = !!cfg.geminiKey;
+    const hasC = !!cfg.claudeKey;
+    if (pref === 'gemini' && hasG) return 'gemini';
+    if (pref === 'claude' && hasC) return 'claude';
+    if (pref === 'auto') {
+      if (hasG) return 'gemini';
+      if (hasC) return 'claude';
+    }
+    // フォールバック：希望プロバイダのキーがない時、相方が居れば使う
+    if (hasG) return 'gemini';
+    if (hasC) return 'claude';
+    return null;
+  }
+
+  // ───── 画像 URL → Blob → base64 ─────
+  async function imageUrlToBase64(url) {
+    // Drive の thumbnail URL は CORS 制限がない（apis経由）が、安全策としてfetch試行 → fail なら別経路
+    const res = await fetch(url, { mode: 'cors', credentials: 'omit' });
+    if (!res.ok) throw new Error('画像取得失敗: HTTP ' + res.status);
+    const blob = await res.blob();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result || '';
+        const comma = result.indexOf(',');
+        if (comma < 0) return reject(new Error('base64 変換失敗'));
+        resolve({
+          mimeType: blob.type || 'image/jpeg',
+          data: result.slice(comma + 1)
+        });
+      };
+      reader.onerror = () => reject(new Error('FileReader 失敗'));
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  // ───── Gemini API 呼び出し ─────
+  async function callGemini(prompt, imageB64, mimeType) {
+    const cfg = UIKI.store.get('config', {});
+    if (!cfg.geminiKey) throw new Error('Gemini API キー未設定');
+    const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=' + encodeURIComponent(cfg.geminiKey);
+    const body = {
+      contents: [{
+        parts: [
+          { text: prompt },
+          { inline_data: { mime_type: mimeType, data: imageB64 } }
+        ]
+      }],
+      generationConfig: {
+        temperature: 0.2,
+        response_mime_type: 'application/json'
+      }
+    };
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error('Gemini API エラー: ' + res.status + ' ' + err.slice(0, 120));
+    }
+    const data = await res.json();
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text) throw new Error('Gemini 応答が空');
+    return text;
+  }
+
+  // ───── Claude API 呼び出し ─────
+  async function callClaude(prompt, imageB64, mimeType) {
+    const cfg = UIKI.store.get('config', {});
+    if (!cfg.claudeKey) throw new Error('Claude API キー未設定');
+    const url = 'https://api.anthropic.com/v1/messages';
+    const body = {
+      model: 'claude-sonnet-4-6',
+      max_tokens: 1024,
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'image', source: { type: 'base64', media_type: mimeType, data: imageB64 } },
+          { type: 'text', text: prompt }
+        ]
+      }]
+    };
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': cfg.claudeKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error('Claude API エラー: ' + res.status + ' ' + err.slice(0, 120));
+    }
+    const data = await res.json();
+    const text = data?.content?.[0]?.text;
+    if (!text) throw new Error('Claude 応答が空');
+    return text;
+  }
+
+  // ───── プロバイダ抽象呼び出し ─────
+  async function call(prompt, imageB64, mimeType) {
+    const provider = getActiveProvider();
+    if (!provider) throw new Error('Gemini または Claude のキーが必要');
+    if (provider === 'gemini') return { provider, text: await callGemini(prompt, imageB64, mimeType) };
+    if (provider === 'claude') return { provider, text: await callClaude(prompt, imageB64, mimeType) };
+    throw new Error('不明なプロバイダ');
+  }
+
+  // ───── JSON 抽出（コードブロック越しでも対応） ─────
+  function extractJSON(text) {
+    if (!text) return null;
+    // ```json ... ``` を剥がす
+    let s = text.trim();
+    s = s.replace(/^```(json)?\s*/i, '').replace(/```\s*$/, '');
+    // 先頭の { から最後の } を切り出す
+    const i = s.indexOf('{');
+    const j = s.lastIndexOf('}');
+    if (i < 0 || j <= i) return null;
+    try {
+      return JSON.parse(s.slice(i, j + 1));
+    } catch (e) {
+      console.warn('JSON parse failed', e, s);
+      return null;
+    }
+  }
+
+  // ───── プロンプト定義 ─────
+  const PROMPTS = {
+    scale: `この画像は体組成計の表示画面です。表示されている数値を読み取り、以下の JSON 形式のみで返してください。説明文・前置きは禁止。
+
+{
+  "weight": <体重kg または null>,
+  "body_fat": <体脂肪率% または null>,
+  "muscle": <筋肉量kg または null>,
+  "water": <水分量% または null>,
+  "visceral_fat": <内臓脂肪レベル または null>,
+  "bone_mass": <骨量kg または null>,
+  "basal_metabolism": <基礎代謝kcal または null>,
+  "bmi": <BMI または null>,
+  "note": "<観察メモ・1文・客観的に>"
+}
+
+読み取れない数値は null。値の単位は付けず数値のみ。`,
+    meal: `この画像は食事です。何を食べているかを推定し、以下の JSON 形式のみで返してください。説明文・前置きは禁止。
+
+{
+  "items": ["<料理名1>", "<料理名2>", ...],
+  "calories": <推定総カロリーkcal>,
+  "protein": <推定タンパク質g>,
+  "fat": <推定脂質g>,
+  "carb": <推定炭水化物g>,
+  "note": "<観察メモ・1文・客観的に>"
+}
+
+栄養素は概算で構わない。値の単位は付けず数値のみ。`,
+    body: `この自撮り画像を客観的に観察し、以下の 4 観点を A-E スケールで評価。さらに総合ランクを S/A+/A/B+/B/C+/C で。説明文・前置きは禁止。JSON のみ。
+
+評価軸：
+- skin（肌質）: A=きれい/B=普通/C=少しくすみ/D=荒れ気味/E=要ケア
+- edema（むくみ）: A=なし/B=軽微/C=普通/D=やや目立つ/E=顕著
+- fatigue（疲労感）: A=覚醒/B=普通/C=軽い疲れ/D=明らかな疲労/E=深い疲労
+- energy（覚醒度）: A=高い/B=普通/C=やや低め/D=低い/E=ほとんどなし
+
+総合ランク基準：4観点が主にA→S/A+、平均B→B+/B、Cが混在→C+/C。
+
+{
+  "rank": "<S/A+/A/B+/B/C+/C>",
+  "skin": "<A-E>",
+  "edema": "<A-E>",
+  "fatigue": "<A-E>",
+  "energy": "<A-E>",
+  "memo": "<観察メモ・1-2文・客観的に・医学的診断は禁止>"
+}
+
+医学的アドバイス・ダイエット指導は絶対禁止。客観観察のみ。`
+  };
+
+  // ───── 各種分析（kind = 'scale' | 'meal' | 'body'） ─────
+  async function analyzeImage(imageUrl, kind) {
+    if (!PROMPTS[kind]) throw new Error('不明な kind: ' + kind);
+    const { mimeType, data } = await imageUrlToBase64(imageUrl);
+    const { provider, text } = await call(PROMPTS[kind], data, mimeType);
+    const json = extractJSON(text);
+    if (!json) throw new Error('AI 応答を JSON として解釈できない');
+    return { provider, raw: text, parsed: json };
+  }
+
+  // ───── 結果を 読雨 Gist に投入 ─────
+  async function writeToYomu(kind, parsed, imageUrl) {
+    if (!UIKI.yomu || !UIKI.yomu.addEntriesBatch) {
+      throw new Error('UIKI.yomu モジュール未ロード');
+    }
+    const today = new Date();
+    const ymd = today.getFullYear() + ('0' + (today.getMonth() + 1)).slice(-2) + ('0' + today.getDate()).slice(-2);
+    const hm = ('0' + today.getHours()).slice(-2) + ':' + ('0' + today.getMinutes()).slice(-2);
+
+    const entries = [];
+
+    if (kind === 'scale') {
+      // 体組成計：metric ごとに type=health を作成
+      const metricsMap = {
+        weight: { unit: 'kg' },
+        body_fat: { unit: '%' },
+        muscle: { unit: 'kg' },
+        water: { unit: '%' },
+        visceral_fat: { unit: 'level' },
+        bone_mass: { unit: 'kg' },
+        basal_metabolism: { unit: 'kcal' },
+        bmi: { unit: '' }
+      };
+      Object.keys(metricsMap).forEach(m => {
+        const v = parsed[m];
+        if (v != null && !isNaN(Number(v))) {
+          entries.push({
+            type: 'health',
+            metric: m,
+            value: Number(v),
+            unit: metricsMap[m].unit,
+            date: ymd,
+            time: hm,
+            memo: parsed.note || '（Vision で自動抽出）',
+            source: 'vision_scale'
+          });
+        }
+      });
+    } else if (kind === 'meal') {
+      // 食事：カロリー＋PFC を type=health に
+      const fields = [
+        ['calories', 'kcal'],
+        ['protein', 'g'],
+        ['fat', 'g'],
+        ['carb', 'g']
+      ];
+      fields.forEach(([m, u]) => {
+        const v = parsed[m];
+        if (v != null && !isNaN(Number(v))) {
+          entries.push({
+            type: 'health',
+            metric: 'meal_' + m,
+            value: Number(v),
+            unit: u,
+            date: ymd,
+            time: hm,
+            memo: (parsed.items || []).join(' / ') + (parsed.note ? ' ── ' + parsed.note : ''),
+            source: 'vision_meal'
+          });
+        }
+      });
+    } else if (kind === 'body') {
+      // 自撮り：type=body_scan に
+      entries.push({
+        type: 'body_scan',
+        image_url: imageUrl,
+        memo: parsed.memo || '',
+        rank: parsed.rank || '',
+        skin: parsed.skin || '',
+        edema: parsed.edema || '',
+        fatigue: parsed.fatigue || '',
+        energy: parsed.energy || '',
+        date: ymd,
+        time: hm,
+        source: 'vision_body'
+      });
+    }
+
+    if (!entries.length) {
+      throw new Error('投入可能なデータが空');
+    }
+    await UIKI.yomu.addEntriesBatch(entries);
+    return entries.length;
+  }
+
+  // ───── 公開：fullAnalyze（分析 + 投入を一気通貫） ─────
+  async function fullAnalyze(imageUrl, kind, onProgress) {
+    onProgress && onProgress('画像を取得中…');
+    const result = await analyzeImage(imageUrl, kind);
+    onProgress && onProgress('AI 応答を解析中…');
+    const written = await writeToYomu(kind, result.parsed, imageUrl);
+    onProgress && onProgress('読雨に ' + written + ' 件投入完了（' + result.provider + '）');
+    return { ...result, written };
+  }
+
+  return { getActiveProvider, analyzeImage, fullAnalyze, writeToYomu, PROMPTS };
 })();
 
 // ─────────────────────────────────────────────────────────
@@ -5523,6 +5829,75 @@ function bootstrap() {
       });
     });
   }
+
+  // Vision 分析ボタン共通処理（v2.22 / 2026-05-17）
+  // 最新画像を Gemini/Claude に渡して結果を読雨に投入
+  function getLatestDriveFile(kind) {
+    const states = UIKI.drive.state ? UIKI.drive.state() : null;
+    const st = states && states[kind];
+    if (!st || !st.files || !st.files.length) return null;
+    const arr = st.files.map(f => {
+      const eff = UIKI.drive.getEffectiveDate(f);
+      return Object.assign({}, f, { _date: eff.date });
+    });
+    arr.sort((a, b) => (b._date ? b._date.getTime() : 0) - (a._date ? a._date.getTime() : 0));
+    return arr[0];
+  }
+  function bindAnalyzeButton(btnId, kind, statusId) {
+    const btn = document.getElementById(btnId);
+    if (!btn) return;
+    btn.addEventListener('click', async () => {
+      const cfg = UIKI.store.get('config', {});
+      if (!cfg.geminiKey && !cfg.claudeKey) {
+        showToast('Vision には Gemini または Claude のキーが必要（設定から登録）');
+        return;
+      }
+      if (!cfg.pat) {
+        showToast('読雨へ書き込むには GitHub PAT が必要（設定から登録）');
+        return;
+      }
+      const latest = getLatestDriveFile(kind);
+      if (!latest) {
+        showToast('分析する画像が見つからない（Drive に画像を追加してください）');
+        return;
+      }
+      // thumbnailLink は小さい（s220 等）ので大きく取り直す
+      let imgUrl = latest.thumbnailLink || ('https://drive.google.com/thumbnail?id=' + latest.id + '&sz=w2000');
+      imgUrl = imgUrl.replace(/=s\d+(-c)?$/, '=s2000');
+      const status = statusId ? document.getElementById(statusId) : null;
+      const orig = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = '🔍 解析中…';
+      if (status) status.textContent = '画像取得中…';
+      try {
+        const result = await UIKI.vision.fullAnalyze(imgUrl, kind, msg => {
+          if (status) status.textContent = msg;
+        });
+        const provider = result.provider;
+        const written = result.written;
+        const p = result.parsed || {};
+        let summary = '';
+        if (kind === 'body') summary = 'ランク ' + (p.rank || '?') + ' / ' + (p.memo || '').slice(0, 30);
+        else if (kind === 'scale') summary = '体重 ' + (p.weight || '?') + 'kg / 体脂肪 ' + (p.body_fat || '?') + '%';
+        else if (kind === 'meal') summary = (p.items || []).slice(0, 2).join('・') + ' / ' + (p.calories || '?') + 'kcal';
+        showToast('✓ ' + provider + '：' + summary + ' → 読雨 ' + written + ' 件');
+        if (status) status.textContent = '✓ ' + provider + '：' + written + ' 件投入';
+        // 読雨の再fetch（健康データセクションを更新）
+        setTimeout(() => { try { UIKI.yomu.fetch(); } catch(e){} }, 1500);
+      } catch (e) {
+        console.warn('vision analyze failed', e);
+        showToast('✗ 解析失敗：' + (e.message || String(e)).slice(0, 80));
+        if (status) status.textContent = '✗ ' + (e.message || '失敗').slice(0, 60);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = orig;
+        setTimeout(() => { if (status) status.textContent = ''; }, 10000);
+      }
+    });
+  }
+  bindAnalyzeButton('drive-analyze-body-btn', 'body', 'drive-upload-status');
+  bindAnalyzeButton('drive-analyze-scale-btn', 'scale', 'drive-upload-scale-status');
+  bindAnalyzeButton('drive-analyze-meal-btn', 'meal', 'drive-upload-meal-status');
 
   // Drive アップロードボタン共通処理（v2.11）
   function bindUploadButton(btnId, inputId, statusId, kind) {
