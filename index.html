@@ -39,6 +39,81 @@
   --tab-accent-rgb: 36, 86, 184;
 }
 
+/* 今日のサマリー（v2.24 / 2026-05-17） */
+.today-summary {
+  margin: 1.5rem 0 2rem;
+  padding: 1.2rem;
+  border: 1px solid var(--faint);
+  border-left: 4px solid var(--tab-accent);
+  border-radius: 0.6rem;
+  background: rgba(var(--tab-accent-rgb), 0.04);
+}
+.ts-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin-bottom: 0.8rem;
+  flex-wrap: wrap;
+}
+.ts-header h3 {
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: rgba(255,255,255,0.85);
+  margin: 0;
+}
+.ts-auto-chip {
+  font-family: var(--sans);
+  font-size: 0.74rem;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid var(--faint);
+  border-radius: 999px;
+  cursor: pointer;
+}
+.ts-auto-chip.on {
+  background: rgba(74,140,74,0.2);
+  border-color: rgba(74,140,74,0.6);
+  color: #6db96d;
+}
+.ts-auto-chip.off {
+  background: rgba(255,255,255,0.06);
+  border-color: var(--faint);
+  color: var(--dim);
+}
+.ts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.8rem;
+}
+.ts-card {
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--faint);
+  border-radius: 0.5rem;
+  background: rgba(255,255,255,0.02);
+  text-align: center;
+}
+.ts-label {
+  font-size: 0.78rem;
+  color: var(--dim);
+  margin-bottom: 0.3rem;
+  font-family: var(--sans);
+}
+.ts-value {
+  font-family: var(--mono);
+  font-size: 1.6rem;
+  font-weight: 500;
+  color: var(--tab-accent);
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+}
+.ts-sub {
+  margin-top: 0.3rem;
+  font-size: 0.74rem;
+  color: var(--dim);
+  font-family: var(--sans);
+}
+
 /* 引力タブ：白系・明るいテーマ（v2.21 / 2026-05-17） */
 body.tab-uwiki {
   background: #f0f4fa;
@@ -62,6 +137,22 @@ body.tab-uwiki::after {
   background: rgba(255, 255, 255, 0.7);
   border-color: rgba(0, 0, 0, 0.1);
   border-left-color: rgba(var(--tab-accent-rgb), 0.45);
+}
+.tab-page[data-tab="uwiki"] .today-summary {
+  background: rgba(255, 255, 255, 0.7);
+  border-color: rgba(0, 0, 0, 0.1);
+  border-left-color: var(--tab-accent);
+}
+.tab-page[data-tab="uwiki"] .ts-header h3 {
+  color: rgba(0, 0, 0, 0.85);
+}
+.tab-page[data-tab="uwiki"] .ts-card {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+.tab-page[data-tab="uwiki"] .ts-label,
+.tab-page[data-tab="uwiki"] .ts-sub {
+  color: rgba(0, 0, 0, 0.55);
 }
 .tab-page[data-tab="uwiki"] .yomu-section h3 {
   color: rgba(0, 0, 0, 0.85);
@@ -2771,6 +2862,31 @@ main { padding-bottom: 5.2rem; }
       </div>
     </section>
 
+    <!-- ━━━ 今日のサマリー（v2.24 / 2026-05-17） ━━━ -->
+    <section class="today-summary reveal" id="today-summary">
+      <div class="ts-header">
+        <h3>📊 今日のサマリー</h3>
+        <span class="ts-auto-chip" id="ts-auto-chip" title="設定の「自動分析を有効にする」">自動分析: 確認中…</span>
+      </div>
+      <div class="ts-grid">
+        <div class="ts-card ts-rank">
+          <div class="ts-label">🤳 今日のランク</div>
+          <div class="ts-value" id="ts-rank">—</div>
+          <div class="ts-sub" id="ts-rank-memo">分析待ち</div>
+        </div>
+        <div class="ts-card ts-weight">
+          <div class="ts-label">⚖️ 体重</div>
+          <div class="ts-value" id="ts-weight">—</div>
+          <div class="ts-sub" id="ts-weight-trend">変動なし</div>
+        </div>
+        <div class="ts-card ts-calories">
+          <div class="ts-label">🍽 今日のカロリー</div>
+          <div class="ts-value" id="ts-calories">—</div>
+          <div class="ts-sub" id="ts-calories-sub">PFC 未計算</div>
+        </div>
+      </div>
+    </section>
+
     <!-- ━━━ Drive 画像（撮影してアップする） ━━━ -->
 
     <!-- 自撮り画像（v2.14 / 名称変更 ── Drive フォルダ直接連携） -->
@@ -2780,8 +2896,8 @@ main { padding-bottom: 5.2rem; }
       <div class="drive-actions" style="display:flex; gap:0.6rem; flex-wrap:wrap; margin-bottom:0.8rem;">
         <input type="file" id="drive-upload-input" accept="image/*" capture="user" style="display:none;">
         <button class="sand-submit" id="drive-upload-btn" style="background: var(--tab-accent); color: #fff;">🤳 自撮りを追加（OAuth）</button>
-        <button class="attraction-add-btn" id="drive-refresh-btn" style="margin: 0; padding: 0.4rem 1rem;">🔄 今すぐ再読込</button>
-        <button class="attraction-add-btn" id="drive-analyze-body-btn" style="margin: 0; padding: 0.4rem 1rem;" title="最新画像から S-C ランクと観察メモを抽出して読雨に投入">🔍 最新をランク評価</button>
+        <button class="sand-submit ai-analyze-btn" id="drive-analyze-body-btn" style="background: #e74c3c; color: #fff;" title="最新画像から S-C ランクと観察メモを抽出して読雨に投入">🔍 AI でランク評価する</button>
+        <button class="attraction-add-btn" id="drive-refresh-btn" style="margin: 0; padding: 0.4rem 1rem;">🔄 再読込</button>
         <span id="drive-upload-status" style="font-size:0.78rem; color: var(--dim); align-self:center;"></span>
       </div>
       <div class="body-scan-grid" id="drive-grid">
@@ -2796,8 +2912,8 @@ main { padding-bottom: 5.2rem; }
       <div class="drive-actions" style="display:flex; gap:0.6rem; flex-wrap:wrap; margin-bottom:0.8rem;">
         <input type="file" id="drive-upload-scale-input" accept="image/*" capture="environment" style="display:none;">
         <button class="sand-submit" id="drive-upload-scale-btn" style="background: var(--tab-accent); color: #fff;">⚖️ 体組成計を追加（OAuth）</button>
-        <button class="attraction-add-btn" id="drive-refresh-scale-btn" style="margin: 0; padding: 0.4rem 1rem;">🔄 今すぐ再読込</button>
-        <button class="attraction-add-btn" id="drive-analyze-scale-btn" style="margin: 0; padding: 0.4rem 1rem;" title="最新画像から数値を抽出して読雨に投入">🔍 最新を数値化</button>
+        <button class="sand-submit ai-analyze-btn" id="drive-analyze-scale-btn" style="background: #e74c3c; color: #fff;" title="最新画像から数値を抽出して読雨に投入">🔍 AI で数値化する</button>
+        <button class="attraction-add-btn" id="drive-refresh-scale-btn" style="margin: 0; padding: 0.4rem 1rem;">🔄 再読込</button>
         <span id="drive-upload-scale-status" style="font-size:0.78rem; color: var(--dim); align-self:center;"></span>
       </div>
       <div class="body-scan-grid" id="drive-grid-scale">
@@ -2812,8 +2928,8 @@ main { padding-bottom: 5.2rem; }
       <div class="drive-actions" style="display:flex; gap:0.6rem; flex-wrap:wrap; margin-bottom:0.8rem;">
         <input type="file" id="drive-upload-meal-input" accept="image/*" capture="environment" style="display:none;">
         <button class="sand-submit" id="drive-upload-meal-btn" style="background: var(--tab-accent); color: #fff;">🍽 食事を追加（OAuth）</button>
-        <button class="attraction-add-btn" id="drive-refresh-meal-btn" style="margin: 0; padding: 0.4rem 1rem;">🔄 今すぐ再読込</button>
-        <button class="attraction-add-btn" id="drive-analyze-meal-btn" style="margin: 0; padding: 0.4rem 1rem;" title="最新画像からカロリー・PFC を推定して読雨に投入">🔍 最新を栄養推定</button>
+        <button class="sand-submit ai-analyze-btn" id="drive-analyze-meal-btn" style="background: #e74c3c; color: #fff;" title="最新画像からカロリー・PFC を推定して読雨に投入">🔍 AI でカロリー推定する</button>
+        <button class="attraction-add-btn" id="drive-refresh-meal-btn" style="margin: 0; padding: 0.4rem 1rem;">🔄 再読込</button>
         <span id="drive-upload-meal-status" style="font-size:0.78rem; color: var(--dim); align-self:center;"></span>
       </div>
       <div class="body-scan-grid" id="drive-grid-meal">
@@ -2944,7 +3060,11 @@ main { padding-bottom: 5.2rem; }
       <strong>API キー取得手順</strong>：① <a href="https://console.cloud.google.com/projectcreate" target="_blank">新規プロジェクト作成</a> → ② <a href="https://console.cloud.google.com/apis/library/drive.googleapis.com" target="_blank">Drive API を有効化</a> → ③ <a href="https://console.cloud.google.com/apis/credentials" target="_blank">認証情報 → API キー作成</a>。
     </p>
     <hr style="border: none; border-top: 1px solid var(--faint); margin: 1.2rem 0;">
-    <h3 style="font-size: 1rem; color: var(--gold); margin-bottom: 0.5rem;">Vision AI 連携（v2.19 / 2026-05-17・任意）</h3>
+    <div id="cfg-vision-warn" style="padding: 0.6rem 0.9rem; background: rgba(231,76,60,0.12); border: 1px solid rgba(231,76,60,0.5); border-radius: 0.4rem; margin-bottom: 0.8rem; font-size: 0.82rem; color: #e74c3c; display: none;">
+      ⚠ Vision 機能（自撮りランク評価・体組成計数値化・食事カロリー推定）には<br>
+      <strong>① GitHub PAT</strong>（読雨書き込み用・上の欄）と <strong>② Gemini API キー</strong>（下の欄）の<strong>両方</strong>が必要です。
+    </div>
+    <h3 style="font-size: 1rem; color: var(--gold); margin-bottom: 0.5rem;">Vision AI 連携（v2.19 / 2026-05-17・必須・本機能の核）</h3>
     <p class="cfg-help" style="font-size: 0.78rem; margin-bottom: 0.8rem;">
       Drive の最新画像（自撮り／食事／体組成計）を AI が読み取り、ランク・カロリー・数値を抽出して読雨に投入する。<br>
       <strong>Gemini（無料推奨）</strong>：<a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a> でキー作成・無料枠あり。<br>
@@ -3179,10 +3299,30 @@ UIKI.vision = (function() {
   }
 
   // ───── 画像 URL → Blob → base64 ─────
-  async function imageUrlToBase64(url) {
-    // Drive の thumbnail URL は CORS 制限がない（apis経由）が、安全策としてfetch試行 → fail なら別経路
-    const res = await fetch(url, { mode: 'cors', credentials: 'omit' });
-    if (!res.ok) throw new Error('画像取得失敗: HTTP ' + res.status);
+  // Drive thumbnailLink は CORS が許可されていない可能性が高いので、
+  // Drive ファイル ID が取れる場合は alt=media + API キーで取得する（CORS OK）
+  async function imageUrlToBase64(url, fileId) {
+    let res;
+    let lastErr;
+    const cfg = UIKI.store.get('config', {});
+    // 優先 1: Drive API alt=media（公開フォルダ + API キー）
+    if (fileId && cfg.driveKey) {
+      const apiUrl = 'https://www.googleapis.com/drive/v3/files/' + encodeURIComponent(fileId) + '?alt=media&key=' + encodeURIComponent(cfg.driveKey);
+      try {
+        res = await fetch(apiUrl);
+        if (!res.ok) throw new Error('Drive API HTTP ' + res.status);
+      } catch (e) { lastErr = e; res = null; }
+    }
+    // 優先 2: thumbnailLink を直接 fetch（CORS 通れば動く）
+    if (!res || !res.ok) {
+      try {
+        res = await fetch(url, { mode: 'cors', credentials: 'omit' });
+        if (!res.ok) throw new Error('thumbnail HTTP ' + res.status);
+      } catch (e) { lastErr = e; res = null; }
+    }
+    if (!res || !res.ok) {
+      throw new Error('画像取得失敗（CORS 制限の可能性）: ' + (lastErr && lastErr.message || '不明'));
+    }
     const blob = await res.blob();
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -3347,9 +3487,9 @@ UIKI.vision = (function() {
   };
 
   // ───── 各種分析（kind = 'scale' | 'meal' | 'body'） ─────
-  async function analyzeImage(imageUrl, kind) {
+  async function analyzeImage(imageUrl, kind, fileId) {
     if (!PROMPTS[kind]) throw new Error('不明な kind: ' + kind);
-    const { mimeType, data } = await imageUrlToBase64(imageUrl);
+    const { mimeType, data } = await imageUrlToBase64(imageUrl, fileId);
     const { provider, text } = await call(PROMPTS[kind], data, mimeType);
     const json = extractJSON(text);
     if (!json) throw new Error('AI 応答を JSON として解釈できない');
@@ -3442,9 +3582,9 @@ UIKI.vision = (function() {
   }
 
   // ───── 公開：fullAnalyze（分析 + 投入を一気通貫） ─────
-  async function fullAnalyze(imageUrl, kind, onProgress) {
+  async function fullAnalyze(imageUrl, kind, onProgress, fileId) {
     onProgress && onProgress('画像を取得中…');
-    const result = await analyzeImage(imageUrl, kind);
+    const result = await analyzeImage(imageUrl, kind, fileId);
     onProgress && onProgress('AI 応答を解析中…');
     const written = await writeToYomu(kind, result.parsed, imageUrl);
     onProgress && onProgress('読雨に ' + written + ' 件投入完了（' + result.provider + '）');
@@ -3698,7 +3838,7 @@ UIKI.drive = (function() {
     let imgUrl = latest.thumbnailLink || ('https://drive.google.com/thumbnail?id=' + latest.id + '&sz=w2000');
     imgUrl = imgUrl.replace(/=s\d+(-c)?$/, '=s2000');
     try {
-      const result = await UIKI.vision.fullAnalyze(imgUrl, kind, () => {});
+      const result = await UIKI.vision.fullAnalyze(imgUrl, kind, () => {}, latest.id);
       UIKI.store.set(lastKey, { fileId: latest.id, ts: new Date().toISOString(), failCount: 0 });
       // 読雨セクションを再描画
       setTimeout(() => { try { UIKI.yomu.fetch(); } catch(e){} }, 1500);
@@ -4060,6 +4200,75 @@ UIKI.yomu = (function() {
     renderBodyScans();
     renderQuotes();
     renderBooks();
+    renderTodaySummary();
+  }
+
+  // v2.24 今日のサマリー：最新の body_scan ランク・体重・今日のカロリー合計
+  function renderTodaySummary() {
+    const wrap = document.getElementById('today-summary');
+    if (!wrap) return;
+    const today = new Date();
+    const todayYmd = today.getFullYear() + ('0' + (today.getMonth() + 1)).slice(-2) + ('0' + today.getDate()).slice(-2);
+    const entries = state.entries || [];
+
+    // 1) 最新の body_scan ランク（今日 or 直近）
+    const scans = entries.filter(e => e.type === 'body_scan').sort((a,b) => (b.created_at||'').localeCompare(a.created_at||''));
+    const latestScan = scans[0];
+    const rankEl = document.getElementById('ts-rank');
+    const rankMemoEl = document.getElementById('ts-rank-memo');
+    if (latestScan && latestScan.rank) {
+      rankEl.textContent = latestScan.rank;
+      rankMemoEl.textContent = (latestScan.memo || '').slice(0, 30) || '観察メモなし';
+    } else {
+      rankEl.textContent = '—';
+      rankMemoEl.textContent = '自撮りを「🔍 AI でランク評価」で分析';
+    }
+
+    // 2) 最新の体重 + 推移
+    const weights = entries.filter(e => e.type === 'health' && e.metric === 'weight').sort((a,b) => (b.date||b.created_at||'').localeCompare(a.date||a.created_at||''));
+    const weightEl = document.getElementById('ts-weight');
+    const weightTrendEl = document.getElementById('ts-weight-trend');
+    if (weights.length) {
+      const latest = weights[0];
+      weightEl.textContent = Number(latest.value).toFixed(1) + ' kg';
+      if (weights.length >= 2) {
+        const prev = weights[1];
+        const delta = Number(latest.value) - Number(prev.value);
+        const arrow = delta > 0 ? '↑' : delta < 0 ? '↓' : '→';
+        weightTrendEl.textContent = arrow + ' ' + Math.abs(delta).toFixed(1) + 'kg（前回比）';
+      } else {
+        weightTrendEl.textContent = '初回記録';
+      }
+    } else {
+      weightEl.textContent = '—';
+      weightTrendEl.textContent = '体組成計を「🔍 数値化」で分析';
+    }
+
+    // 3) 今日のカロリー合計
+    const todayCalories = entries.filter(e =>
+      e.type === 'health' && e.metric === 'meal_calories' && (e.date === todayYmd || (e.date || '').replace(/-/g, '') === todayYmd)
+    );
+    const calEl = document.getElementById('ts-calories');
+    const calSubEl = document.getElementById('ts-calories-sub');
+    if (todayCalories.length) {
+      const total = todayCalories.reduce((s, e) => s + Number(e.value || 0), 0);
+      calEl.textContent = total.toFixed(0) + ' kcal';
+      calSubEl.textContent = todayCalories.length + ' 食記録（自動推定）';
+    } else {
+      calEl.textContent = '—';
+      calSubEl.textContent = '食事を「🔍 栄養推定」で分析';
+    }
+
+    // 4) 自動分析チップ
+    const cfg = UIKI.store.get('config', {});
+    const chip = document.getElementById('ts-auto-chip');
+    if (chip) {
+      const isOn = !!cfg.visionAuto && (!!cfg.geminiKey || !!cfg.claudeKey) && !!cfg.pat;
+      chip.classList.toggle('on', isOn);
+      chip.classList.toggle('off', !isOn);
+      chip.textContent = isOn ? '🟢 自動分析 ON' : '⚪ 自動分析 OFF';
+      chip.onclick = () => { try { UIKI.config.open(); } catch(e) {} };
+    }
   }
 
   // 読雨Gist への書き込み（PAT 必須）
@@ -5750,6 +5959,11 @@ UIKI.config = (() => {
     if (ckEl) ckEl.value = cfg.claudeKey || '';
     if (vpEl) vpEl.value = cfg.visionProvider || 'gemini';
     if (vaEl) vaEl.checked = !!cfg.visionAuto;
+    // Vision 警告：PAT または Gemini キー未設定なら警告バナーを表示
+    const visionWarn = document.getElementById('cfg-vision-warn');
+    if (visionWarn) {
+      visionWarn.style.display = (!cfg.pat || !cfg.geminiKey) ? 'block' : 'none';
+    }
     document.getElementById('config-modal').hidden = false;
   }
   function close() {
@@ -5909,11 +6123,13 @@ function bootstrap() {
     btn.addEventListener('click', async () => {
       const cfg = UIKI.store.get('config', {});
       if (!cfg.geminiKey && !cfg.claudeKey) {
-        showToast('Vision には Gemini または Claude のキーが必要（設定から登録）');
+        showToast('Vision には Gemini キーが必要 ── 設定モーダルを開きます');
+        setTimeout(() => UIKI.config.open(), 1200);
         return;
       }
       if (!cfg.pat) {
-        showToast('読雨へ書き込むには GitHub PAT が必要（設定から登録）');
+        showToast('読雨へ書き込むには GitHub PAT が必要 ── 設定モーダルを開きます');
+        setTimeout(() => UIKI.config.open(), 1200);
         return;
       }
       const latest = getLatestDriveFile(kind);
@@ -5932,7 +6148,7 @@ function bootstrap() {
       try {
         const result = await UIKI.vision.fullAnalyze(imgUrl, kind, msg => {
           if (status) status.textContent = msg;
-        });
+        }, latest.id);
         const provider = result.provider;
         const written = result.written;
         const p = result.parsed || {};
