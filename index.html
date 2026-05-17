@@ -2966,6 +2966,11 @@ main { padding-bottom: 5.2rem; }
       </select>
       <small>両方キーがある時、どちらを優先するか。</small>
     </label>
+    <label class="cfg-checkbox" style="display:block; margin-top:0.8rem;">
+      <input type="checkbox" id="cfg-vision-auto">
+      <span>自動分析を有効にする（v2.23）</span>
+      <small>Drive 同期（5分ごと）で新しい画像を検知したら、自動で Vision にかけて読雨に投入。1 画像につき 1 回まで（同じ画像の重複分析はしない）。</small>
+    </label>
     <hr style="border: none; border-top: 1px solid var(--faint); margin: 1.2rem 0;">
     <h3 style="font-size: 1rem; color: var(--gold); margin-bottom: 0.5rem;">ブクログ連携（v2.17 / 2026-05-17・任意）</h3>
     <label>ブクログ ユーザー名
@@ -3655,10 +3660,61 @@ UIKI.drive = (function() {
       st.error = null;
       st.fetchedAt = new Date().toISOString();
       renderKind(kind);
+      // v2.23 半自動 Vision：設定で有効なら最新画像を自動分析
+      try { await maybeAutoAnalyze(kind); } catch(e) { console.warn('auto-analyze failed', e); }
     } catch (e) {
       st.error = String(e && e.message || e);
       console.warn('drive fetch failed (' + kind + ')', e);
       renderError(kind);
+    }
+  }
+
+  // v2.23 NEW 画像を検知して自動分析（last_analyzed_{kind} で重複防止・5分クールダウン）
+  async function maybeAutoAnalyze(kind) {
+    const cfg = UIKI.store.get('config', {});
+    if (!cfg.visionAuto) return;
+    if (!cfg.geminiKey && !cfg.claudeKey) return;
+    if (!cfg.pat) return;
+    if (!UIKI.vision) return;
+    const st = STATES[kind];
+    if (!st || !st.files.length) return;
+    // 最新ファイル（実効日付ソート）
+    const enriched = st.files.map(f => {
+      const eff = getEffectiveDate(f);
+      return Object.assign({}, f, { _date: eff.date });
+    });
+    enriched.sort((a, b) => (b._date ? b._date.getTime() : 0) - (a._date ? a._date.getTime() : 0));
+    const latest = enriched[0];
+    if (!latest) return;
+    const lastKey = 'last_auto_analyzed_' + kind;
+    const last = UIKI.store.get(lastKey, null);
+    // 同じ画像なら何もしない
+    if (last && last.fileId === latest.id) return;
+    // 5 分以内に分析していれば連発防止
+    if (last && Date.now() - new Date(last.ts).getTime() < 5 * 60 * 1000) return;
+    // 連続失敗 3 回でクールダウン（30 分）
+    if (last && last.failCount >= 3 && Date.now() - new Date(last.ts).getTime() < 30 * 60 * 1000) return;
+
+    let imgUrl = latest.thumbnailLink || ('https://drive.google.com/thumbnail?id=' + latest.id + '&sz=w2000');
+    imgUrl = imgUrl.replace(/=s\d+(-c)?$/, '=s2000');
+    try {
+      const result = await UIKI.vision.fullAnalyze(imgUrl, kind, () => {});
+      UIKI.store.set(lastKey, { fileId: latest.id, ts: new Date().toISOString(), failCount: 0 });
+      // 読雨セクションを再描画
+      setTimeout(() => { try { UIKI.yomu.fetch(); } catch(e){} }, 1500);
+      // 控えめなトースト通知（自動なので大袈裟にしない）
+      if (typeof showToast === 'function') {
+        const p = result.parsed || {};
+        let summary = '';
+        if (kind === 'body') summary = 'ランク ' + (p.rank || '?');
+        else if (kind === 'scale') summary = '体重 ' + (p.weight || '?') + 'kg';
+        else if (kind === 'meal') summary = (p.items || ['食事'])[0] + ' ' + (p.calories || '?') + 'kcal';
+        showToast('🔍 自動分析：' + summary + ' → 読雨');
+      }
+    } catch (e) {
+      const failCount = (last && last.failCount || 0) + 1;
+      UIKI.store.set(lastKey, { fileId: latest.id, ts: new Date().toISOString(), failCount });
+      console.warn('auto-analyze error (' + kind + ')', e);
     }
   }
 
@@ -5683,6 +5739,7 @@ UIKI.config = (() => {
     const gkEl = document.getElementById('cfg-gemini-key');
     const ckEl = document.getElementById('cfg-claude-key');
     const vpEl = document.getElementById('cfg-vision-provider');
+    const vaEl = document.getElementById('cfg-vision-auto');
     if (dk) dk.value = cfg.driveKey || '';
     if (df) df.value = cfg.driveFolderId || '1qCu88aJG93g5BMzUd6sVhXUpxy94Ehgk';
     if (dfm) dfm.value = cfg.driveFolderIdMeal || '129gwV0ySQjJBBTOb-tc2QnDt7xMPRM3v';
@@ -5692,6 +5749,7 @@ UIKI.config = (() => {
     if (gkEl) gkEl.value = cfg.geminiKey || '';
     if (ckEl) ckEl.value = cfg.claudeKey || '';
     if (vpEl) vpEl.value = cfg.visionProvider || 'gemini';
+    if (vaEl) vaEl.checked = !!cfg.visionAuto;
     document.getElementById('config-modal').hidden = false;
   }
   function close() {
@@ -5710,6 +5768,7 @@ UIKI.config = (() => {
     const gkEl2 = document.getElementById('cfg-gemini-key');
     const ckEl2 = document.getElementById('cfg-claude-key');
     const vpEl2 = document.getElementById('cfg-vision-provider');
+    const vaEl2 = document.getElementById('cfg-vision-auto');
     const driveKey = dkEl ? dkEl.value.trim() : '';
     const driveFolderId = dfEl ? dfEl.value.trim() : '';
     const driveFolderIdMeal = dfmEl ? dfmEl.value.trim() : '';
@@ -5719,6 +5778,7 @@ UIKI.config = (() => {
     const geminiKey = gkEl2 ? gkEl2.value.trim() : '';
     const claudeKey = ckEl2 ? ckEl2.value.trim() : '';
     const visionProvider = vpEl2 ? vpEl2.value : 'gemini';
+    const visionAuto = vaEl2 ? vaEl2.checked : false;
 
     // v2.8 緩和：PAT または Drive キーのどちらかがあれば保存可
     if (!pat && !driveKey) {
@@ -5737,7 +5797,7 @@ UIKI.config = (() => {
       pat, gistId, notifEnabled,
       driveKey, driveFolderId, driveFolderIdMeal, driveFolderIdScale, driveOauthClientId,
       booklogUsername,
-      geminiKey, claudeKey, visionProvider,
+      geminiKey, claudeKey, visionProvider, visionAuto,
       savedAt: new Date().toISOString()
     });
     showToast(pat ? '設定を保存した' : 'Drive 連携のみで保存した（PAT 未登録）');
