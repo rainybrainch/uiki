@@ -65,6 +65,30 @@ body.delete-mode [data-yomu-id]::after {
 body.delete-mode [data-yomu-id] { position: relative; }
 body.delete-mode [data-yomu-id]:hover::after { background: rgba(220, 50, 30, 1); }
 
+/* ロードマップ進捗バー（v2.57 / 2026-05-17） */
+.rm-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto;
+  gap: 0.15rem 0.4rem;
+  margin-top: 0.4rem;
+}
+.rm-label { font-size: 0.74rem; color: rgba(255,255,255,0.78); }
+.rm-pct { font-family: var(--mono); font-size: 0.72rem; color: var(--tab-accent); font-weight: 600; }
+.rm-bar {
+  grid-column: 1 / -1;
+  height: 4px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.rm-fill {
+  height: 100%;
+  background: linear-gradient(90deg, rgba(var(--tab-accent-rgb), 0.5), var(--tab-accent));
+  border-radius: 999px;
+  transition: width 0.5s ease;
+}
+
 /* 読雨アーカイブ 内部タブ（v2.54 / 2026-05-17） */
 .archive-tab.active {
   background: var(--tab-accent) !important;
@@ -2998,13 +3022,13 @@ main { padding-bottom: 5.2rem; }
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; margin-top: 0.6rem;" id="roadmap-grid">
       <div style="padding: 0.8rem 1rem; border: 1px solid rgba(var(--tab-accent-rgb), 0.4); border-radius: 0.5rem; background: rgba(var(--tab-accent-rgb), 0.05);">
         <div style="font-family: var(--serif); font-size: 0.95rem; font-weight: 600; color: var(--tab-accent); margin-bottom: 0.4rem;">🌧 Phase 1（〜2026年末）</div>
-        <div style="font-size: 0.78rem; color: rgba(255,255,255,0.85); line-height: 1.6;">
-          <strong>基盤構築 ── 資金確保</strong><br>
-          1. 🍅 ぽもじかん v2.9（5月末リリース）<br>
-          2. 📘 マネぼう教科書 + 本編集 AI（6-12月）<br>
-          3. ☔ 雨域 UIKI 完成（並行）<br>
-          4. 💧 読雨統合DB 完成<br>
-          5. 🤲 漫画修行（毎日 3-5h・最優先）
+        <div style="font-size: 0.78rem; color: rgba(255,255,255,0.85); line-height: 1.7;">
+          <strong>基盤構築 ── 資金確保</strong>
+          <div class="rm-item"><span class="rm-label">🍅 ぽもじかん v2.9</span><span class="rm-pct" id="rm-pct-pomo">60%</span><div class="rm-bar"><div class="rm-fill" style="width: 60%;"></div></div></div>
+          <div class="rm-item"><span class="rm-label">📘 マネぼう教科書 + 本編集AI</span><span class="rm-pct" id="rm-pct-mane">5%</span><div class="rm-bar"><div class="rm-fill" style="width: 5%;"></div></div></div>
+          <div class="rm-item"><span class="rm-label">☔ 雨域 UIKI</span><span class="rm-pct" id="rm-pct-uiki">95%</span><div class="rm-bar"><div class="rm-fill" style="width: 95%;"></div></div></div>
+          <div class="rm-item"><span class="rm-label">💧 読雨統合DB</span><span class="rm-pct" id="rm-pct-yomu">90%</span><div class="rm-bar"><div class="rm-fill" style="width: 90%;"></div></div></div>
+          <div class="rm-item"><span class="rm-label">🤲 漫画修行（毎日3-5h）</span><span class="rm-pct" id="rm-pct-manga">継続</span><div class="rm-bar"><div class="rm-fill" style="width: 30%;"></div></div></div>
         </div>
       </div>
       <div style="padding: 0.8rem 1rem; border: 1px solid rgba(93,138,209,0.4); border-radius: 0.5rem; background: rgba(93,138,209,0.05);">
@@ -4890,7 +4914,8 @@ UIKI.yomu = (function() {
       return;
     }
     quotes.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
-    const top = quotes.slice(0, 5);
+    const showAllQ = wrap.dataset.showAll === '1';
+    const top = showAllQ ? quotes : quotes.slice(0, 5);
     wrap.innerHTML = top.map(q => {
       const src = q.source ? '── ' + escapeHtml(q.source) : '';
       const core = q.core ? ' ｜ 核' + q.core : '';
@@ -4899,6 +4924,15 @@ UIKI.yomu = (function() {
         '<footer>' + src + escapeHtml(core) + '</footer>' +
         '</blockquote>';
     }).join('');
+    // v2.57「もっと見る」ボタン
+    if (!showAllQ && quotes.length > 5) {
+      const btn = document.createElement('button');
+      btn.className = 'attraction-add-btn';
+      btn.style.cssText = 'margin: 0.6rem 0 0; padding: 0.35rem 0.9rem; font-size: 0.78rem;';
+      btn.textContent = 'もっと見る（残り ' + (quotes.length - 5) + ' 件）';
+      btn.onclick = () => { wrap.dataset.showAll = '1'; renderQuotes(); };
+      wrap.appendChild(btn);
+    }
   }
 
   function renderBooks() {
@@ -5523,18 +5557,23 @@ UIKI.yomu = (function() {
       }
     }
 
-    // 4) 自動分析チップ + Vision 成功率
+    // 4) 自動分析チップ + Vision 成功率 + 今日の解析回数
     const cfg = UIKI.store.get('config', {});
     const chip = document.getElementById('ts-auto-chip');
     if (chip) {
       const isOn = !!cfg.visionAuto && (!!cfg.geminiKey || !!cfg.claudeKey) && !!cfg.pat;
-      // v2.29 直近 10 回の成功率も併記
-      const history = UIKI.store.get('vision_history', []).slice(0, 10);
-      const okCount = history.filter(h => h.ok).length;
-      const rateText = history.length ? ' / 成功率 ' + okCount + '/' + history.length : '';
+      const history = UIKI.store.get('vision_history', []);
+      const last10 = history.slice(0, 10);
+      const okCount = last10.filter(h => h.ok).length;
+      const rateText = last10.length ? ' / 成功 ' + okCount + '/' + last10.length : '';
+      // v2.57 今日の解析回数（無料枠監視）
+      const todayKey = new Date().toISOString().slice(0, 10);
+      const todayCount = history.filter(h => (h.ts || '').slice(0, 10) === todayKey).length;
+      const todayText = todayCount > 0 ? ' / 今日 ' + todayCount + '回' : '';
       chip.classList.toggle('on', isOn);
       chip.classList.toggle('off', !isOn);
-      chip.textContent = (isOn ? '🟢 自動 ON' : '⚪ 自動 OFF') + rateText;
+      chip.textContent = (isOn ? '🟢 自動 ON' : '⚪ 自動 OFF') + rateText + todayText;
+      chip.title = 'Gemini 無料枠: 1日 1500 リクエスト / 1分 15 リクエスト';
       chip.onclick = () => { try { UIKI.config.open(); } catch(e) {} };
     }
   }
