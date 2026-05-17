@@ -2298,8 +2298,8 @@ main { padding-bottom: 5.2rem; }
   margin-right: 0.4rem;
   vertical-align: middle;
 }
-.growth-legend .lg-gold { background: var(--gold); }
-.growth-legend .lg-blue { background: var(--rain-blue); }
+.growth-legend .lg-gold { background: #b87a3a; }  /* v2.46: 飴色 */
+.growth-legend .lg-blue { background: #2456b8; }  /* v2.46: 雨青 */
 .ai-roles {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -3133,11 +3133,11 @@ main { padding-bottom: 5.2rem; }
       <h3>成長の可視化 ── 重力と引力の均衡</h3>
       <svg class="growth-chart" id="growth-chart" viewBox="0 0 600 220" preserveAspectRatio="none" aria-label="重力と引力の成長グラフ"></svg>
       <div class="growth-legend">
-        <span><span class="lg-dot lg-gold"></span>内面の熱量（重力）</span>
-        <span><span class="lg-dot lg-blue"></span>外面の成果（引力）</span>
+        <span><span class="lg-dot lg-gold"></span>内向き活動（重力＝飴）</span>
+        <span><span class="lg-dot lg-blue"></span>外向き測定（引力＝雨）</span>
       </div>
       <p class="pane-desc" style="text-align:center; margin-top:0.8rem;">
-        内面の熱量（金）と外面の成果（青）が、バランスよく成長しているかをAIが分析します。
+        内向き（飴：砂・タスク完了・名言・読書・メモ）と外向き（雨：体重・ランク・気分申告）の均衡を 14 日推移で可視化。
       </p>
     </div>
 
@@ -5589,26 +5589,41 @@ UIKI.uwiki = (function() {
     const svg = document.getElementById('growth-chart');
     if (!svg) return;
     const W = 600, H = 220, P = 24;
-    // 過去 14 日の日別集計
+    // 過去 14 日の日別集計（v2.46 改：実データから取る）
     const days = 14;
     const today = new Date(); today.setHours(0,0,0,0);
     const labels = [];
-    const gravSeries = []; // 1 日あたりの重力エントリの weight 合計
-    const attrSeries = []; // 1 日あたりの引力記録数（正規化用に件数）
+    const gravSeries = []; // 重力＝内向き活動の数（砂のログ + 完了タスク + 名言 + 読書 + メモ）
+    const attrSeries = []; // 引力＝外向き測定の数（health + body_scan）
+
+    // データソース取得
+    const sandLog = UIKI.store.get('sand_log', []);
+    const tasks = UIKI.store.get('tasks', []);
+    let yomuEntries = [];
+    try { yomuEntries = (UIKI.yomu && UIKI.yomu.state) ? (UIKI.yomu.state().entries || []) : []; } catch(e){}
+
+    // ある日のエントリ数を返すヘルパー
+    const inRange = (tsStr, dStart, dEnd) => {
+      if (!tsStr) return false;
+      const t = new Date(tsStr).getTime();
+      return t >= dStart && t < dEnd;
+    };
+
     for (let i = days - 1; i >= 0; i--) {
       const d = new Date(today); d.setDate(today.getDate() - i);
       const next = new Date(d); next.setDate(d.getDate() + 1);
       labels.push((d.getMonth()+1) + '/' + d.getDate());
-      const gSum = state.gravity.reduce((s, g) => {
-        const t = new Date(g.createdAt).getTime();
-        return (t >= d.getTime() && t < next.getTime()) ? s + (g.weight || 1) : s;
-      }, 0);
-      const aCount = Object.values(state.attraction.items).reduce((s, hist) => {
-        return s + hist.filter(h => {
-          const t = new Date(h.at).getTime();
-          return t >= d.getTime() && t < next.getTime();
-        }).length;
-      }, 0);
+      const dStart = d.getTime(), dEnd = next.getTime();
+
+      // 重力：砂のログ（weight 合計）+ 完了タスク + 読雨の quote/book/memo
+      let gSum = 0;
+      gSum += sandLog.reduce((s, x) => inRange(x.created_at || x.createdAt, dStart, dEnd) ? s + (Number(x.weight) || 1) : s, 0);
+      gSum += tasks.filter(t => t.completed && t.completedAt && inRange(t.completedAt, dStart, dEnd)).length * 2;
+      gSum += yomuEntries.filter(e => ['quote', 'book', 'memo'].includes(e.type) && inRange(e.created_at, dStart, dEnd)).length;
+
+      // 引力：読雨の health / body_scan / self
+      let aCount = yomuEntries.filter(e => ['health', 'body_scan', 'self'].includes(e.type) && inRange(e.created_at, dStart, dEnd)).length;
+
       gravSeries.push(gSum);
       attrSeries.push(aCount);
     }
@@ -5626,11 +5641,11 @@ UIKI.uwiki = (function() {
     svg.innerHTML =
       axisY + axisX + labelL + labelR +
       // 引力（青・下層）
-      '<path d="' + areaPath(attrSeries) + '" fill="rgba(58,111,201,0.18)"/>' +
-      '<path d="' + path(attrSeries) + '" stroke="#3a6fc9" stroke-width="2" fill="none"/>' +
-      // 重力（金・上層）
-      '<path d="' + areaPath(gravSeries) + '" fill="rgba(201,168,76,0.18)"/>' +
-      '<path d="' + path(gravSeries) + '" stroke="#c9a84c" stroke-width="2" fill="none"/>';
+      '<path d="' + areaPath(attrSeries) + '" fill="rgba(36,86,184,0.22)"/>' +
+      '<path d="' + path(attrSeries) + '" stroke="#2456b8" stroke-width="2" fill="none"/>' +
+      // 重力（飴色・上層）
+      '<path d="' + areaPath(gravSeries) + '" fill="rgba(184,122,58,0.22)"/>' +
+      '<path d="' + path(gravSeries) + '" stroke="#b87a3a" stroke-width="2" fill="none"/>';
   }
 
   // ── ジャーニーヒント（時刻ベース・PDF p8 由来） ──
