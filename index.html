@@ -2588,6 +2588,30 @@ main { padding-bottom: 5.2rem; }
     </div>
   </section>
 
+  <!-- 今日のサマリー（重力タブ・v2.24） -->
+  <section class="today-summary reveal" id="today-summary-home">
+    <div class="ts-header">
+      <h3>📊 今日の内なる活動</h3>
+    </div>
+    <div class="ts-grid">
+      <div class="ts-card">
+        <div class="ts-label">☑ 完了タスク</div>
+        <div class="ts-value" id="ts-tasks-done">—</div>
+        <div class="ts-sub" id="ts-tasks-remain">残り —</div>
+      </div>
+      <div class="ts-card">
+        <div class="ts-label">✨ 砂のログ</div>
+        <div class="ts-value" id="ts-sand-count">—</div>
+        <div class="ts-sub" id="ts-sand-weight">重力 —</div>
+      </div>
+      <div class="ts-card">
+        <div class="ts-label">📖 読書記録</div>
+        <div class="ts-value" id="ts-book-count">—</div>
+        <div class="ts-sub" id="ts-book-latest">最新: なし</div>
+      </div>
+    </div>
+  </section>
+
   <!-- 砂のログ（v2.4：雨域メインから移動 ── 重力的活動として統合） -->
   <section class="uwiki-pane gravity-pane sand-section reveal" style="margin: 1.5rem 0 2rem;">
     <div class="pane-header">
@@ -4201,6 +4225,44 @@ UIKI.yomu = (function() {
     renderQuotes();
     renderBooks();
     renderTodaySummary();
+    renderHomeTodaySummary();
+  }
+
+  // 重力タブの今日のサマリー（v2.24）
+  function renderHomeTodaySummary() {
+    const wrap = document.getElementById('today-summary-home');
+    if (!wrap) return;
+    const today = new Date();
+    const todayStr = today.getFullYear() + '-' + ('0' + (today.getMonth() + 1)).slice(-2) + '-' + ('0' + today.getDate()).slice(-2);
+    const tasks = UIKI.store.get('tasks', []);
+    const done = tasks.filter(t => t.completed && t.completedAt && t.completedAt.slice(0, 10) === todayStr).length;
+    const remain = tasks.filter(t => !t.completed && !t.stain).length;
+    const tDone = document.getElementById('ts-tasks-done');
+    const tRem = document.getElementById('ts-tasks-remain');
+    if (tDone) tDone.textContent = done;
+    if (tRem) tRem.textContent = '残り ' + remain;
+
+    // 砂のログ（localStorage の uiki_sand_log を読む）
+    const sand = UIKI.store.get('sand_log', []);
+    const todaySand = sand.filter(s => s.date === todayStr);
+    const sandCount = document.getElementById('ts-sand-count');
+    const sandWeight = document.getElementById('ts-sand-weight');
+    if (sandCount) sandCount.textContent = todaySand.length;
+    if (sandWeight) {
+      const totalW = todaySand.reduce((s, x) => s + (Number(x.weight) || 0), 0);
+      sandWeight.textContent = '重力 ' + totalW;
+    }
+
+    // 読書（type=book）
+    const books = (state.entries || []).filter(e => e.type === 'book');
+    const bookCount = document.getElementById('ts-book-count');
+    const bookLatest = document.getElementById('ts-book-latest');
+    if (bookCount) bookCount.textContent = books.length;
+    if (bookLatest) {
+      const sorted = books.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+      const latest = sorted[0];
+      bookLatest.textContent = latest ? ('最新: ' + (latest.title || '').slice(0, 12)) : '最新: なし';
+    }
   }
 
   // v2.24 今日のサマリー：最新の body_scan ランク・体重・今日のカロリー合計
@@ -6017,9 +6079,14 @@ UIKI.config = (() => {
     showToast(pat ? '設定を保存した' : 'Drive 連携のみで保存した（PAT 未登録）');
     close();
     if (pat) UIKI.sync.start();
-    // Drive 連携が有効なら即 fetch
+    // Drive 連携が有効なら即 fetch（自動分析が有効ならその後に分析も走る）
     if (driveKey && driveFolderId && UIKI.drive) {
       UIKI.drive.fetch().catch(e => console.warn('drive fetch failed', e));
+    }
+    // 自動分析を ON にした直後、5 分待たずに即時実行できるよう last_auto_analyzed をリセット
+    if (visionAuto && pat && (geminiKey || claudeKey)) {
+      ['body', 'scale', 'meal'].forEach(k => UIKI.store.set('last_auto_analyzed_' + k, null));
+      showToast('🔍 自動分析 ON ── 次回 Drive 同期で最新画像を分析します');
     }
   }
   // PAT の経過日数チェック（330日経過で警告、365日超で error）
@@ -6162,8 +6229,15 @@ function bootstrap() {
         setTimeout(() => { try { UIKI.yomu.fetch(); } catch(e){} }, 1500);
       } catch (e) {
         console.warn('vision analyze failed', e);
-        showToast('✗ 解析失敗：' + (e.message || String(e)).slice(0, 80));
-        if (status) status.textContent = '✗ ' + (e.message || '失敗').slice(0, 60);
+        const msg = e.message || String(e);
+        // エラーパターンに応じてヒントを出す
+        let hint = '';
+        if (/CORS|fetch|画像取得/i.test(msg)) hint = '\n→ Drive API キーがフォルダにアクセス可能か確認';
+        else if (/Gemini|429|quota/i.test(msg)) hint = '\n→ Gemini API のレート制限。1 分待って再試行';
+        else if (/PAT|401|403|Gist/i.test(msg)) hint = '\n→ PAT に Gist scope があるか確認';
+        else if (/JSON/i.test(msg)) hint = '\n→ AI が想定外応答。もう一度試行';
+        showToast('✗ ' + msg.slice(0, 100) + hint);
+        if (status) status.textContent = '✗ ' + msg.slice(0, 80);
       } finally {
         btn.disabled = false;
         btn.textContent = orig;
