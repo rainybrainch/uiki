@@ -65,6 +65,76 @@ body.delete-mode [data-yomu-id]::after {
 body.delete-mode [data-yomu-id] { position: relative; }
 body.delete-mode [data-yomu-id]:hover::after { background: rgba(220, 50, 30, 1); }
 
+/* カレンダー一覧（v2.50 / 2026-05-17） */
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  background: rgba(255,255,255,0.05);
+  padding: 2px;
+  border-radius: 0.4rem;
+}
+.cal-cell {
+  background: rgba(255,255,255,0.04);
+  padding: 0.4rem 0.3rem;
+  min-height: 56px;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: background 0.15s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.cal-cell.cal-head {
+  background: transparent;
+  cursor: default;
+  font-weight: 600;
+  color: var(--dim);
+  font-size: 0.7rem;
+  min-height: auto;
+  padding: 0.3rem 0;
+  text-align: center;
+}
+.cal-cell.cal-blank { background: transparent; cursor: default; }
+.cal-cell.cal-today {
+  background: rgba(var(--tab-accent-rgb), 0.18);
+  border: 1px solid var(--tab-accent);
+}
+.cal-cell.cal-future {
+  opacity: 0.35;
+  cursor: default;
+}
+.cal-cell.cal-has-data:hover {
+  background: rgba(var(--tab-accent-rgb), 0.12);
+}
+.cal-day-num {
+  font-weight: 600;
+  font-size: 0.78rem;
+  color: var(--text);
+  margin-bottom: 0.2rem;
+}
+.cal-day-marks {
+  display: flex;
+  gap: 0.15rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  font-size: 0.7rem;
+  line-height: 1;
+}
+.cal-day-marks .cal-mark {
+  display: inline-block;
+  font-size: 0.7rem;
+}
+.cal-day-marks .cal-mark-rank {
+  background: var(--tab-accent);
+  color: #fff;
+  border-radius: 999px;
+  padding: 0.05rem 0.3rem;
+  font-size: 0.62rem;
+  font-weight: 600;
+}
+
 /* 自己申告チップ（v2.32 / 2026-05-17） */
 .self-row {
   display: flex;
@@ -3355,6 +3425,21 @@ main { padding-bottom: 5.2rem; }
       </details>
     </section>
 
+    <!-- v2.50 カレンダー一覧（日付別データの俯瞰） -->
+    <section class="yomu-section reveal" id="calendar-view">
+      <h3>📆 カレンダー一覧 <span class="yomu-from" id="cal-period">今月</span></h3>
+      <p class="yomu-desc">日付ごとの記録状況を俯瞰。⚖️=体組成計、🤳=自撮りランク、🍽=食事カロリー。タップで詳細表示。</p>
+      <div style="display:flex; gap:0.4rem; margin-bottom:0.6rem;">
+        <button class="attraction-add-btn" id="cal-prev" style="margin: 0; padding: 0.35rem 0.8rem; font-size: 0.78rem;">← 先月</button>
+        <button class="attraction-add-btn" id="cal-today" style="margin: 0; padding: 0.35rem 0.8rem; font-size: 0.78rem;">今月</button>
+        <button class="attraction-add-btn" id="cal-next" style="margin: 0; padding: 0.35rem 0.8rem; font-size: 0.78rem;">来月 →</button>
+      </div>
+      <div class="cal-grid" id="cal-grid">
+        <div class="yomu-loading yomu-empty">読み込み中…</div>
+      </div>
+      <div id="cal-day-detail" style="margin-top: 0.8rem; padding: 0.6rem 0.9rem; background: rgba(var(--tab-accent-rgb), 0.06); border-left: 3px solid var(--tab-accent); border-radius: 0.4rem; display: none;"></div>
+    </section>
+
     <!-- 月次振り返り（v2.27 / 2026-05-17 / 雨域 AI の前段） -->
     <section class="yomu-section reveal" id="monthly-review">
       <h3>📅 月次振り返り <span class="yomu-from" id="monthly-period">今月</span></h3>
@@ -4845,6 +4930,106 @@ UIKI.yomu = (function() {
     renderTodaySummary();
     renderHomeTodaySummary();
     renderMonthlyReview();
+    renderCalendar();
+  }
+
+  // v2.50 カレンダー一覧
+  let _calOffset = 0;
+  function renderCalendar() {
+    const wrap = document.getElementById('cal-grid');
+    if (!wrap) return;
+    const now = new Date();
+    now.setMonth(now.getMonth() + _calOffset);
+    const y = now.getFullYear();
+    const m = now.getMonth();
+    const period = document.getElementById('cal-period');
+    if (period) period.textContent = y + '-' + ('0' + (m + 1)).slice(-2) + (_calOffset === 0 ? '（今月）' : _calOffset === -1 ? '（先月）' : _calOffset === 1 ? '（来月）' : '');
+
+    const firstDay = new Date(y, m, 1);
+    const lastDay = new Date(y, m + 1, 0);
+    const startDow = firstDay.getDay(); // 0=日
+    const daysInMonth = lastDay.getDate();
+    const todayY = now.getFullYear() === new Date().getFullYear() && now.getMonth() === new Date().getMonth() ? new Date().getDate() : -1;
+
+    // 日付別のデータ集約
+    const entries = state.entries || [];
+    const byDay = {};
+    entries.forEach(e => {
+      const d = (e.date || '').toString();
+      let day = null;
+      if (/^\d{8}$/.test(d) && +d.slice(0,4) === y && +d.slice(4,6) - 1 === m) day = +d.slice(6,8);
+      else if (/^\d{4}-\d{2}-\d{2}/.test(d) && +d.slice(0,4) === y && +d.slice(5,7) - 1 === m) day = +d.slice(8,10);
+      if (!day) return;
+      if (!byDay[day]) byDay[day] = { scale: null, body: null, meal: 0 };
+      if (e.type === 'health' && ['weight','body_fat','muscle','water','bmi'].includes(e.metric)) byDay[day].scale = e.value;
+      if (e.type === 'body_scan' && e.rank) byDay[day].body = e.rank;
+      if (e.type === 'health' && e.metric === 'meal_calories') byDay[day].meal += Number(e.value || 0);
+    });
+
+    // ヘッダ
+    const heads = ['日','月','火','水','木','金','土'];
+    let html = heads.map(h => '<div class="cal-cell cal-head">' + h + '</div>').join('');
+    // 月初前の空白
+    for (let i = 0; i < startDow; i++) html += '<div class="cal-cell cal-blank"></div>';
+    // 各日
+    const realToday = new Date();
+    for (let day = 1; day <= daysInMonth; day++) {
+      const isToday = todayY === day;
+      const isFuture = new Date(y, m, day) > realToday;
+      const data = byDay[day];
+      const hasData = !!data;
+      let marks = '';
+      if (data) {
+        if (data.scale != null) marks += '<span class="cal-mark" title="体組成計">⚖️</span>';
+        if (data.body) marks += '<span class="cal-mark cal-mark-rank" title="ランク">' + escapeHtml(data.body) + '</span>';
+        if (data.meal > 0) marks += '<span class="cal-mark" title="食事 ' + data.meal.toFixed(0) + 'kcal">🍽</span>';
+      }
+      const cls = 'cal-cell' + (isToday ? ' cal-today' : '') + (isFuture ? ' cal-future' : '') + (hasData && !isFuture ? ' cal-has-data' : '');
+      html += '<div class="' + cls + '" data-cal-day="' + day + '">' +
+                '<span class="cal-day-num">' + day + '</span>' +
+                '<span class="cal-day-marks">' + marks + '</span>' +
+              '</div>';
+    }
+    wrap.innerHTML = html;
+    // セルクリックで詳細表示
+    wrap.querySelectorAll('.cal-cell[data-cal-day]').forEach(cell => {
+      cell.addEventListener('click', () => {
+        const d = +cell.dataset.calDay;
+        const data = byDay[d];
+        const detail = document.getElementById('cal-day-detail');
+        if (!detail) return;
+        const dateStr = y + '-' + ('0' + (m+1)).slice(-2) + '-' + ('0' + d).slice(-2);
+        if (!data) {
+          detail.style.display = 'block';
+          detail.innerHTML = '<strong>' + dateStr + '</strong> ── この日の記録なし';
+          return;
+        }
+        // この日の全エントリを抽出
+        const dayEntries = entries.filter(e => {
+          const ds = (e.date || '').toString();
+          if (/^\d{8}$/.test(ds)) return +ds.slice(0,4) === y && +ds.slice(4,6) - 1 === m && +ds.slice(6,8) === d;
+          if (/^\d{4}-\d{2}-\d{2}/.test(ds)) return +ds.slice(0,4) === y && +ds.slice(5,7) - 1 === m && +ds.slice(8,10) === d;
+          return false;
+        });
+        const scaleList = dayEntries.filter(e => e.type === 'health' && !e.metric.startsWith('meal_'));
+        const bodyList = dayEntries.filter(e => e.type === 'body_scan');
+        const mealList = dayEntries.filter(e => e.type === 'health' && e.metric.startsWith('meal_'));
+        let html = '<div style="font-weight:600; margin-bottom:0.4rem;">📆 ' + dateStr + '</div>';
+        if (scaleList.length) {
+          html += '<div style="margin-bottom:0.3rem;"><strong>⚖️ 体組成計</strong>: ' + scaleList.map(e => e.metric + ' ' + e.value + (e.unit||'')).join(' / ') + '</div>';
+        }
+        if (bodyList.length) {
+          const b = bodyList[0];
+          html += '<div style="margin-bottom:0.3rem;"><strong>🤳 ランク</strong>: ' + (b.rank||'?') + ' / ' + (b.memo||'').slice(0,50) + '</div>';
+        }
+        if (mealList.length) {
+          const cal = mealList.find(e => e.metric === 'meal_calories');
+          html += '<div><strong>🍽 食事</strong>: ' + (cal ? cal.value + ' kcal' : '記録あり') + ' (' + mealList.length + ' 件)</div>';
+        }
+        detail.style.display = 'block';
+        detail.innerHTML = html;
+      });
+    });
   }
 
   // v2.41 メモ一覧（type=memo）
@@ -5459,7 +5644,11 @@ UIKI.yomu = (function() {
     state: () => state,
     renderMonthlyReview,
     monthlyPrev: () => { _monthlyOffset--; renderMonthlyReview(); },
-    monthlyNext: () => { if (_monthlyOffset < 0) { _monthlyOffset++; renderMonthlyReview(); } }
+    monthlyNext: () => { if (_monthlyOffset < 0) { _monthlyOffset++; renderMonthlyReview(); } },
+    renderCalendar,
+    calPrev: () => { _calOffset--; renderCalendar(); },
+    calNext: () => { _calOffset++; renderCalendar(); },
+    calToday: () => { _calOffset = 0; renderCalendar(); }
   };
 })();
 
@@ -7577,6 +7766,14 @@ function bootstrap() {
   if (mRefresh) mRefresh.addEventListener('click', () => { try { UIKI.yomu.renderMonthlyReview && UIKI.yomu.renderMonthlyReview(); } catch(e){} showToast('🔄 集計更新'); });
   if (mPrev) mPrev.addEventListener('click', () => { try { UIKI.yomu.monthlyPrev && UIKI.yomu.monthlyPrev(); } catch(e){} });
   if (mNext) mNext.addEventListener('click', () => { try { UIKI.yomu.monthlyNext && UIKI.yomu.monthlyNext(); } catch(e){} });
+
+  // v2.50 カレンダー一覧ナビ
+  const cPrev = document.getElementById('cal-prev');
+  const cNext = document.getElementById('cal-next');
+  const cToday = document.getElementById('cal-today');
+  if (cPrev) cPrev.addEventListener('click', () => { try { UIKI.yomu.calPrev(); } catch(e){} });
+  if (cNext) cNext.addEventListener('click', () => { try { UIKI.yomu.calNext(); } catch(e){} });
+  if (cToday) cToday.addEventListener('click', () => { try { UIKI.yomu.calToday(); } catch(e){} });
 
   // v2.31 AI 1 行コメント
   const tsAiBtn = document.getElementById('ts-ai-comment');
