@@ -193,24 +193,63 @@ body.public-mode .quick-fab { display: none !important; }
 }
 
 /* ライトテーマ（v2.39 / 2026-05-17）── 引力タブはそのまま白系・それ以外のタブで明るく */
-body.theme-light:not(.tab-uwiki) {
+body.theme-light:not(.tab-uwiki):not(.tab-uwiki-main) {
   background: #f7f5ed;
 }
-body.theme-light:not(.tab-uwiki) .tab-page[data-tab="home"],
-body.theme-light:not(.tab-uwiki) .tab-page[data-tab="uwiki-main"],
-body.theme-light:not(.tab-uwiki) .tab-page[data-tab="tasks"],
-body.theme-light:not(.tab-uwiki) .tab-page[data-tab="projects"],
-body.theme-light:not(.tab-uwiki) .tab-page[data-tab="log"] {
+body.theme-light:not(.tab-uwiki):not(.tab-uwiki-main) .tab-page[data-tab="home"],
+body.theme-light:not(.tab-uwiki):not(.tab-uwiki-main) .tab-page[data-tab="tasks"],
+body.theme-light:not(.tab-uwiki):not(.tab-uwiki-main) .tab-page[data-tab="projects"],
+body.theme-light:not(.tab-uwiki):not(.tab-uwiki-main) .tab-page[data-tab="log"] {
   color: rgba(26, 31, 46, 0.85);
 }
-body.theme-light:not(.tab-uwiki) .yomu-section {
+body.theme-light:not(.tab-uwiki):not(.tab-uwiki-main) .yomu-section {
   background: rgba(255, 255, 255, 0.85);
   border-color: rgba(0, 0, 0, 0.12);
 }
-body.theme-light:not(.tab-uwiki) .uwiki-pane,
-body.theme-light:not(.tab-uwiki) .today-summary {
+body.theme-light:not(.tab-uwiki):not(.tab-uwiki-main) .uwiki-pane,
+body.theme-light:not(.tab-uwiki):not(.tab-uwiki-main) .today-summary {
   background: rgba(255, 255, 255, 0.8);
   border-color: rgba(0, 0, 0, 0.12);
+}
+
+/* v2.42 雨域メインタブ：濃い青基調（重力黒 / 引力白 と区別する基幹色） */
+body.tab-uwiki-main {
+  background: #0a1530 !important;
+}
+body.tab-uwiki-main::before,
+body.tab-uwiki-main::after {
+  opacity: 0.4;
+}
+body.tab-uwiki-main .tab-page[data-tab="uwiki-main"] {
+  color: rgba(220, 230, 255, 0.85);
+}
+body.tab-uwiki-main .uwiki-main-hero h1,
+body.tab-uwiki-main .uwiki-main-hero .uwiki-en {
+  color: #d4b86a;
+}
+body.tab-uwiki-main .uwiki-main-hero p {
+  color: rgba(220, 230, 255, 0.6);
+}
+body.tab-uwiki-main .journey-hint {
+  background: rgba(58, 111, 201, 0.12);
+  border-color: rgba(201, 168, 76, 0.35);
+}
+body.tab-uwiki-main .journey-hint .jh-time { color: #d4b86a; }
+body.tab-uwiki-main .journey-hint .jh-text { color: rgba(255, 255, 255, 0.78); }
+body.tab-uwiki-main .uwiki-bigcard {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+body.tab-uwiki-main .uwiki-bigcard.gravity-bigcard:hover {
+  border-color: var(--gold);
+}
+body.tab-uwiki-main .uwiki-bigcard.attraction-bigcard:hover {
+  border-color: var(--rain-blue);
+}
+body.tab-uwiki-main .uwiki-pane,
+body.tab-uwiki-main .yomu-section {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 /* 公開モード（v2.28 / 2026-05-17） */
