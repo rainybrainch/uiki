@@ -1958,6 +1958,25 @@ main { padding-bottom: 5.2rem; }
   font-size: 0.92rem;
   letter-spacing: 0.08em;
 }
+.journey-hint-wrap {
+  position: relative;
+  margin: 1.2rem 0;
+}
+.journey-hint-toggle {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.8rem;
+  background: transparent;
+  border: 1px solid var(--faint);
+  color: var(--dim);
+  font-size: 0.7rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  cursor: pointer;
+  z-index: 2;
+}
+.journey-hint-wrap.collapsed .journey-hint { display: none; }
+.journey-hint-wrap.collapsed { padding: 0.4rem 0.8rem; }
 .journey-hint {
   margin: 1.2rem auto 2.5rem;
   max-width: 720px;
@@ -3467,8 +3486,9 @@ main { padding-bottom: 5.2rem; }
       <small>ON にすると、読雨セクションの各エントリに「×」ボタンが現れて個別削除可能（誤投稿/重複エントリの掃除用）。</small>
     </label>
     <div style="display:flex; gap:0.4rem; flex-wrap:wrap;">
-      <button type="button" id="cfg-export-yomu" class="attraction-add-btn" style="margin:0; padding:0.4rem 0.9rem; font-size:0.78rem;">📥 読雨データを JSON でダウンロード</button>
-      <button type="button" id="cfg-export-local" class="attraction-add-btn" style="margin:0; padding:0.4rem 0.9rem; font-size:0.78rem;">📥 localStorage 全エクスポート</button>
+      <button type="button" id="cfg-export-bundle" class="attraction-add-btn" style="margin:0; padding:0.4rem 0.9rem; font-size:0.78rem; background:rgba(201,168,76,0.15); border-color:var(--gold); color:var(--gold);">📦 全部入りバンドル（読雨+local+config）</button>
+      <button type="button" id="cfg-export-yomu" class="attraction-add-btn" style="margin:0; padding:0.4rem 0.9rem; font-size:0.78rem;">📥 読雨のみ</button>
+      <button type="button" id="cfg-export-local" class="attraction-add-btn" style="margin:0; padding:0.4rem 0.9rem; font-size:0.78rem;">📥 localStorage のみ</button>
     </div>
     <small style="display:block; margin-top:0.4rem; color:var(--dim);">読雨 Gist の中身と localStorage（タスク・砂のログ・設定）を JSON でバックアップできます。</small>
     <hr style="border: none; border-top: 1px solid var(--faint); margin: 1.2rem 0;">
@@ -7395,6 +7415,28 @@ function bootstrap() {
     document.body.classList.add('public-mode');
   }
 
+  // v2.38 AI 1 行コメント朝の自動生成（朝5時〜10時の初回起動で未生成なら自動実行）
+  setTimeout(() => {
+    try {
+      const cfg = UIKI.store.get('config', {});
+      if (!cfg.geminiKey) return;
+      const now = new Date();
+      const hour = now.getHours();
+      // 朝 5-10 時帯のみ自動実行
+      if (hour < 5 || hour >= 11) return;
+      const today = now.getFullYear() + '-' + ('0' + (now.getMonth() + 1)).slice(-2) + '-' + ('0' + now.getDate()).slice(-2);
+      const aiComments = UIKI.store.get('ai_comments', []);
+      const generated = aiComments.find(c => c.date === today);
+      if (generated) return; // 今日分は生成済
+      // 振り返りボタンを自動クリック（ただし、ボタンが見えるタブにいる時のみ）
+      const btn = document.getElementById('ts-ai-comment');
+      if (btn && !btn.disabled) {
+        showToast('🌅 朝の自動コメント生成中…');
+        setTimeout(() => btn.click(), 2000);
+      }
+    } catch(e) { console.warn('morning auto-comment failed', e); }
+  }, 5000);
+
   // v2.36 PWA インストールバナー
   let deferredPrompt = null;
   window.addEventListener('beforeinstallprompt', e => {
@@ -7799,6 +7841,44 @@ function bootstrap() {
       }
     }
   });
+
+  // v2.38 全部入りバンドル
+  const exportBundleBtn = document.getElementById('cfg-export-bundle');
+  if (exportBundleBtn) {
+    exportBundleBtn.addEventListener('click', () => {
+      try {
+        const yomuState = UIKI.yomu.state ? UIKI.yomu.state() : { entries: [] };
+        const localAll = {};
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (k && (k.startsWith('uiki_') || k.startsWith('shared_'))) {
+            try { localAll[k] = JSON.parse(localStorage.getItem(k)); }
+            catch(e) { localAll[k] = localStorage.getItem(k); }
+          }
+        }
+        const bundle = {
+          version: '2.38',
+          exported_at: new Date().toISOString(),
+          source: 'rainybrainch.github.io/uiki/',
+          yomu: yomuState,
+          localStorage: localAll,
+          metadata: {
+            entry_count: (yomuState.entries || []).length,
+            local_keys: Object.keys(localAll).length,
+            user: '服牢井像 / 円舵'
+          }
+        };
+        const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const ts = new Date().toISOString().slice(0, 10);
+        a.href = url; a.download = 'uiki-bundle-' + ts + '.json';
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        showToast('📦 全部入りバンドルをダウンロード（' + bundle.metadata.entry_count + ' エントリ）');
+      } catch(e) { showToast('✗ ' + (e.message || '失敗')); }
+    });
+  }
 
   // v2.30 localStorage 全エクスポート
   const exportLocalBtn = document.getElementById('cfg-export-local');
