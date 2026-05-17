@@ -2691,6 +2691,7 @@ main { padding-bottom: 5.2rem; }
           <button class="weight-btn" data-weight="5">超重力</button>
         </div>
         <button class="sand-submit" id="sand-submit">沈める</button>
+        <button class="attraction-add-btn" id="sand-quote-btn" style="margin: 0; padding: 0.45rem 0.9rem; font-size: 0.8rem;" title="入力した砂を「名言」として読雨に投入">⚡ 名言として刻む</button>
       </div>
     </div>
     <div class="sand-log" id="sand-log">
@@ -3063,6 +3064,7 @@ main { padding-bottom: 5.2rem; }
           <div class="ts-label">⚖️ 体重平均</div>
           <div class="ts-value" id="m-weight-avg">—</div>
           <div class="ts-sub" id="m-weight-delta">変動 —</div>
+          <svg class="ts-spark" id="m-weight-spark" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true"></svg>
         </div>
         <div class="ts-card">
           <div class="ts-label">🤳 ランク最頻</div>
@@ -3073,6 +3075,7 @@ main { padding-bottom: 5.2rem; }
           <div class="ts-label">🍽 カロリー平均</div>
           <div class="ts-value" id="m-cal-avg">—</div>
           <div class="ts-sub" id="m-cal-days">日 —</div>
+          <svg class="ts-spark" id="m-cal-spark" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true"></svg>
         </div>
         <div class="ts-card">
           <div class="ts-label">☑ 完了タスク</div>
@@ -4446,6 +4449,13 @@ UIKI.yomu = (function() {
     } else {
       document.getElementById('m-book-stars').textContent = '★ 記録なし';
     }
+
+    // v2.29 月次 sparkline：体重の月内推移（date 順）
+    const wSorted = weights.slice().sort((a, b) => (a.date || a.created_at || '').localeCompare(b.date || b.created_at || ''));
+    drawSparkline('m-weight-spark', wSorted.map(w => Number(w.value)).filter(v => !isNaN(v)));
+    // カロリーの月内推移（日付順）
+    const calDays = Object.keys(calByDay).sort();
+    drawSparkline('m-cal-spark', calDays.map(d => calByDay[d]));
   }
 
   // 重力タブの今日のサマリー（v2.24）
@@ -4571,14 +4581,18 @@ UIKI.yomu = (function() {
     const fillPath = linePath + ' L' + w + ',' + h + ' L0,' + h + ' Z';
     svg.innerHTML = '<path class="ts-spark-fill" d="' + fillPath + '"/><path d="' + linePath + '"/>';
 
-    // 4) 自動分析チップ
+    // 4) 自動分析チップ + Vision 成功率
     const cfg = UIKI.store.get('config', {});
     const chip = document.getElementById('ts-auto-chip');
     if (chip) {
       const isOn = !!cfg.visionAuto && (!!cfg.geminiKey || !!cfg.claudeKey) && !!cfg.pat;
+      // v2.29 直近 10 回の成功率も併記
+      const history = UIKI.store.get('vision_history', []).slice(0, 10);
+      const okCount = history.filter(h => h.ok).length;
+      const rateText = history.length ? ' / 成功率 ' + okCount + '/' + history.length : '';
       chip.classList.toggle('on', isOn);
       chip.classList.toggle('off', !isOn);
-      chip.textContent = isOn ? '🟢 自動分析 ON' : '⚪ 自動分析 OFF';
+      chip.textContent = (isOn ? '🟢 自動 ON' : '⚪ 自動 OFF') + rateText;
       chip.onclick = () => { try { UIKI.config.open(); } catch(e) {} };
     }
   }
@@ -5060,6 +5074,41 @@ UIKI.uwiki = (function() {
       textarea.addEventListener('keydown', (e) => {
         if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
           submitBtn.click();
+        }
+      });
+    }
+    // v2.29 Quick Add 名言：砂をそのまま type=quote として読雨へ
+    const quoteBtn = document.getElementById('sand-quote-btn');
+    if (quoteBtn && textarea) {
+      quoteBtn.addEventListener('click', async () => {
+        const v = (textarea.value || '').trim();
+        if (!v) { showToast('テキストを入力してから「名言として刻む」'); return; }
+        const cfg = UIKI.store.get('config', {});
+        if (!cfg.pat) {
+          showToast('読雨書込には PAT 必要 ── 設定モーダルを開きます');
+          setTimeout(() => UIKI.config.open(), 1200);
+          return;
+        }
+        quoteBtn.disabled = true;
+        const orig = quoteBtn.textContent;
+        quoteBtn.textContent = '⚡ 刻んでいます…';
+        try {
+          await UIKI.yomu.addEntry({
+            type: 'quote',
+            quote: v,
+            core: state.currentWeight || 1,
+            source: 'sand_quick_quote',
+            is_draft: true,
+            created_at: new Date().toISOString()
+          });
+          showToast('⚡ 名言として読雨に刻んだ（is_draft: true）');
+          textarea.value = '';
+          setTimeout(() => { try { UIKI.yomu.fetch(); } catch(e){} }, 1500);
+        } catch (e) {
+          showToast('✗ ' + (e.message || '失敗').slice(0, 80));
+        } finally {
+          quoteBtn.disabled = false;
+          quoteBtn.textContent = orig;
         }
       });
     }
@@ -6485,6 +6534,10 @@ function bootstrap() {
           if (status) status.textContent = msg;
           if (progress && pct != null) progress.querySelector('.vp-fill').style.width = pct + '%';
         }, latest.id);
+        // v2.29 成功率追跡
+        const history = UIKI.store.get('vision_history', []);
+        history.unshift({ ok: true, kind, ts: new Date().toISOString() });
+        UIKI.store.set('vision_history', history.slice(0, 20));
         const provider = result.provider;
         const written = result.written;
         const p = result.parsed || {};
@@ -6499,6 +6552,10 @@ function bootstrap() {
       } catch (e) {
         console.warn('vision analyze failed', e);
         const msg = e.message || String(e);
+        // v2.29 失敗を成功率履歴に記録
+        const history = UIKI.store.get('vision_history', []);
+        history.unshift({ ok: false, kind, error: msg.slice(0, 80), ts: new Date().toISOString() });
+        UIKI.store.set('vision_history', history.slice(0, 20));
         // エラーパターンに応じてヒントを出す
         let hint = '';
         if (/CORS|fetch|画像取得/i.test(msg)) hint = '\n→ Drive API キーがフォルダにアクセス可能か確認';
