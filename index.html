@@ -65,6 +65,11 @@ body.delete-mode [data-yomu-id]::after {
 body.delete-mode [data-yomu-id] { position: relative; }
 body.delete-mode [data-yomu-id]:hover::after { background: rgba(220, 50, 30, 1); }
 
+/* v2.58 服牢365 + ロードマップの 2 カラム化（モバイルは縦） */
+@media (max-width: 768px) {
+  .philosophy-row { grid-template-columns: 1fr !important; }
+}
+
 /* ロードマップ進捗バー（v2.57 / 2026-05-17） */
 .rm-item {
   display: grid;
@@ -1797,14 +1802,24 @@ footer {
   font-weight: 600;
 }
 .menu-btn {
-  background: transparent;
-  border: none;
+  background: rgba(201, 168, 76, 0.12);
+  border: 1px solid rgba(201, 168, 76, 0.4);
   color: var(--gold);
-  font-size: 1.45rem;
+  font-size: 1.3rem;
   cursor: pointer;
-  padding: 0.25rem 0.6rem;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
   line-height: 1;
+  transition: background 0.2s, transform 0.15s;
 }
+.menu-btn:hover {
+  background: rgba(201, 168, 76, 0.25);
+  transform: scale(1.05);
+}
+.menu-btn:active { transform: scale(0.95); }
 
 /* ───── Tab pages ───── */
 .tab-page { display: block; }
@@ -3004,18 +3019,21 @@ main { padding-bottom: 5.2rem; }
     </div>
   </section>
 
+  <!-- v2.58 服牢365 + ロードマップを 2 カラムで並べる（モバイルは縦） -->
+  <div class="philosophy-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; margin: 1rem 0;">
+
   <!-- v2.52 服牢365：今日の哲学一言 -->
-  <section class="yomu-section reveal fukurou365-section">
+  <section class="yomu-section reveal fukurou365-section" style="margin: 0;">
     <h3>📅 服牢365 <span class="yomu-from" id="f365-day">今日</span></h3>
-    <blockquote style="font-family: var(--serif); font-size: 1.05rem; line-height: 1.7; color: rgba(255,255,255,0.85); padding: 0.6rem 1rem; border-left: 3px solid var(--tab-accent); background: rgba(var(--tab-accent-rgb), 0.06); border-radius: 0.3rem; margin: 0.4rem 0;">
+    <blockquote style="font-family: var(--serif); font-size: 1.02rem; line-height: 1.7; color: rgba(255,255,255,0.85); padding: 0.6rem 1rem; border-left: 3px solid var(--tab-accent); background: rgba(var(--tab-accent-rgb), 0.06); border-radius: 0.3rem; margin: 0.4rem 0;">
       <p id="f365-text">読み込み中…</p>
-      <footer style="font-size: 0.78rem; color: var(--dim); margin-top: 0.4rem;" id="f365-core">── 服牢井像</footer>
+      <footer style="font-size: 0.74rem; color: var(--dim); margin-top: 0.4rem;" id="f365-core">── 服牢井像</footer>
     </blockquote>
-    <p class="yomu-desc" style="font-size: 0.78rem;">365 日分の服牢井像の核言葉。日付ごとに 1 つずつ。重力雨域の精神支柱。</p>
+    <p class="yomu-desc" style="font-size: 0.74rem;">365 日分の核言葉。重力雨域の精神支柱。</p>
   </section>
 
   <!-- v2.52 人生のロードマップ：Phase 1 / Phase 2 戦略 -->
-  <section class="yomu-section reveal life-roadmap-section">
+  <section class="yomu-section reveal life-roadmap-section" style="margin: 0;">
     <h3>📍 人生のロードマップ <span class="yomu-from">Phase 1 / 2</span></h3>
     <p class="yomu-desc">2026 年末まで基盤を完成 → 2027 年に雨域 AI が次の道を示す。先走らない。</p>
 
@@ -3044,10 +3062,12 @@ main { padding-bottom: 5.2rem; }
       </div>
     </div>
 
-    <div style="margin-top: 0.8rem; padding: 0.5rem 0.8rem; background: rgba(231,76,60,0.08); border-left: 3px solid #e74c3c; border-radius: 0.3rem; font-size: 0.76rem; color: rgba(255,255,255,0.85); line-height: 1.6;">
-      <strong>🚫 やらないこと（Phase 1 中）</strong>：Blender 本格学習 / Unity / Cluster SDK / RAINY BRAIN ワールド実装 / YouTube 6ch（1ch のみ）/ 電脳世界 AI 拡張
+    <div style="margin-top: 0.8rem; padding: 0.5rem 0.8rem; background: rgba(231,76,60,0.08); border-left: 3px solid #e74c3c; border-radius: 0.3rem; font-size: 0.72rem; color: rgba(255,255,255,0.85); line-height: 1.5;">
+      <strong>🚫 やらないこと</strong>：Blender 本格 / Unity / Cluster SDK / Ward 実装 / 6ch / 電脳拡張
     </div>
   </section>
+
+  </div><!-- /philosophy-row -->
 
   <!-- 砂のログ（v2.4：雨域メインから移動 ── 重力的活動として統合） -->
   <section class="uwiki-pane gravity-pane sand-section reveal" style="margin: 1.5rem 0 2rem;">
@@ -3810,7 +3830,7 @@ main { padding-bottom: 5.2rem; }
         <span style="font-family: var(--serif); font-size: 1.1rem; font-weight: 600;">🤖 UwikiAI</span>
         <span style="font-size: 0.74rem; color: var(--dim); margin-left: 0.6rem;">雨域の AI 管理人</span>
       </div>
-      <button id="uwikiai-close" style="background: transparent; border: none; color: var(--ink); font-size: 1.4rem; cursor: pointer; width: 32px; height: 32px; border-radius: 50%;">×</button>
+      <button id="uwikiai-close" aria-label="UwikiAI チャットを閉じる" style="background: transparent; border: none; color: var(--ink); font-size: 1.4rem; cursor: pointer; width: 32px; height: 32px; border-radius: 50%;">×</button>
     </div>
     <div id="uwikiai-messages" style="flex: 1 1 auto; overflow-y: auto; padding: 1rem 1.2rem; min-height: 320px; max-height: 60vh;">
       <div class="uw-msg uw-msg-ai">
@@ -3827,7 +3847,7 @@ main { padding-bottom: 5.2rem; }
     </div>
     <div style="padding: 0.8rem 1.2rem; border-top: 1px solid var(--faint); display: flex; gap: 0.5rem;">
       <textarea id="uwikiai-input" placeholder="雨域に投入したいことを呟く..." rows="2" style="flex: 1; resize: none; padding: 0.6rem; border: 1px solid var(--faint); border-radius: 0.4rem; background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 0.92rem;"></textarea>
-      <button id="uwikiai-send" style="background: linear-gradient(135deg, #d4915c, #3a6fc9); color: #fff; border: none; padding: 0.6rem 1.2rem; border-radius: 0.4rem; cursor: pointer; font-weight: 600;">送信</button>
+      <button id="uwikiai-send" aria-label="UwikiAI に送信" style="background: linear-gradient(135deg, #b87a3a, #3a6fc9); color: #fff; border: none; padding: 0.6rem 1.2rem; border-radius: 0.4rem; cursor: pointer; font-weight: 600;">送信</button>
     </div>
   </div>
 </div>
