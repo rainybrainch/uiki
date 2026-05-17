@@ -39,6 +39,25 @@
   --tab-accent-rgb: 36, 86, 184;
 }
 
+/* 読雨エントリ削除モード（v2.33 / 2026-05-17） */
+body.delete-mode [data-yomu-id]::after {
+  content: '🗑 削除';
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(192, 57, 43, 0.95);
+  color: #fff;
+  font-size: 0.68rem;
+  font-family: var(--sans);
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  cursor: pointer;
+  z-index: 5;
+  pointer-events: auto;
+}
+body.delete-mode [data-yomu-id] { position: relative; }
+body.delete-mode [data-yomu-id]:hover::after { background: rgba(220, 50, 30, 1); }
+
 /* 自己申告チップ（v2.32 / 2026-05-17） */
 .self-row {
   display: flex;
@@ -3063,7 +3082,8 @@ main { padding-bottom: 5.2rem; }
       <div class="ts-header">
         <h3>📊 今日のサマリー</h3>
         <div style="display:flex; gap:0.4rem; align-items:center; flex-wrap:wrap;">
-          <button id="ts-ai-comment" class="attraction-add-btn" style="margin:0; padding:0.3rem 0.8rem; font-size:0.78rem;">💬 AI に 1 行コメントさせる</button>
+          <button id="ts-ai-comment" class="attraction-add-btn" style="margin:0; padding:0.3rem 0.8rem; font-size:0.78rem;">💬 振り返り</button>
+          <button id="ts-ai-future" class="attraction-add-btn" style="margin:0; padding:0.3rem 0.8rem; font-size:0.78rem;">🌅 明日への一言</button>
           <button id="ts-analyze-now" class="attraction-add-btn" style="margin:0; padding:0.3rem 0.8rem; font-size:0.78rem;">🔍 今すぐ全て分析</button>
           <span class="ts-auto-chip" id="ts-auto-chip" title="設定の「自動分析を有効にする」">自動分析: 確認中…</span>
         </div>
@@ -3381,7 +3401,12 @@ main { padding-bottom: 5.2rem; }
       <span id="cfg-vision-test-result" style="font-size:0.76rem; color:var(--dim); align-self:center;"></span>
     </div>
     <hr style="border: none; border-top: 1px solid var(--faint); margin: 1.2rem 0;">
-    <h3 style="font-size: 1rem; color: var(--gold); margin-bottom: 0.5rem;">データ管理（v2.30 / 2026-05-17）</h3>
+    <h3 style="font-size: 1rem; color: var(--gold); margin-bottom: 0.5rem;">データ管理（v2.30-33 / 2026-05-17）</h3>
+    <label class="cfg-checkbox" style="display:block; margin-bottom:0.6rem;">
+      <input type="checkbox" id="cfg-delete-mode">
+      <span>🗑 削除モードを有効化（v2.33）</span>
+      <small>ON にすると、読雨セクションの各エントリに「×」ボタンが現れて個別削除可能（誤投稿/重複エントリの掃除用）。</small>
+    </label>
     <div style="display:flex; gap:0.4rem; flex-wrap:wrap;">
       <button type="button" id="cfg-export-yomu" class="attraction-add-btn" style="margin:0; padding:0.4rem 0.9rem; font-size:0.78rem;">📥 読雨データを JSON でダウンロード</button>
       <button type="button" id="cfg-export-local" class="attraction-add-btn" style="margin:0; padding:0.4rem 0.9rem; font-size:0.78rem;">📥 localStorage 全エクスポート</button>
@@ -4375,7 +4400,7 @@ UIKI.yomu = (function() {
       const avgHtml = change && change.avg
         ? '<span class="yhi-avg">週平均: ' + change.avg + (latest.unit || '') + '</span>'
         : '';
-      return '<div class="yomu-health-card has-spark">' +
+      return '<div class="yomu-health-card has-spark" data-yomu-id="' + escapeHtml(latest.id || '') + '">' +
         '<div class="yhi-top">' +
           '<span class="yhi-metric">' + escapeHtml(metric) + '</span>' +
           changeHtml +
@@ -4404,7 +4429,7 @@ UIKI.yomu = (function() {
     wrap.innerHTML = top.map(q => {
       const src = q.source ? '── ' + escapeHtml(q.source) : '';
       const core = q.core ? ' ｜ 核' + q.core : '';
-      return '<blockquote class="yomu-quote-item">' +
+      return '<blockquote class="yomu-quote-item" data-yomu-id="' + escapeHtml(q.id || '') + '">' +
         '<p>' + escapeHtml(q.quote || '') + '</p>' +
         '<footer>' + src + escapeHtml(core) + '</footer>' +
         '</blockquote>';
@@ -5048,8 +5073,40 @@ UIKI.yomu = (function() {
     setInterval(fetchYomu, POLL_MS);
   }
 
+  // v2.33 読雨エントリ削除
+  async function deleteEntry(entryId) {
+    const cfg = UIKI.store.get('config', null);
+    if (!cfg || !cfg.pat) throw new Error('PAT 未設定');
+    const fetchRes = await fetch('https://api.github.com/gists/' + YOMU_GIST_ID, {
+      headers: { 'Authorization': 'Bearer ' + cfg.pat, 'Accept': 'application/vnd.github+json' }
+    });
+    if (!fetchRes.ok) throw new Error('読雨Gist fetch失敗: HTTP ' + fetchRes.status);
+    const data = await fetchRes.json();
+    const file = data.files && data.files['yomu-data.json'];
+    if (!file) throw new Error('yomu-data.json not found');
+    let parsed;
+    try { parsed = JSON.parse(file.content); } catch(e) { throw new Error('yomu-data.json 解析失敗'); }
+    if (!Array.isArray(parsed.entries)) parsed.entries = [];
+    const before = parsed.entries.length;
+    parsed.entries = parsed.entries.filter(e => e.id !== entryId);
+    if (parsed.entries.length === before) throw new Error('該当エントリが見つからない');
+    parsed.updatedAt = new Date().toISOString();
+    const patchRes = await fetch('https://api.github.com/gists/' + YOMU_GIST_ID, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': 'Bearer ' + cfg.pat,
+        'Accept': 'application/vnd.github+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ files: { 'yomu-data.json': { content: JSON.stringify(parsed, null, 2) } } })
+    });
+    if (!patchRes.ok) throw new Error('読雨Gist 削除失敗: HTTP ' + patchRes.status);
+    state.entries = parsed.entries;
+    return true;
+  }
+
   return {
-    init, fetch: fetchYomu, addEntry, addEntriesBatch, ingestFromQuery,
+    init, fetch: fetchYomu, addEntry, addEntriesBatch, deleteEntry, ingestFromQuery,
     state: () => state,
     renderMonthlyReview,
     monthlyPrev: () => { _monthlyOffset--; renderMonthlyReview(); },
@@ -6550,6 +6607,8 @@ UIKI.config = (() => {
     if (ckEl) ckEl.value = cfg.claudeKey || '';
     if (vpEl) vpEl.value = cfg.visionProvider || 'gemini';
     if (vaEl) vaEl.checked = !!cfg.visionAuto;
+    const dmEl = document.getElementById('cfg-delete-mode');
+    if (dmEl) dmEl.checked = !!cfg.deleteMode;
     // Vision 警告：PAT または Gemini キー未設定なら警告バナーを表示
     const visionWarn = document.getElementById('cfg-vision-warn');
     if (visionWarn) {
@@ -6584,6 +6643,8 @@ UIKI.config = (() => {
     const claudeKey = ckEl2 ? ckEl2.value.trim() : '';
     const visionProvider = vpEl2 ? vpEl2.value : 'gemini';
     const visionAuto = vaEl2 ? vaEl2.checked : false;
+    const dmEl2 = document.getElementById('cfg-delete-mode');
+    const deleteMode = dmEl2 ? dmEl2.checked : false;
 
     // v2.8 緩和：PAT または Drive キーのどちらかがあれば保存可
     if (!pat && !driveKey) {
@@ -6602,7 +6663,7 @@ UIKI.config = (() => {
       pat, gistId, notifEnabled,
       driveKey, driveFolderId, driveFolderIdMeal, driveFolderIdScale, driveOauthClientId,
       booklogUsername,
-      geminiKey, claudeKey, visionProvider, visionAuto,
+      geminiKey, claudeKey, visionProvider, visionAuto, deleteMode,
       savedAt: new Date().toISOString()
     });
     showToast(pat ? '設定を保存した' : 'Drive 連携のみで保存した（PAT 未登録）');
@@ -6872,6 +6933,55 @@ function bootstrap() {
     });
   }
 
+  // v2.33 AI「明日への一言」
+  const tsAiFutureBtn = document.getElementById('ts-ai-future');
+  if (tsAiFutureBtn) {
+    tsAiFutureBtn.addEventListener('click', async () => {
+      const cfg = UIKI.store.get('config', {});
+      if (!cfg.geminiKey) { showToast('Gemini キー必要'); setTimeout(()=>UIKI.config.open(),1200); return; }
+      const out = document.getElementById('ts-ai-comment-out');
+      tsAiFutureBtn.disabled = true;
+      const orig = tsAiFutureBtn.textContent;
+      tsAiFutureBtn.textContent = '🌅 考え中…';
+      try {
+        const today = new Date();
+        const todayStr = today.getFullYear() + '-' + ('0' + (today.getMonth() + 1)).slice(-2) + '-' + ('0' + today.getDate()).slice(-2);
+        const tasks = UIKI.store.get('tasks', []);
+        const tasksRemain = tasks.filter(t => !t.completed && !t.stain).slice(0, 10).map(t => ({ text: t.text, project: t.projectId, deadline: t.deadline }));
+        const recentSelf = (UIKI.yomu.state ? UIKI.yomu.state().entries || [] : []).filter(e => e.type === 'self').slice(0, 5);
+        const recentRanks = (UIKI.yomu.state ? UIKI.yomu.state().entries || [] : []).filter(e => e.type === 'body_scan').slice(0, 3).map(e => ({ date: e.date, rank: e.rank, memo: e.memo }));
+        const aiComments = UIKI.store.get('ai_comments', []).slice(0, 7);
+        const data = {
+          today: todayStr,
+          remaining_tasks: tasksRemain,
+          recent_self_reports: recentSelf,
+          recent_ranks: recentRanks,
+          recent_ai_comments: aiComments
+        };
+        const prompt = `あなたは服牢井像（円舵）の個人アシスタント「服牢AI」。\n以下のデータから、創造主に対する「明日への具体的な一言助言」を 60-90 字で。\n- 残タスクの優先度に触れる（重要度や期限）\n- 自己申告データ（気分/疲労）から無理しない範囲で\n- 漫画修行・ぽもじかん・マネぼう教科書・雨域完成のうち、明日触れるべきものを 1 つだけ提案\n- 診断・指導は禁止、励まし口調で\n\nデータ:\n` + JSON.stringify(data, null, 2);
+        const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=' + encodeURIComponent(cfg.geminiKey);
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { temperature: 0.7, maxOutputTokens: 300 }
+          })
+        });
+        if (!res.ok) throw new Error('Gemini ' + res.status);
+        const resp = await res.json();
+        const text = resp?.candidates?.[0]?.content?.parts?.[0]?.text || '応答なし';
+        out.style.display = 'block';
+        out.textContent = '🌅 ' + text.trim();
+      } catch(e) {
+        showToast('✗ ' + (e.message || '失敗'));
+      } finally {
+        tsAiFutureBtn.disabled = false;
+        tsAiFutureBtn.textContent = orig;
+      }
+    });
+  }
+
   // 「今すぐ全て分析」ボタン
   const tsAnalyzeNow = document.getElementById('ts-analyze-now');
   if (tsAnalyzeNow) {
@@ -7120,6 +7230,45 @@ function bootstrap() {
   if (new URLSearchParams(location.search).get('public') === '1') {
     document.body.classList.add('public-mode');
   }
+
+  // v2.33 削除モード反映
+  const cfg33 = UIKI.store.get('config', {});
+  if (cfg33.deleteMode) document.body.classList.add('delete-mode');
+  // 削除モード切替時にも反映：cfg-save 時に body class を更新
+  const cfgSaveBtn = document.getElementById('cfg-save');
+  if (cfgSaveBtn) {
+    const origHandler = cfgSaveBtn.onclick;
+    // 既存ハンドラ後に追加処理
+    cfgSaveBtn.addEventListener('click', () => {
+      setTimeout(() => {
+        const c = UIKI.store.get('config', {});
+        document.body.classList.toggle('delete-mode', !!c.deleteMode);
+        try { UIKI.yomu.fetch(); } catch(e) {}
+      }, 800);
+    });
+  }
+  // 削除ボタンクリック委譲
+  document.addEventListener('click', async (e) => {
+    if (!document.body.classList.contains('delete-mode')) return;
+    const card = e.target.closest('[data-yomu-id]');
+    if (!card) return;
+    // ::after クリック判定：clientX/Y がカード右上に近いか
+    const rect = card.getBoundingClientRect();
+    const inDelArea = e.clientX > rect.right - 70 && e.clientY < rect.top + 30;
+    if (!inDelArea) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const id = card.dataset.yomuId;
+    if (!id) return;
+    if (!confirm('このエントリを読雨から削除しますか？\n（取消不可・Gist が更新されます）')) return;
+    try {
+      await UIKI.yomu.deleteEntry(id);
+      showToast('✓ 削除した');
+      try { UIKI.yomu.fetch(); } catch(e) {}
+    } catch (err) {
+      showToast('✗ ' + (err.message || '失敗'));
+    }
+  });
 
   // フォーム
   const toggle = document.getElementById('invoke-toggle');
