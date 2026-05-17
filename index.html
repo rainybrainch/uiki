@@ -3486,6 +3486,12 @@ main { padding-bottom: 5.2rem; }
         </div>
       </div>
 
+      <!-- v2.63 ランク推移折れ線グラフ -->
+      <div style="margin-bottom: 1rem;">
+        <h4 style="font-size:0.88rem; font-family:var(--serif); color: rgba(var(--tab-accent-rgb), 0.85); margin-bottom: 0.5rem;">📈 ランク推移（過去14日）</h4>
+        <svg id="rank-trend-chart" viewBox="0 0 600 120" preserveAspectRatio="none" style="width: 100%; height: 100px; background: rgba(255,255,255,0.03); border-radius: 0.4rem; padding: 4px;"></svg>
+      </div>
+
       <!-- 身体スキャン履歴（type=body_scan・ランク付き） -->
       <div style="margin-bottom: 1rem;">
         <h4 style="font-size:0.88rem; font-family:var(--serif); color: rgba(var(--tab-accent-rgb), 0.85); margin-bottom: 0.5rem;">🤳 ランク履歴</h4>
@@ -3714,7 +3720,10 @@ main { padding-bottom: 5.2rem; }
     <p class="warning-top">⚠ このページの他のスクリプトからも読み取れます。公共の端末では使用しないこと。</p>
     <label>GitHub Personal Access Token
       <input type="password" id="cfg-pat" autocomplete="off">
-      <small>このトークンは、あなたの端末にのみ保存される。サーバーには送られない。<br>fine-grained token を使い、Gist スコープのみ許可すること。</small>
+      <small>このトークンは、あなたの端末にのみ保存される。サーバーには送られない。<br>fine-grained token を使い、Gist スコープのみ許可すること。<br>
+        <a href="https://github.com/settings/tokens?type=beta" target="_blank" rel="noopener" style="color: var(--gold);">🔑 PAT を新規発行する →</a>
+        （Token name: UIKI / Expiration: 365 days / Account permissions の Gists を <strong>Read and write</strong>）
+      </small>
     </label>
     <label>Gist ID（任意）
       <input type="text" id="cfg-gistid" autocomplete="off">
@@ -4961,7 +4970,8 @@ UIKI.yomu = (function() {
     wrap.innerHTML = top.map(q => {
       const src = q.source ? '── ' + escapeHtml(q.source) : '';
       const core = q.core ? ' ｜ 核' + q.core : '';
-      return '<blockquote class="yomu-quote-item" data-yomu-id="' + escapeHtml(q.id || '') + '">' +
+      return '<blockquote class="yomu-quote-item" data-yomu-id="' + escapeHtml(q.id || '') + '" style="position:relative;">' +
+        '<button class="yomu-copy-btn" data-copy="' + escapeHtml(q.quote || '') + '" title="コピー" aria-label="コピー" style="position:absolute; top:4px; right:4px; background: transparent; border: 1px solid var(--faint); color: var(--dim); padding: 0.1rem 0.4rem; border-radius: 4px; font-size: 0.66rem; cursor: pointer;">📋</button>' +
         '<p>' + escapeHtml(q.quote || '') + '</p>' +
         '<footer>' + src + escapeHtml(core) + '</footer>' +
         '</blockquote>';
@@ -5090,6 +5100,75 @@ UIKI.yomu = (function() {
     renderCalendar();
     renderFukurou365();
     renderBigcardStats();
+    renderRankTrend();
+  }
+
+  // v2.63 ランク推移折れ線グラフ（S=8, A+=7, A=6, B+=5, B=4, C+=3, C=2, D=1, E=0）
+  function renderRankTrend() {
+    const svg = document.getElementById('rank-trend-chart');
+    if (!svg) return;
+    const rankMap = { 'S': 8, 'A+': 7, 'A': 6, 'B+': 5, 'B': 4, 'C+': 3, 'C': 2, 'D': 1, 'E': 0 };
+    const scans = (state.entries || []).filter(e => e.type === 'body_scan' && e.rank);
+    if (!scans.length) {
+      svg.innerHTML = '<text x="300" y="60" fill="rgba(255,255,255,0.4)" font-size="11" text-anchor="middle" font-family="sans-serif">ランクデータなし ── 「🔍 ランク評価する」で記録</text>';
+      return;
+    }
+    // 過去 14 日 × 日付別の最新ランク
+    const today = new Date(); today.setHours(0,0,0,0);
+    const days = 14;
+    const points = [];
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date(today); d.setDate(today.getDate() - i);
+      const ymd = d.getFullYear() + ('0'+(d.getMonth()+1)).slice(-2) + ('0'+d.getDate()).slice(-2);
+      const ymdh = d.getFullYear() + '-' + ('0'+(d.getMonth()+1)).slice(-2) + '-' + ('0'+d.getDate()).slice(-2);
+      const dayScan = scans.find(s => s.date === ymd || s.date === ymdh);
+      points.push({
+        x: i,
+        date: d,
+        rank: dayScan ? dayScan.rank : null,
+        value: dayScan && rankMap[dayScan.rank] != null ? rankMap[dayScan.rank] : null
+      });
+    }
+    const W = 600, H = 120, P = 20;
+    const stepX = (W - P*2) / (days - 1);
+    const valid = points.filter(p => p.value != null);
+    if (!valid.length) {
+      svg.innerHTML = '<text x="300" y="60" fill="rgba(255,255,255,0.4)" font-size="11" text-anchor="middle" font-family="sans-serif">過去14日にランク記録なし</text>';
+      return;
+    }
+    // y = H - P - (value/8) * (H - P*2)
+    const y = v => H - P - (v / 8) * (H - P*2);
+    // 軸
+    let html = '<line x1="' + P + '" y1="' + (H-P) + '" x2="' + (W-P) + '" y2="' + (H-P) + '" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>';
+    // S/B/D 目安ライン
+    [['S', 8], ['B', 4], ['D', 1]].forEach(([lab, v]) => {
+      html += '<line x1="' + P + '" y1="' + y(v).toFixed(0) + '" x2="' + (W-P) + '" y2="' + y(v).toFixed(0) + '" stroke="rgba(255,255,255,0.08)" stroke-width="1" stroke-dasharray="3 4"/>';
+      html += '<text x="' + (P-4) + '" y="' + (y(v)+3).toFixed(0) + '" fill="rgba(255,255,255,0.4)" font-size="9" text-anchor="end" font-family="monospace">' + lab + '</text>';
+    });
+    // 線（途切れあり）
+    let pathParts = [];
+    let prevValid = false;
+    points.forEach((p, idx) => {
+      if (p.value != null) {
+        const xPos = P + (days - 1 - p.x) * stepX;
+        pathParts.push((prevValid ? 'L' : 'M') + xPos.toFixed(1) + ',' + y(p.value).toFixed(1));
+        prevValid = true;
+      } else {
+        prevValid = false;
+      }
+    });
+    if (pathParts.length) {
+      html += '<path d="' + pathParts.join(' ') + '" stroke="var(--tab-accent)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
+    }
+    // ポイント + ランク文字
+    points.forEach(p => {
+      if (p.value != null) {
+        const xPos = P + (days - 1 - p.x) * stepX;
+        html += '<circle cx="' + xPos.toFixed(1) + '" cy="' + y(p.value).toFixed(1) + '" r="3" fill="var(--tab-accent)"/>';
+        html += '<text x="' + xPos.toFixed(1) + '" y="' + (y(p.value) - 8).toFixed(1) + '" fill="rgba(255,255,255,0.8)" font-size="9" text-anchor="middle" font-family="monospace">' + p.rank + '</text>';
+      }
+    });
+    svg.innerHTML = html;
   }
 
   // v2.61 雨域メインの bigcard に最新サマリーを表示
@@ -5298,7 +5377,8 @@ UIKI.yomu = (function() {
     const memos = showAll ? allMemos : allMemos.slice(0, 5);
     wrap.innerHTML = memos.map(m => {
       const date = (m.created_at || m.date || '').slice(0, 10);
-      return '<blockquote class="yomu-quote-item" data-yomu-id="' + escapeHtml(m.id || '') + '">' +
+      return '<blockquote class="yomu-quote-item" data-yomu-id="' + escapeHtml(m.id || '') + '" style="position:relative;">' +
+        '<button class="yomu-copy-btn" data-copy="' + escapeHtml(m.text || '') + '" title="コピー" aria-label="コピー" style="position:absolute; top:4px; right:4px; background: transparent; border: 1px solid var(--faint); color: var(--dim); padding: 0.1rem 0.4rem; border-radius: 4px; font-size: 0.66rem; cursor: pointer;">📋</button>' +
         '<p>' + escapeHtml(m.text || '') + '</p>' +
         '<footer>' + escapeHtml(date) + (m.weight ? ' ｜ 重力 ' + m.weight : '') + '</footer>' +
         '</blockquote>';
@@ -8099,6 +8179,31 @@ function bootstrap() {
   if (mRefresh) mRefresh.addEventListener('click', () => { try { UIKI.yomu.renderMonthlyReview && UIKI.yomu.renderMonthlyReview(); } catch(e){} showToast('🔄 集計更新'); });
   if (mPrev) mPrev.addEventListener('click', () => { try { UIKI.yomu.monthlyPrev && UIKI.yomu.monthlyPrev(); } catch(e){} });
   if (mNext) mNext.addEventListener('click', () => { try { UIKI.yomu.monthlyNext && UIKI.yomu.monthlyNext(); } catch(e){} });
+
+  // v2.63 コピーボタン委譲（名言・メモ）
+  document.addEventListener('click', e => {
+    const btn = e.target.closest('.yomu-copy-btn');
+    if (!btn) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const text = btn.dataset.copy || '';
+    if (!text) return;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('📋 コピーしました');
+        btn.textContent = '✓';
+        setTimeout(() => { btn.textContent = '📋'; }, 1500);
+      }).catch(() => showToast('✗ コピー失敗'));
+    } else {
+      // フォールバック
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); showToast('📋 コピーしました'); } catch(e) {}
+      document.body.removeChild(ta);
+    }
+  });
 
   // v2.54 読雨アーカイブ内部タブ（quote / memo / book）
   document.querySelectorAll('.archive-tab').forEach(tab => {
