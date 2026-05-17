@@ -2986,27 +2986,11 @@ main { padding-bottom: 5.2rem; }
     </div>
   </section>
 
-  <!-- v2.51 カレンダー一覧（重力タブ・全データ俯瞰） -->
+  <!-- v2.65 カレンダー + 今日のサマリー統合（重力タブ） -->
   <section class="yomu-section reveal" id="calendar-view-home">
-    <h3>📆 カレンダー一覧 <span class="yomu-from" id="cal-period-home">今月</span></h3>
-    <p class="yomu-desc">日付ごとに全データを俯瞰。☑=タスク完了、✨=砂、📖=読書、💬=名言、📝=メモ。タップで詳細。</p>
-    <div style="display:flex; gap:0.4rem; margin-bottom:0.6rem;">
-      <button class="attraction-add-btn cal-prev-btn" style="margin: 0; padding: 0.35rem 0.8rem; font-size: 0.78rem;">← 先月</button>
-      <button class="attraction-add-btn cal-today-btn" style="margin: 0; padding: 0.35rem 0.8rem; font-size: 0.78rem;">今月</button>
-      <button class="attraction-add-btn cal-next-btn" style="margin: 0; padding: 0.35rem 0.8rem; font-size: 0.78rem;">来月 →</button>
-    </div>
-    <div class="cal-grid cal-grid-target" data-cal-tab="home">
-      <div class="yomu-loading yomu-empty">読み込み中…</div>
-    </div>
-    <div class="cal-day-detail" data-cal-detail="home" style="margin-top: 0.8rem; padding: 0.6rem 0.9rem; background: rgba(var(--tab-accent-rgb), 0.06); border-left: 3px solid var(--tab-accent); border-radius: 0.4rem; display: none;"></div>
-  </section>
-
-  <!-- 今日のサマリー（重力タブ・v2.24） -->
-  <section class="today-summary reveal" id="today-summary-home">
-    <div class="ts-header">
-      <h3>📊 今日の内なる活動</h3>
-    </div>
-    <div class="ts-grid">
+    <h3>📆 今日 + カレンダー <span class="yomu-from" id="cal-period-home">今月</span></h3>
+    <!-- 今日のサマリー（カレンダー上部に統合） -->
+    <div class="ts-grid" style="margin-bottom: 0.8rem;">
       <div class="ts-card">
         <div class="ts-label">☑ 完了タスク</div>
         <div class="ts-value" id="ts-tasks-done">—</div>
@@ -3023,7 +3007,18 @@ main { padding-bottom: 5.2rem; }
         <div class="ts-sub" id="ts-book-latest">最新: なし</div>
       </div>
     </div>
+    <p class="yomu-desc" style="font-size: 0.74rem;">日付タップで詳細。☑=タスク完了 ✨=砂 📖=読書 💬=名言 📝=メモ</p>
+    <div style="display:flex; gap:0.4rem; margin-bottom:0.6rem;">
+      <button class="attraction-add-btn cal-prev-btn" style="margin: 0; padding: 0.35rem 0.8rem; font-size: 0.78rem;">← 先月</button>
+      <button class="attraction-add-btn cal-today-btn" style="margin: 0; padding: 0.35rem 0.8rem; font-size: 0.78rem;">今月</button>
+      <button class="attraction-add-btn cal-next-btn" style="margin: 0; padding: 0.35rem 0.8rem; font-size: 0.78rem;">来月 →</button>
+    </div>
+    <div class="cal-grid cal-grid-target" data-cal-tab="home">
+      <div class="yomu-loading yomu-empty">読み込み中…</div>
+    </div>
+    <div class="cal-day-detail" data-cal-detail="home" style="margin-top: 0.8rem; padding: 0.6rem 0.9rem; background: rgba(var(--tab-accent-rgb), 0.06); border-left: 3px solid var(--tab-accent); border-radius: 0.4rem; display: none;"></div>
   </section>
+  <!-- v2.65 旧今日のサマリーセクションはカレンダーに統合済 -->
 
   <!-- v2.58 服牢365 + ロードマップを 2 カラムで並べる（モバイルは縦） -->
   <div class="philosophy-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; margin: 1rem 0;">
@@ -3398,10 +3393,12 @@ main { padding-bottom: 5.2rem; }
       </div>
     </section>
 
-    <!-- v2.51 カレンダー一覧（引力タブ・全データ俯瞰・Hero 直下に最優先表示） -->
+    <!-- v2.65 カレンダー + 今日のサマリー統合（引力タブ） -->
     <section class="yomu-section reveal" id="calendar-view-uwiki">
-      <h3>📆 カレンダー一覧 <span class="yomu-from" id="cal-period-uwiki">今月</span></h3>
-      <p class="yomu-desc">日付ごとに全データを俯瞰。⚖️=体組成計、🤳=ランク、🍽=食事、😊=自己申告、📝=メモ、✨=砂、☑=タスク完了。タップで詳細。</p>
+      <h3>📆 今日 + カレンダー <span class="yomu-from" id="cal-period-uwiki">今月</span></h3>
+      <!-- 今日のサマリーをカレンダー上部に統合（元の today-summary 内のグリッドを継承） -->
+      <div id="uwiki-cal-summary-slot"></div>
+      <p class="yomu-desc" style="font-size: 0.74rem;">日付タップで詳細。⚖️体組成計 🤳ランク 🍽食事 😊自己申告 📷画像アップ</p>
       <div style="display:flex; gap:0.4rem; margin-bottom:0.6rem;">
         <button class="attraction-add-btn cal-prev-btn" style="margin: 0; padding: 0.35rem 0.8rem; font-size: 0.78rem;">← 先月</button>
         <button class="attraction-add-btn cal-today-btn" style="margin: 0; padding: 0.35rem 0.8rem; font-size: 0.78rem;">今月</button>
@@ -3413,7 +3410,7 @@ main { padding-bottom: 5.2rem; }
       <div class="cal-day-detail" data-cal-detail="uwiki" style="margin-top: 0.8rem; padding: 0.6rem 0.9rem; background: rgba(var(--tab-accent-rgb), 0.06); border-left: 3px solid var(--tab-accent); border-radius: 0.4rem; display: none;"></div>
     </section>
 
-    <!-- ━━━ 今日のサマリー（v2.24 / 2026-05-17） ━━━ -->
+    <!-- ━━━ 今日のサマリー（v2.24 / 2026-05-17 → v2.65 でカレンダー直下に移動） ━━━ -->
     <section class="today-summary reveal" id="today-summary">
       <div class="ts-header">
         <h3>📊 今日のサマリー</h3>
@@ -3599,7 +3596,9 @@ main { padding-bottom: 5.2rem; }
           <button class="attraction-add-btn" id="monthly-refresh" style="margin: 0.4rem 0 0; padding: 0.4rem 0.9rem; font-size: 0.78rem;">🔄 集計を更新</button>
           <button class="attraction-add-btn" id="monthly-prev" style="margin: 0.4rem 0.3rem 0; padding: 0.4rem 0.9rem; font-size: 0.78rem;">← 先月</button>
           <button class="attraction-add-btn" id="monthly-next" style="margin: 0.4rem 0 0; padding: 0.4rem 0.9rem; font-size: 0.78rem;">来月 →</button>
+          <button class="attraction-add-btn" id="monthly-ai-summary" style="margin: 0.4rem 0 0; padding: 0.4rem 0.9rem; font-size: 0.78rem; background: rgba(184,122,58,0.15); border-color: var(--gold); color: var(--gold);">🤖 AI で月次総評</button>
         </p>
+        <div id="monthly-ai-result" style="display: none; padding: 0.7rem 0.9rem; background: rgba(var(--tab-accent-rgb), 0.08); border-left: 3px solid var(--tab-accent); border-radius: 0.4rem; font-size: 0.86rem; line-height: 1.6; margin-bottom: 0.8rem;"></div>
         <div class="ts-grid" id="monthly-grid">
         <div class="ts-card">
           <div class="ts-label">⚖️ 体重平均</div>
@@ -3875,7 +3874,7 @@ main { padding-bottom: 5.2rem; }
     <div style="display:flex; align-items:center; justify-content:space-between; padding: 0.9rem 1.2rem; border-bottom: 1px solid var(--faint); background: linear-gradient(135deg, rgba(212,145,92,0.18) 0%, rgba(58,111,201,0.18) 100%);">
       <div>
         <span style="font-family: var(--serif); font-size: 1.1rem; font-weight: 600;">🤖 UwikiAI</span>
-        <span style="font-size: 0.74rem; color: var(--dim); margin-left: 0.6rem;">雨域の AI 管理人</span>
+        <span style="font-size: 0.74rem; color: var(--dim); margin-left: 0.6rem;">雨域の AI 管理人 <span id="uwikiai-count" style="margin-left:0.4rem;"></span></span>
       </div>
       <div style="display:flex; gap:0.4rem; align-items:center;">
         <button id="uwikiai-clear" aria-label="UwikiAI 履歴をクリア" title="履歴をクリア" style="background: transparent; border: 1px solid var(--faint); color: var(--dim); font-size: 0.74rem; cursor: pointer; padding: 0.25rem 0.6rem; border-radius: 999px;">🗑 履歴</button>
@@ -5249,10 +5248,11 @@ UIKI.yomu = (function() {
     const daysInMonth = lastDay.getDate();
     const todayY = now.getFullYear() === new Date().getFullYear() && now.getMonth() === new Date().getMonth() ? new Date().getDate() : -1;
 
-    // v2.51 日付別のデータ集約：全データソース（重力 + 引力）統合
+    // v2.65 日付別データ集約：重力 / 引力 別に集計（タブごとに表示分岐）
     const entries = state.entries || [];
     const tasks = UIKI.store.get('tasks', []);
     const sandLog = UIKI.store.get('sand_log', []);
+    const initDay = () => ({ scale: null, body: null, meal: 0, self: 0, quote: 0, book: 0, memo: 0, tasks: 0, sand: 0, uploadBody: 0, uploadScale: 0, uploadMeal: 0 });
     const byDay = {};
     // 読雨エントリ
     entries.forEach(e => {
@@ -5261,7 +5261,7 @@ UIKI.yomu = (function() {
       if (/^\d{8}$/.test(d) && +d.slice(0,4) === y && +d.slice(4,6) - 1 === m) day = +d.slice(6,8);
       else if (/^\d{4}-\d{2}-\d{2}/.test(d) && +d.slice(0,4) === y && +d.slice(5,7) - 1 === m) day = +d.slice(8,10);
       if (!day) return;
-      if (!byDay[day]) byDay[day] = { scale: null, body: null, meal: 0, self: 0, quote: 0, book: 0, memo: 0, tasks: 0, sand: 0 };
+      if (!byDay[day]) byDay[day] = initDay();
       if (e.type === 'health' && ['weight','body_fat','muscle','water','bmi'].includes(e.metric)) byDay[day].scale = e.value;
       if (e.type === 'body_scan' && e.rank) byDay[day].body = e.rank;
       if (e.type === 'health' && e.metric === 'meal_calories') byDay[day].meal += Number(e.value || 0);
@@ -5276,7 +5276,7 @@ UIKI.yomu = (function() {
       const d = new Date(t.completedAt);
       if (d.getFullYear() === y && d.getMonth() === m) {
         const day = d.getDate();
-        if (!byDay[day]) byDay[day] = { scale: null, body: null, meal: 0, self: 0, quote: 0, book: 0, memo: 0, tasks: 0, sand: 0 };
+        if (!byDay[day]) byDay[day] = initDay();
         byDay[day].tasks++;
       }
     });
@@ -5287,43 +5287,71 @@ UIKI.yomu = (function() {
       const d = new Date(ts);
       if (d.getFullYear() === y && d.getMonth() === m) {
         const day = d.getDate();
-        if (!byDay[day]) byDay[day] = { scale: null, body: null, meal: 0, self: 0, quote: 0, book: 0, memo: 0, tasks: 0, sand: 0 };
+        if (!byDay[day]) byDay[day] = initDay();
         byDay[day].sand++;
       }
     });
-
-    // ヘッダ
-    const heads = ['日','月','火','水','木','金','土'];
-    let html = heads.map(h => '<div class="cal-cell cal-head">' + h + '</div>').join('');
-    // 月初前の空白
-    for (let i = 0; i < startDow; i++) html += '<div class="cal-cell cal-blank"></div>';
-    // 各日
-    const realToday = new Date();
-    for (let day = 1; day <= daysInMonth; day++) {
-      const isToday = todayY === day;
-      const isFuture = new Date(y, m, day) > realToday;
-      const data = byDay[day];
-      const hasData = !!data;
-      let marks = '';
-      if (data) {
-        if (data.scale != null) marks += '<span class="cal-mark" title="体組成計">⚖️</span>';
-        if (data.body) marks += '<span class="cal-mark cal-mark-rank" title="ランク">' + escapeHtml(data.body) + '</span>';
-        if (data.meal > 0) marks += '<span class="cal-mark" title="食事 ' + data.meal.toFixed(0) + 'kcal">🍽</span>';
-        if (data.self > 0) marks += '<span class="cal-mark" title="自己申告">😊</span>';
-        if (data.tasks > 0) marks += '<span class="cal-mark" title="タスク完了 ' + data.tasks + '">☑</span>';
-        if (data.sand > 0) marks += '<span class="cal-mark" title="砂 ' + data.sand + '">✨</span>';
-        if (data.quote > 0) marks += '<span class="cal-mark" title="名言">💬</span>';
-        if (data.book > 0) marks += '<span class="cal-mark" title="読書">📖</span>';
-        if (data.memo > 0) marks += '<span class="cal-mark" title="メモ">📝</span>';
+    // v2.65 Drive 画像アップロード状況（撮影日ベース）
+    try {
+      const driveStates = UIKI.drive && UIKI.drive.state ? UIKI.drive.state() : null;
+      if (driveStates) {
+        const checkKinds = [['body', 'uploadBody'], ['scale', 'uploadScale'], ['meal', 'uploadMeal']];
+        checkKinds.forEach(([kind, key]) => {
+          const files = (driveStates[kind] && driveStates[kind].files) || [];
+          files.forEach(f => {
+            const eff = UIKI.drive.getEffectiveDate(f);
+            const d = eff && eff.date;
+            if (!d) return;
+            if (d.getFullYear() === y && d.getMonth() === m) {
+              const day = d.getDate();
+              if (!byDay[day]) byDay[day] = initDay();
+              byDay[day][key]++;
+            }
+          });
+        });
       }
-      const cls = 'cal-cell' + (isToday ? ' cal-today' : '') + (isFuture ? ' cal-future' : '') + (hasData && !isFuture ? ' cal-has-data' : '');
-      html += '<div class="' + cls + '" data-cal-day="' + day + '">' +
-                '<span class="cal-day-num">' + day + '</span>' +
-                '<span class="cal-day-marks">' + marks + '</span>' +
-              '</div>';
-    }
-    // 両タブのカレンダーグリッドに同じ内容を反映
-    targets.forEach(t => { t.innerHTML = html; });
+    } catch(e) { /* drive 未ロード時は無視 */ }
+
+    // v2.65 タブごとに別マーカーを表示（home=重力 / uwiki=引力）
+    const heads = ['日','月','火','水','木','金','土'];
+    const realToday = new Date();
+    const buildCellsForTab = (tabKey) => {
+      let html = heads.map(h => '<div class="cal-cell cal-head">' + h + '</div>').join('');
+      for (let i = 0; i < startDow; i++) html += '<div class="cal-cell cal-blank"></div>';
+      for (let day = 1; day <= daysInMonth; day++) {
+        const isToday = todayY === day;
+        const isFuture = new Date(y, m, day) > realToday;
+        const data = byDay[day];
+        const hasData = !!data;
+        let marks = '';
+        if (data) {
+          if (tabKey === 'home') {
+            // 重力：タスク・砂・名言・読書・メモ
+            if (data.tasks > 0) marks += '<span class="cal-mark" title="タスク完了 ' + data.tasks + '">☑</span>';
+            if (data.sand > 0) marks += '<span class="cal-mark" title="砂 ' + data.sand + '">✨</span>';
+            if (data.quote > 0) marks += '<span class="cal-mark" title="名言">💬</span>';
+            if (data.book > 0) marks += '<span class="cal-mark" title="読書">📖</span>';
+            if (data.memo > 0) marks += '<span class="cal-mark" title="メモ">📝</span>';
+          } else {
+            // 引力：体組成計・ランク・食事・自己申告 + 画像アップ
+            if (data.scale != null) marks += '<span class="cal-mark" title="体組成計数値">⚖️</span>';
+            if (data.body) marks += '<span class="cal-mark cal-mark-rank" title="ランク">' + escapeHtml(data.body) + '</span>';
+            if (data.meal > 0) marks += '<span class="cal-mark" title="食事 ' + data.meal.toFixed(0) + 'kcal">🍽</span>';
+            if (data.self > 0) marks += '<span class="cal-mark" title="自己申告">😊</span>';
+            if (data.uploadBody > 0) marks += '<span class="cal-mark" title="自撮りアップ ' + data.uploadBody + '">🤳</span>';
+            if (data.uploadScale > 0) marks += '<span class="cal-mark" title="体組成計画像アップ ' + data.uploadScale + '">📸</span>';
+            if (data.uploadMeal > 0) marks += '<span class="cal-mark" title="食事画像アップ ' + data.uploadMeal + '">🥗</span>';
+          }
+        }
+        const cls = 'cal-cell' + (isToday ? ' cal-today' : '') + (isFuture ? ' cal-future' : '') + (hasData && !isFuture ? ' cal-has-data' : '');
+        html += '<div class="' + cls + '" data-cal-day="' + day + '">' +
+                  '<span class="cal-day-num">' + day + '</span>' +
+                  '<span class="cal-day-marks">' + marks + '</span>' +
+                '</div>';
+      }
+      return html;
+    };
+    targets.forEach(t => { t.innerHTML = buildCellsForTab(t.dataset.calTab || 'home'); });
     const wrap = targets[0];
     // v2.51 セルクリックで詳細表示（全データ対応・両タブ）
     targets.forEach(grid => {
@@ -5368,6 +5396,13 @@ UIKI.yomu = (function() {
             if (bodyList.length) { const b = bodyList[0]; html += '<div style="margin:0.2rem 0;"><strong>🤳 ランク</strong>: ' + (b.rank||'?') + ' / ' + (b.memo||'').slice(0,50) + '</div>'; }
             if (mealList.length) { const cal = mealList.find(e => e.metric === 'meal_calories'); html += '<div style="margin:0.2rem 0;"><strong>🍽 食事</strong>: ' + (cal ? cal.value + ' kcal' : '記録あり') + ' (' + mealList.length + ' 件)</div>'; }
             if (selfList.length) html += '<div style="margin:0.2rem 0;"><strong>😊 自己申告</strong>: ' + selfList.map(e => e.metric + '=' + e.value).join(' / ') + '</div>';
+            if (data.uploadBody || data.uploadScale || data.uploadMeal) {
+              const ups = [];
+              if (data.uploadBody) ups.push('🤳 自撮り ' + data.uploadBody);
+              if (data.uploadScale) ups.push('📸 体組成計 ' + data.uploadScale);
+              if (data.uploadMeal) ups.push('🥗 食事 ' + data.uploadMeal);
+              html += '<div style="margin:0.2rem 0;"><strong>📷 画像アップ</strong>: ' + ups.join(' / ') + '</div>';
+            }
             if (doneTasks.length) html += '<div style="margin:0.2rem 0;"><strong>☑ 完了タスク</strong>: ' + doneTasks.length + ' 件<br>' + doneTasks.slice(0,5).map(t => '・' + (t.text||'').slice(0,40)).join('<br>') + '</div>';
             if (sandToday.length) html += '<div style="margin:0.2rem 0;"><strong>✨ 砂のログ</strong>: ' + sandToday.length + ' 件（重力合計 ' + sandToday.reduce((s,x)=>s+(Number(x.weight)||1),0) + '）</div>';
             if (quoteList.length) html += '<div style="margin:0.2rem 0;"><strong>💬 名言</strong>: ' + quoteList.slice(0,3).map(q => (q.quote||'').slice(0,40)).join(' / ') + '</div>';
@@ -7836,6 +7871,9 @@ https://rainybrainch.github.io/uiki/?add=...
       });
       wrap.dataset.restored = '1';
     }
+    // v2.65 履歴件数表示
+    const countEl = document.getElementById('uwikiai-count');
+    if (countEl) countEl.textContent = messages.length ? '(' + messages.length + ' 件保存中)' : '';
     document.getElementById('uwikiai-modal').hidden = false;
     setTimeout(() => document.getElementById('uwikiai-input').focus(), 100);
   }
@@ -8251,6 +8289,60 @@ function bootstrap() {
       try { UIKI.yomu.setF365CoreFilter && UIKI.yomu.setF365CoreFilter(core); } catch(e){}
     });
   });
+
+  // v2.65 AI 月次総評（Gemini で当月データを総評）
+  const monthlyAiBtn = document.getElementById('monthly-ai-summary');
+  if (monthlyAiBtn) {
+    monthlyAiBtn.addEventListener('click', async () => {
+      const cfg = UIKI.store.get('config', {});
+      if (!cfg.geminiKey) { showToast('Gemini キー必要'); setTimeout(()=>UIKI.config.open(),1200); return; }
+      const out = document.getElementById('monthly-ai-result');
+      monthlyAiBtn.disabled = true;
+      const orig = monthlyAiBtn.textContent;
+      monthlyAiBtn.textContent = '🤖 解析中…';
+      try {
+        const m = {
+          weightAvg: document.getElementById('m-weight-avg')?.textContent || '—',
+          weightDelta: document.getElementById('m-weight-delta')?.textContent || '—',
+          rankMode: document.getElementById('m-rank-mode')?.textContent || '—',
+          rankCount: document.getElementById('m-rank-count')?.textContent || '—',
+          calAvg: document.getElementById('m-cal-avg')?.textContent || '—',
+          calDays: document.getElementById('m-cal-days')?.textContent || '—',
+          tasksDone: document.getElementById('m-tasks-done')?.textContent || '—',
+          tasksRate: document.getElementById('m-tasks-rate')?.textContent || '—',
+          sandCount: document.getElementById('m-sand-count')?.textContent || '—',
+          bookCount: document.getElementById('m-book-count')?.textContent || '—'
+        };
+        const period = document.getElementById('monthly-period')?.textContent || '';
+        const prompt = `あなたは服牢井像（円舵）の個人 AI「服牢AI」。\n\n${period} の月次データから 3-4 文で総評してください：\n- 良かった点（具体的に）\n- 改善点・気付き\n- 来月への一言\n\n服牢の Phase 1 戦略：「ぽもじかん完成・マネぼう教科書・雨域完成・漫画修行毎日」を踏まえて。\n医学的アドバイス・ダイエット指導は禁止。励まし口調。\n\nデータ:\n${JSON.stringify(m, null, 2)}`;
+        const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+        let resp;
+        for (const model of GEMINI_MODELS) {
+          const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + encodeURIComponent(cfg.geminiKey), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: { temperature: 0.7, maxOutputTokens: 500 }
+            })
+          });
+          if (r.status === 404) continue;
+          if (!r.ok) throw new Error(model + ' ' + r.status);
+          resp = await r.json();
+          break;
+        }
+        if (!resp) throw new Error('全モデル失敗');
+        const text = resp?.candidates?.[0]?.content?.parts?.[0]?.text || '応答なし';
+        out.style.display = 'block';
+        out.innerHTML = '<strong>🤖 ' + period + ' の月次総評</strong><br>' + text.replace(/\n/g, '<br>');
+      } catch(e) {
+        showToast('✗ ' + (e.message || '失敗'));
+      } finally {
+        monthlyAiBtn.disabled = false;
+        monthlyAiBtn.textContent = orig;
+      }
+    });
+  }
 
   // v2.51 カレンダー一覧ナビ（両タブの全ボタンを class で一括バインド）
   document.querySelectorAll('.cal-prev-btn').forEach(b => b.addEventListener('click', () => { try { UIKI.yomu.calPrev(); } catch(e){} }));
