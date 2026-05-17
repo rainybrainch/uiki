@@ -2921,7 +2921,7 @@ main { padding-bottom: 5.2rem; }
 <canvas id="rain-canvas"></canvas>
 
 <header class="app-header">
-  <div class="logo">UIKI</div>
+  <div class="logo">☔ 雨域 <span style="font-size: 0.65rem; letter-spacing: 0.3em; color: var(--dim); margin-left: 0.4em;">UIKI</span></div>
   <button id="menu-toggle" class="menu-btn" aria-label="メニュー">☰</button>
 </header>
 
@@ -3043,8 +3043,13 @@ main { padding-bottom: 5.2rem; }
         </div>
         <button class="sand-submit" id="sand-submit">沈める</button>
         <button class="attraction-add-btn" id="sand-mic-btn" style="margin: 0; padding: 0.45rem 0.7rem; font-size: 0.8rem;" title="音声入力で砂を口述">🎤</button>
-        <button class="attraction-add-btn" id="sand-quote-btn" style="margin: 0; padding: 0.45rem 0.9rem; font-size: 0.8rem;" title="入力した砂を「名言」として読雨に投入">⚡ 名言として刻む</button>
-        <button class="attraction-add-btn" id="sand-memo-btn" style="margin: 0; padding: 0.45rem 0.9rem; font-size: 0.8rem;" title="入力した砂を「メモ」として読雨に投入（type=memo）">📝 メモとして保存</button>
+        <details class="sand-more" style="display:inline-block; position:relative;">
+          <summary style="cursor:pointer; padding: 0.45rem 0.7rem; border: 1px solid var(--faint); border-radius: 999px; color: var(--dim); font-size: 0.8rem; list-style:none; display:inline-block;">▼ もっと</summary>
+          <div style="position:absolute; right:0; top:100%; margin-top:0.3rem; background: var(--bg-elev, #07090f); border:1px solid var(--faint); border-radius:0.4rem; padding:0.4rem; display:flex; flex-direction:column; gap:0.3rem; min-width:160px; z-index:20; box-shadow:0 4px 12px rgba(0,0,0,0.4);">
+            <button class="attraction-add-btn" id="sand-quote-btn" style="margin: 0; padding: 0.45rem 0.9rem; font-size: 0.78rem; text-align:left;" title="入力した砂を「名言」として読雨に投入">⚡ 名言として刻む</button>
+            <button class="attraction-add-btn" id="sand-memo-btn" style="margin: 0; padding: 0.45rem 0.9rem; font-size: 0.78rem; text-align:left;" title="入力した砂を「メモ」として読雨に投入（type=memo）">📝 メモとして保存</button>
+          </div>
+        </details>
       </div>
     </div>
     <div class="sand-log" id="sand-log">
@@ -3622,7 +3627,7 @@ main { padding-bottom: 5.2rem; }
 <!-- ドロワーメニュー -->
 <aside class="drawer" id="drawer" hidden>
   <div class="drawer-header">
-    <div class="drawer-title">UIKI</div>
+    <div class="drawer-title">☔ 雨域 UIKI</div>
     <div class="drawer-sub">雨域図 ── 全プロジェクト横断のタスクハブ</div>
   </div>
   <ul class="drawer-list">
@@ -3664,7 +3669,7 @@ main { padding-bottom: 5.2rem; }
       Permissions: Gists (Read and Write) のみを選択
     </p>
     <hr style="border: none; border-top: 1px solid var(--faint); margin: 1.2rem 0;">
-    <h3 style="font-size: 1rem; color: var(--gold); margin-bottom: 0.5rem;">Google Drive 連携（任意・v2.8 / 2026-05-16）</h3>
+    <details><summary style="cursor:pointer; font-size: 1rem; color: var(--gold); margin-bottom: 0.5rem; font-family: var(--serif); font-weight: 600; padding: 0.4rem 0;">▼ Google Drive 連携（任意・v2.8）</summary>
     <label>Google Drive API キー
       <input type="password" id="cfg-drive-key" autocomplete="off">
       <small>公開 Drive フォルダの一覧取得用。<a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener">Google Cloud Console</a> で API キー作成（無料）→ Drive API を有効化。</small>
@@ -3688,12 +3693,13 @@ main { padding-bottom: 5.2rem; }
     <p class="cfg-help" style="font-size: 0.78rem;">
       <strong>API キー取得手順</strong>：① <a href="https://console.cloud.google.com/projectcreate" target="_blank">新規プロジェクト作成</a> → ② <a href="https://console.cloud.google.com/apis/library/drive.googleapis.com" target="_blank">Drive API を有効化</a> → ③ <a href="https://console.cloud.google.com/apis/credentials" target="_blank">認証情報 → API キー作成</a>。
     </p>
+    </details>
     <hr style="border: none; border-top: 1px solid var(--faint); margin: 1.2rem 0;">
+    <details open><summary style="cursor:pointer; font-size: 1rem; color: var(--gold); margin-bottom: 0.5rem; font-family: var(--serif); font-weight: 600; padding: 0.4rem 0;">▼ Vision AI 連携（必須・本機能の核）</summary>
     <div id="cfg-vision-warn" style="padding: 0.6rem 0.9rem; background: rgba(231,76,60,0.12); border: 1px solid rgba(231,76,60,0.5); border-radius: 0.4rem; margin-bottom: 0.8rem; font-size: 0.82rem; color: #e74c3c; display: none;">
       ⚠ Vision 機能（自撮りランク評価・体組成計数値化・食事カロリー推定）には<br>
       <strong>① GitHub PAT</strong>（読雨書き込み用・上の欄）と <strong>② Gemini API キー</strong>（下の欄）の<strong>両方</strong>が必要です。
     </div>
-    <h3 style="font-size: 1rem; color: var(--gold); margin-bottom: 0.5rem;">Vision AI 連携（v2.19 / 2026-05-17・必須・本機能の核）</h3>
     <p class="cfg-help" style="font-size: 0.78rem; margin-bottom: 0.8rem;">
       Drive の最新画像（自撮り／食事／体組成計）を AI が読み取り、ランク・カロリー・数値を抽出して読雨に投入する。<br>
       <strong>Gemini（無料推奨）</strong>：<a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a> でキー作成・無料枠あり。<br>
@@ -3725,8 +3731,9 @@ main { padding-bottom: 5.2rem; }
       <button type="button" id="cfg-vision-history" class="attraction-add-btn" style="margin:0; padding:0.4rem 0.9rem; font-size:0.78rem;">📋 直近 20 回の履歴</button>
       <span id="cfg-vision-test-result" style="font-size:0.76rem; color:var(--dim); align-self:center;"></span>
     </div>
+    </details>
     <hr style="border: none; border-top: 1px solid var(--faint); margin: 1.2rem 0;">
-    <h3 style="font-size: 1rem; color: var(--gold); margin-bottom: 0.5rem;">表示・同期（v2.39 / 2026-05-17）</h3>
+    <details><summary style="cursor:pointer; font-size: 1rem; color: var(--gold); margin-bottom: 0.5rem; font-family: var(--serif); font-weight: 600; padding: 0.4rem 0;">▼ 表示・同期</summary>
     <label>テーマ
       <select id="cfg-theme" style="width: 100%; padding: 0.6rem; background: var(--bg-elev); border: 1px solid var(--faint); border-radius: 0.4rem; color: var(--ink);">
         <option value="auto">🌗 自動（システム設定に追従）</option>
@@ -3744,8 +3751,9 @@ main { padding-bottom: 5.2rem; }
       </select>
       <small>Drive フォルダの再取得間隔。短いほど反映が早いが API クォータ消費も増える。</small>
     </label>
+    </details>
     <hr style="border: none; border-top: 1px solid var(--faint); margin: 1.2rem 0;">
-    <h3 style="font-size: 1rem; color: var(--gold); margin-bottom: 0.5rem;">データ管理（v2.30-33 / 2026-05-17）</h3>
+    <details><summary style="cursor:pointer; font-size: 1rem; color: var(--gold); margin-bottom: 0.5rem; font-family: var(--serif); font-weight: 600; padding: 0.4rem 0;">▼ データ管理</summary>
     <label class="cfg-checkbox" style="display:block; margin-bottom:0.6rem;">
       <input type="checkbox" id="cfg-delete-mode">
       <span>🗑 削除モードを有効化（v2.33）</span>
@@ -3757,12 +3765,14 @@ main { padding-bottom: 5.2rem; }
       <button type="button" id="cfg-export-local" class="attraction-add-btn" style="margin:0; padding:0.4rem 0.9rem; font-size:0.78rem;">📥 localStorage のみ</button>
     </div>
     <small style="display:block; margin-top:0.4rem; color:var(--dim);">読雨 Gist の中身と localStorage（タスク・砂のログ・設定）を JSON でバックアップできます。</small>
+    </details>
     <hr style="border: none; border-top: 1px solid var(--faint); margin: 1.2rem 0;">
-    <h3 style="font-size: 1rem; color: var(--gold); margin-bottom: 0.5rem;">ブクログ連携（v2.17 / 2026-05-17・任意）</h3>
+    <details><summary style="cursor:pointer; font-size: 1rem; color: var(--gold); margin-bottom: 0.5rem; font-family: var(--serif); font-weight: 600; padding: 0.4rem 0;">▼ ブクログ連携（任意）</summary>
     <label>ブクログ ユーザー名
       <input type="text" id="cfg-booklog-username" autocomplete="off" placeholder="例: mucchimuchimo">
       <small><a href="https://booklog.jp/" target="_blank" rel="noopener">booklog.jp</a> のユーザー名。設定すると雨域から自分の本棚へリンク表示。CSV エクスポート → 雨域から取込で読雨に流し込み可能。</small>
     </label>
+    </details>
     <div class="modal-buttons">
       <button id="cfg-cancel">閉じる</button>
       <button id="cfg-save">保存</button>
