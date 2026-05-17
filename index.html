@@ -2989,12 +2989,22 @@ main { padding-bottom: 5.2rem; }
   <!-- v2.65 カレンダー + 今日のサマリー統合（重力タブ） -->
   <section class="yomu-section reveal" id="calendar-view-home">
     <h3>📆 今日 + カレンダー <span class="yomu-from" id="cal-period-home">今月</span></h3>
-    <!-- 今日のサマリー（カレンダー上部に統合） -->
+    <!-- 今日のサマリー（カレンダー上部に統合・v2.67 タスク 3 カテゴリ追加） -->
     <div class="ts-grid" style="margin-bottom: 0.8rem;">
       <div class="ts-card">
-        <div class="ts-label">☑ 完了タスク</div>
+        <div class="ts-label">☑ 今日完了</div>
         <div class="ts-value" id="ts-tasks-done">—</div>
         <div class="ts-sub" id="ts-tasks-remain">残り —</div>
+      </div>
+      <div class="ts-card">
+        <div class="ts-label">📅 明日のタスク</div>
+        <div class="ts-value" id="ts-tasks-tomorrow">—</div>
+        <div class="ts-sub" id="ts-tasks-tomorrow-sub">期限あり</div>
+      </div>
+      <div class="ts-card">
+        <div class="ts-label">📆 今週のタスク</div>
+        <div class="ts-value" id="ts-tasks-week">—</div>
+        <div class="ts-sub" id="ts-tasks-week-sub">7日以内</div>
       </div>
       <div class="ts-card">
         <div class="ts-label">✨ 砂のログ</div>
@@ -3340,14 +3350,14 @@ main { padding-bottom: 5.2rem; }
     <!-- v2.56 2 大カード（簡素化） -->
     <div class="uwiki-bigcards">
       <button class="uwiki-bigcard gravity-bigcard" data-go="home" aria-label="重力雨域を開く">
-        <div class="bigcard-icon">🏜</div>
+        <div class="bigcard-icon">🏜<span class="visited-stamp" id="visited-stamp-home" hidden style="position:absolute; top:8px; right:8px; background:rgba(184,122,58,0.9); color:#fff; font-size:0.6rem; padding:0.1rem 0.4rem; border-radius:999px; font-weight:600;">✓ 今日訪問</span></div>
         <div class="bigcard-title">重力雨域</div>
         <div class="bigcard-sub">Internal ── 内向き</div>
         <p class="bigcard-desc">タスク・砂・名言・読書・服牢365</p>
         <div class="bigcard-stats" id="bigcard-stats-gravity" style="font-size: 0.74rem; color: rgba(255,255,255,0.6); margin-top: 0.5rem; line-height: 1.5;">─</div>
       </button>
       <button class="uwiki-bigcard attraction-bigcard" data-go="uwiki" aria-label="引力雨域を開く">
-        <div class="bigcard-icon">💧</div>
+        <div class="bigcard-icon">💧<span class="visited-stamp" id="visited-stamp-uwiki" hidden style="position:absolute; top:8px; right:8px; background:rgba(36,86,184,0.9); color:#fff; font-size:0.6rem; padding:0.1rem 0.4rem; border-radius:999px; font-weight:600;">✓ 今日訪問</span></div>
         <div class="bigcard-title">引力雨域</div>
         <div class="bigcard-sub">External ── 外向き</div>
         <p class="bigcard-desc">体重・ランク・カロリー・気分</p>
@@ -5243,6 +5253,17 @@ UIKI.yomu = (function() {
       const show = inMorning && !todayHasScan && dismissed !== todayStr;
       reminder.hidden = !show;
     }
+    // v2.67 「今日訪問」スタンプ表示
+    try {
+      const visited = UIKI.store.get('tab_visits', { date: todayStr, tabs: [] });
+      if (visited.date === todayStr) {
+        const homeStamp = document.getElementById('visited-stamp-home');
+        const uwikiStamp = document.getElementById('visited-stamp-uwiki');
+        if (homeStamp) homeStamp.hidden = !visited.tabs.includes('home');
+        if (uwikiStamp) uwikiStamp.hidden = !visited.tabs.includes('uwiki');
+      }
+    } catch(e) {}
+
     // v2.66 「今日まだ体組成計測定なし」リマインダー
     const scaleReminder = document.getElementById('scale-reminder');
     if (scaleReminder) {
@@ -5670,6 +5691,21 @@ UIKI.yomu = (function() {
     const tRem = document.getElementById('ts-tasks-remain');
     if (tDone) tDone.textContent = done;
     if (tRem) tRem.textContent = '残り ' + remain;
+
+    // v2.67 明日のタスク / 今週のタスク
+    const tomorrowD = new Date(today); tomorrowD.setDate(today.getDate() + 1);
+    const tomorrowStr = tomorrowD.getFullYear() + '-' + ('0' + (tomorrowD.getMonth() + 1)).slice(-2) + '-' + ('0' + tomorrowD.getDate()).slice(-2);
+    const weekEnd = new Date(today); weekEnd.setDate(today.getDate() + 7);
+    const tomorrowTasks = tasks.filter(t => !t.completed && !t.stain && t.deadline === tomorrowStr).length;
+    const weekTasks = tasks.filter(t => {
+      if (t.completed || t.stain || !t.deadline) return false;
+      const d = new Date(t.deadline);
+      return d >= today && d <= weekEnd;
+    }).length;
+    const tTomEl = document.getElementById('ts-tasks-tomorrow');
+    if (tTomEl) tTomEl.textContent = tomorrowTasks;
+    const tWeekEl = document.getElementById('ts-tasks-week');
+    if (tWeekEl) tWeekEl.textContent = weekTasks;
 
     // 砂のログ（localStorage の uiki_sand_log を読む）
     const sand = UIKI.store.get('sand_log', []);
@@ -9323,6 +9359,14 @@ function bootstrap() {
     document.querySelectorAll('#tab-bar button').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
     document.querySelectorAll('.drawer-list a[data-tab]').forEach(a => a.classList.toggle('current', a.dataset.tab === name));
     UIKI.store.set('current_tab', name);
+    // v2.67 今日触れたタブを記録
+    try {
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const visited = UIKI.store.get('tab_visits', { date: todayStr, tabs: [] });
+      if (visited.date !== todayStr) { visited.date = todayStr; visited.tabs = []; }
+      if (!visited.tabs.includes(name)) visited.tabs.push(name);
+      UIKI.store.set('tab_visits', visited);
+    } catch(e) {}
     // 2P カラー：body にタブ名のクラスを付与（引力タブで白系テーマに切替）
     document.body.classList.remove('tab-home', 'tab-uwiki', 'tab-tasks', 'tab-projects', 'tab-log');
     document.body.classList.add('tab-' + name);
