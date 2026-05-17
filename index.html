@@ -24,6 +24,19 @@
   --serif: 'Noto Serif JP', serif;
   --sans: 'Zen Kaku Gothic New', sans-serif;
   --mono: 'JetBrains Mono', monospace;
+  /* 2P カラー：タブごとにアクセント色を切り替え（v2.20 / 2026-05-17） */
+  --tab-accent: #c9a84c;
+  --tab-accent-rgb: 201, 168, 76;
+}
+
+/* タブ別アクセント切替（重力＝金／引力＝青の 2P カラー） */
+.tab-page[data-tab="home"] {
+  --tab-accent: #c9a84c;
+  --tab-accent-rgb: 201, 168, 76;
+}
+.tab-page[data-tab="uwiki"] {
+  --tab-accent: #3a6fc9;
+  --tab-accent-rgb: 58, 111, 201;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -87,7 +100,7 @@ main {
   font-family: var(--serif);
   font-size: clamp(2.2rem, 6vw, 3.4rem);
   font-weight: 700;
-  color: var(--gold);
+  color: var(--tab-accent);
   letter-spacing: 0.18em;
   opacity: 0;
   animation: fadeUp 1.1s ease 0.2s forwards;
@@ -98,7 +111,7 @@ main {
   font-family: var(--sans);
   font-size: 0.9rem;
   font-weight: 400;
-  color: rgba(201,168,76,0.55);
+  color: rgba(var(--tab-accent-rgb), 0.55);
   letter-spacing: 0.5em;
   margin-top: 0.5rem;
   padding-left: 0.5em;
@@ -109,7 +122,7 @@ main {
   font-family: var(--serif);
   font-size: 1.05rem;
   line-height: 2;
-  color: rgba(201,168,76,0.65);
+  color: rgba(var(--tab-accent-rgb), 0.65);
   opacity: 0;
   animation: fadeUp 1.1s ease 0.5s forwards;
 }
@@ -2038,6 +2051,7 @@ main { padding-bottom: 5.2rem; }
 }
 .yomu-section {
   border: 1px solid var(--faint);
+  border-left: 3px solid rgba(var(--tab-accent-rgb), 0.45);
   border-left: 3px solid var(--rain-blue);
   border-radius: 4px;
   padding: 1.2rem;
@@ -2058,9 +2072,13 @@ main { padding-bottom: 5.2rem; }
 .yomu-section h3 .yomu-from {
   margin-left: auto;
   font-size: 0.7rem;
-  color: var(--dim);
+  color: rgba(var(--tab-accent-rgb), 0.7);
   letter-spacing: 0.1em;
   font-weight: 400;
+  padding: 0.15rem 0.6rem;
+  border: 1px solid rgba(var(--tab-accent-rgb), 0.3);
+  border-radius: 999px;
+  background: rgba(var(--tab-accent-rgb), 0.05);
 }
 .yomu-section .yomu-desc {
   font-size: 0.82rem;
@@ -2383,9 +2401,9 @@ main { padding-bottom: 5.2rem; }
 <main>
 
   <div class="tab-page" data-tab="home">
-  <!-- Hero（v2.4：重力雨域に書き換え） -->
+  <!-- Hero（v2.20 / 2P カラー：var(--tab-accent) に統一） -->
   <section class="hero">
-    <h1 style="color: var(--gold);">重力雨域<span class="subtitle-roman" style="color: var(--dim);">Internal</span></h1>
+    <h1>重力雨域<span class="subtitle-roman">Internal</span></h1>
     <p class="tagline">
       <span>降った雨は、還らない。</span>
       <span>その事実だけが、ここに積もる。</span>
@@ -2656,12 +2674,19 @@ main { padding-bottom: 5.2rem; }
     </div>
   </div><!-- /tab uwiki-main -->
 
-  <!-- ===== 引力雨域タブ（v2.4 / 旧雨域から数値部分のみ抽出） ===== -->
+  <!-- ===== 引力雨域タブ（v2.20 / 2P カラー：重力と同構造・色だけ違う） ===== -->
   <div class="tab-page" data-tab="uwiki" hidden>
-    <div class="uwiki-hero attraction-hero">
-      <h1><span style="color: var(--rain-blue)">引力雨域</span></h1>
-      <p>External ── 他者から見えた自分・客観的な数値</p>
-    </div>
+    <section class="hero">
+      <h1>引力雨域<span class="subtitle-roman">External</span></h1>
+      <p class="tagline">
+        <span>映った像は、嘘を吐かない。</span>
+        <span>その数値だけが、ここに積もる。</span>
+      </p>
+      <div class="hero-meta">
+        <div id="scan-today">今日はまだ、映していない</div>
+        <div class="sync-status" id="sync-status-uwiki" data-state="loading">読み込み中…</div>
+      </div>
+    </section>
 
     <!-- ━━━ Drive 画像（撮影してアップする） ━━━ -->
 
@@ -2671,7 +2696,7 @@ main { padding-bottom: 5.2rem; }
       <p class="yomu-desc">自撮り用 Drive フォルダ内の画像を 5 分ごとに自動取得。<br>スマホで撮影 → Drive アップ → 自動で表示。日付アイコン：📁ファイル名 / 📷EXIF / ☁️アップ時刻</p>
       <div class="drive-actions" style="display:flex; gap:0.6rem; flex-wrap:wrap; margin-bottom:0.8rem;">
         <input type="file" id="drive-upload-input" accept="image/*" capture="user" style="display:none;">
-        <button class="sand-submit" id="drive-upload-btn" style="background: var(--rain-blue); color: #fff;">🤳 自撮りを追加（OAuth）</button>
+        <button class="sand-submit" id="drive-upload-btn" style="background: var(--tab-accent); color: #fff;">🤳 自撮りを追加（OAuth）</button>
         <button class="attraction-add-btn" id="drive-refresh-btn" style="margin: 0; padding: 0.4rem 1rem;">🔄 今すぐ再読込</button>
         <span id="drive-upload-status" style="font-size:0.78rem; color: var(--dim); align-self:center;"></span>
       </div>
@@ -2686,7 +2711,7 @@ main { padding-bottom: 5.2rem; }
       <p class="yomu-desc">体組成計の表示画面を撮った写真を Drive 経由で記録。数値入力が面倒な日に。日付アイコン：📁ファイル名 / 📷EXIF / ☁️アップ時刻</p>
       <div class="drive-actions" style="display:flex; gap:0.6rem; flex-wrap:wrap; margin-bottom:0.8rem;">
         <input type="file" id="drive-upload-scale-input" accept="image/*" capture="environment" style="display:none;">
-        <button class="sand-submit" id="drive-upload-scale-btn" style="background: var(--rain-blue); color: #fff;">⚖️ 体組成計を追加（OAuth）</button>
+        <button class="sand-submit" id="drive-upload-scale-btn" style="background: var(--tab-accent); color: #fff;">⚖️ 体組成計を追加（OAuth）</button>
         <button class="attraction-add-btn" id="drive-refresh-scale-btn" style="margin: 0; padding: 0.4rem 1rem;">🔄 今すぐ再読込</button>
         <span id="drive-upload-scale-status" style="font-size:0.78rem; color: var(--dim); align-self:center;"></span>
       </div>
@@ -2701,7 +2726,7 @@ main { padding-bottom: 5.2rem; }
       <p class="yomu-desc">食事用 Drive フォルダ内の画像を表示。ファイル名から日付を自動抽出。日付アイコン：📁ファイル名 / 📷EXIF / ☁️アップ時刻 / 🔄更新時刻</p>
       <div class="drive-actions" style="display:flex; gap:0.6rem; flex-wrap:wrap; margin-bottom:0.8rem;">
         <input type="file" id="drive-upload-meal-input" accept="image/*" capture="environment" style="display:none;">
-        <button class="sand-submit" id="drive-upload-meal-btn" style="background: var(--rain-blue); color: #fff;">🍽 食事を追加（OAuth）</button>
+        <button class="sand-submit" id="drive-upload-meal-btn" style="background: var(--tab-accent); color: #fff;">🍽 食事を追加（OAuth）</button>
         <button class="attraction-add-btn" id="drive-refresh-meal-btn" style="margin: 0; padding: 0.4rem 1rem;">🔄 今すぐ再読込</button>
         <span id="drive-upload-meal-status" style="font-size:0.78rem; color: var(--dim); align-self:center;"></span>
       </div>
