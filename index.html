@@ -2907,11 +2907,16 @@ main { padding-bottom: 5.2rem; }
   letter-spacing: 0.05em;
   margin-right: 0.4rem;
 }
-.rank-A, .rank-A\+ { background: rgba(201,168,76,0.85); color: #1a1a1a; }
-.rank-B, .rank-B\+ { background: rgba(107,255,149,0.65); color: #0a1f0a; }
-.rank-C, .rank-C\+ { background: rgba(58,111,201,0.55); color: #fff; }
-.rank-D, .rank-D\+ { background: rgba(255,154,76,0.6); color: #1a0a00; }
-.rank-E { background: rgba(224,92,92,0.6); color: #fff; }
+/* v2.62 8 段階の厳格ランク色分け（S=最良 / D=要休養） */
+.rank-S { background: linear-gradient(135deg, #f8d97e, #d4a82e); color: #1a1a1a; box-shadow: 0 0 8px rgba(244,200,80,0.5); }
+.rank-A\+ { background: rgba(201,168,76,0.95); color: #1a1a1a; }
+.rank-A { background: rgba(201,168,76,0.7); color: #1a1a1a; }
+.rank-B\+ { background: rgba(107,200,140,0.7); color: #0a1f0a; }
+.rank-B { background: rgba(107,200,140,0.5); color: #0a1f0a; }
+.rank-C\+ { background: rgba(255,154,76,0.6); color: #1a0a00; }
+.rank-C { background: rgba(255,154,76,0.8); color: #1a0a00; }
+.rank-D { background: rgba(224,92,92,0.75); color: #fff; }
+.rank-E { background: rgba(180,60,60,0.85); color: #fff; }
 .rank-factors {
   font-size: 0.68rem;
   color: rgba(255,255,255,0.75);
@@ -3298,10 +3303,13 @@ main { padding-bottom: 5.2rem; }
       <div class="jh-text" id="jh-text">情報の「滴」が、あなたの未来を形作る砂となりますように。</div>
     </div>
 
-    <!-- v2.61 「今日まだ自撮り無い」リマインダー（朝〜昼帯のみ表示） -->
+    <!-- v2.61/v2.62 「今日まだ自撮り無い」リマインダー（朝〜昼帯のみ表示） -->
     <div id="selfie-reminder" hidden style="margin: 0.8rem auto; max-width: 720px; padding: 0.7rem 1.2rem; background: rgba(184,122,58,0.12); border: 1px solid rgba(184,122,58,0.4); border-radius: 0.4rem; font-size: 0.85rem; color: rgba(255,255,255,0.85); display:flex; align-items:center; justify-content:space-between; gap:0.6rem; flex-wrap:wrap;">
-      <span>🤳 <strong>今日まだ自撮りしていない</strong> ── 朝の鏡前で撮影 → Drive → 自動分析</span>
-      <button id="selfie-reminder-dismiss" style="background: transparent; border: 1px solid var(--faint); color: var(--dim); padding: 0.3rem 0.7rem; border-radius: 999px; font-size: 0.74rem; cursor: pointer;">後で</button>
+      <span>🤳 <strong>今日まだ自撮りしていない</strong> ── 鏡前で撮影 → 自動分析</span>
+      <div style="display:flex; gap:0.4rem;">
+        <button id="selfie-reminder-now" style="background: #b87a3a; color: #fff; border: none; padding: 0.4rem 0.9rem; border-radius: 999px; font-size: 0.78rem; cursor: pointer; font-weight: 600;">📸 今から撮る</button>
+        <button id="selfie-reminder-dismiss" style="background: transparent; border: 1px solid var(--faint); color: var(--dim); padding: 0.3rem 0.7rem; border-radius: 999px; font-size: 0.74rem; cursor: pointer;">後で</button>
+      </div>
     </div>
 
     <!-- 読雨統合バナー（v2.5 / 2026-05-16） -->
@@ -3841,7 +3849,10 @@ main { padding-bottom: 5.2rem; }
         <span style="font-family: var(--serif); font-size: 1.1rem; font-weight: 600;">🤖 UwikiAI</span>
         <span style="font-size: 0.74rem; color: var(--dim); margin-left: 0.6rem;">雨域の AI 管理人</span>
       </div>
-      <button id="uwikiai-close" aria-label="UwikiAI チャットを閉じる" style="background: transparent; border: none; color: var(--ink); font-size: 1.4rem; cursor: pointer; width: 32px; height: 32px; border-radius: 50%;">×</button>
+      <div style="display:flex; gap:0.4rem; align-items:center;">
+        <button id="uwikiai-clear" aria-label="UwikiAI 履歴をクリア" title="履歴をクリア" style="background: transparent; border: 1px solid var(--faint); color: var(--dim); font-size: 0.74rem; cursor: pointer; padding: 0.25rem 0.6rem; border-radius: 999px;">🗑 履歴</button>
+        <button id="uwikiai-close" aria-label="UwikiAI チャットを閉じる" style="background: transparent; border: none; color: var(--ink); font-size: 1.4rem; cursor: pointer; width: 32px; height: 32px; border-radius: 50%;">×</button>
+      </div>
     </div>
     <div id="uwikiai-messages" style="flex: 1 1 auto; overflow-y: auto; padding: 1rem 1.2rem; min-height: 320px; max-height: 60vh;">
       <div class="uw-msg uw-msg-ai">
@@ -7587,7 +7598,12 @@ https://rainybrainch.github.io/uiki/?add=...
 
 タップで投入されます。`;
 
-  let messages = []; // 履歴
+  // v2.62 UwikiAI 履歴を localStorage に永続化
+  let messages = UIKI.store.get('uwikiai_history', []);
+  function saveHistory() {
+    // 最新 50 件まで保持
+    UIKI.store.set('uwikiai_history', messages.slice(-50));
+  }
   function escHtml(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
@@ -7621,6 +7637,7 @@ https://rainybrainch.github.io/uiki/?add=...
     }
     addMessage('user', userText);
     messages.push({ role: 'user', content: userText });
+    saveHistory();
     const loadingDiv = addMessage('loading', '🌧 UwikiAI が考えています…', {cls: 'uw-msg-loading'});
     try {
       let replyText;
@@ -7633,6 +7650,7 @@ https://rainybrainch.github.io/uiki/?add=...
       if (loadingDiv) loadingDiv.remove();
       addMessage('ai', replyText);
       messages.push({ role: 'assistant', content: replyText });
+      saveHistory();
     } catch (e) {
       if (loadingDiv) loadingDiv.remove();
       addMessage('error', '✗ ' + (e.message || '失敗'), {cls: 'uw-msg-error'});
@@ -7701,8 +7719,29 @@ https://rainybrainch.github.io/uiki/?add=...
   }
 
   function open() {
+    // v2.62 履歴を復元描画
+    const wrap = document.getElementById('uwikiai-messages');
+    if (wrap && messages.length && !wrap.dataset.restored) {
+      messages.slice(-20).forEach(m => {
+        addMessage(m.role === 'assistant' ? 'ai' : 'user', m.content);
+      });
+      wrap.dataset.restored = '1';
+    }
     document.getElementById('uwikiai-modal').hidden = false;
     setTimeout(() => document.getElementById('uwikiai-input').focus(), 100);
+  }
+  function clearHistory() {
+    messages = [];
+    saveHistory();
+    const wrap = document.getElementById('uwikiai-messages');
+    if (wrap) {
+      wrap.dataset.restored = '';
+      // 初期メッセージを残して他を削除
+      const first = wrap.querySelector('.uw-msg-ai');
+      wrap.innerHTML = '';
+      if (first) wrap.appendChild(first);
+    }
+    showToast('🤖 履歴をクリアしました');
   }
   function close() {
     document.getElementById('uwikiai-modal').hidden = true;
@@ -7722,6 +7761,10 @@ https://rainybrainch.github.io/uiki/?add=...
       if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); sendBtn.click(); }
     });
     if (closeBtn) closeBtn.addEventListener('click', close);
+    const clearBtn = document.getElementById('uwikiai-clear');
+    if (clearBtn) clearBtn.addEventListener('click', () => {
+      if (confirm('UwikiAI の会話履歴を全削除しますか？')) clearHistory();
+    });
     if (modal) modal.addEventListener('click', e => { if (e.target === modal) close(); });
     // 雨域 URL クリック → 内部で取り込み（外部遷移せず現ページに反映）
     document.addEventListener('click', e => {
@@ -7743,7 +7786,7 @@ https://rainybrainch.github.io/uiki/?add=...
       }
     });
   }
-  return { open, close, init, send };
+  return { open, close, init, send, clearHistory };
 })();
 
 UIKI.config = (() => {
@@ -8493,6 +8536,22 @@ function bootstrap() {
       const todayStr = new Date().toISOString().slice(0, 10);
       UIKI.store.set('selfie_reminder_dismissed', todayStr);
       document.getElementById('selfie-reminder').hidden = true;
+    });
+  }
+  // v2.62 リマインダー「今から撮る」→ 引力タブ + 自撮りアップロードボタン
+  const selfieNow = document.getElementById('selfie-reminder-now');
+  if (selfieNow) {
+    selfieNow.addEventListener('click', () => {
+      switchTab('uwiki');
+      setTimeout(() => {
+        const uploadInput = document.getElementById('drive-upload-input');
+        if (uploadInput) {
+          uploadInput.click();
+        } else {
+          const btn = document.getElementById('drive-upload-btn');
+          if (btn) { btn.scrollIntoView({ behavior: 'smooth', block: 'center' }); btn.click(); }
+        }
+      }, 300);
     });
   }
 
