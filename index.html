@@ -65,6 +65,14 @@ body.delete-mode [data-yomu-id]::after {
 body.delete-mode [data-yomu-id] { position: relative; }
 body.delete-mode [data-yomu-id]:hover::after { background: rgba(220, 50, 30, 1); }
 
+/* 読雨アーカイブ 内部タブ（v2.54 / 2026-05-17） */
+.archive-tab.active {
+  background: var(--tab-accent) !important;
+  color: #fff !important;
+  border-color: var(--tab-accent) !important;
+  font-weight: 600;
+}
+
 /* カレンダー一覧（v2.50 / 2026-05-17） */
 .cal-grid {
   display: grid;
@@ -3044,37 +3052,49 @@ main { padding-bottom: 5.2rem; }
     </div>
   </section>
 
-  <!-- 読雨統合：名言（v2.5 / 重力雨域は内向き活動なので名言を表示） -->
-  <section class="yomu-section reveal">
-    <h3>✨ 読雨から ── 最近の名言 <span class="yomu-from">type=quote</span></h3>
-    <p class="yomu-desc">読雨に「刻んだ」名言の最近 5 件。UwikiAI 経由 or 直接 読雨で記録できる。</p>
-    <div class="yomu-quote-list" id="yomu-quotes">
-      <div class="yomu-loading yomu-empty">読み込み中…</div>
-    </div>
-  </section>
+  <!-- v2.54 読雨アーカイブ統合：名言 / メモ / 読書を 1 つのセクションに -->
+  <section class="yomu-section reveal yomu-archive-section">
+    <h3>💎 読雨アーカイブ <span class="yomu-from">quote / memo / book</span></h3>
+    <p class="yomu-desc">砂のログから読雨に投入したもの。タブで切替。</p>
 
-  <!-- v2.41 メモ一覧（type=memo） -->
-  <section class="yomu-section reveal">
-    <h3>📝 読雨から ── 最近のメモ <span class="yomu-from">type=memo</span></h3>
-    <p class="yomu-desc">砂のログから「📝 メモとして保存」で投入した自由テキスト。最新 5 件。</p>
-    <div class="yomu-quote-list" id="yomu-memos">
-      <div class="yomu-loading yomu-empty">読み込み中…</div>
+    <!-- 内部タブ -->
+    <div style="display:flex; gap:0.4rem; margin-bottom: 0.6rem; flex-wrap:wrap;">
+      <button class="archive-tab attraction-add-btn active" data-arc="quote" style="margin: 0; padding: 0.35rem 0.9rem; font-size: 0.78rem;">💬 名言</button>
+      <button class="archive-tab attraction-add-btn" data-arc="memo" style="margin: 0; padding: 0.35rem 0.9rem; font-size: 0.78rem;">📝 メモ</button>
+      <button class="archive-tab attraction-add-btn" data-arc="book" style="margin: 0; padding: 0.35rem 0.9rem; font-size: 0.78rem;">📖 読書 <span id="yomu-book-stats" style="font-size:0.68rem; color:var(--dim); margin-left:0.2rem;">— 件</span></button>
     </div>
-  </section>
 
-  <!-- 読雨統合：読書 + ブクログ連携（v2.17 / 本棚差分 v2.37） -->
-  <section class="yomu-section reveal">
-    <h3>📖 読雨から ── 最近の読書 <span class="yomu-from">type=book</span> <span class="yomu-from" id="yomu-book-stats" style="margin-left:0.4rem;">— 件</span></h3>
-    <p class="yomu-desc">読書感想の最近 5 件。RAINA・服牢井像への素材候補。<br><small id="book-stats-detail" style="color:var(--dim);">本棚プロジェクトで管理中…</small></p>
-    <div class="booklog-actions" style="display:flex; gap:0.6rem; flex-wrap:wrap; margin-bottom:0.8rem; align-items:center;">
-      <a class="yomu-link" href="honbako/" style="padding: 0.45rem 1rem; border: 1px solid var(--gold); border-radius: 999px; background: var(--gold); color: #07090f; text-decoration: none; font-size: 0.82rem; font-weight: 600;">📚 自分の本棚を開く →</a>
-      <a class="yomu-link" href="honbako/?public=1" target="_blank" rel="noopener" style="padding: 0.45rem 1rem; border: 1px solid var(--gold); border-radius: 999px; color: var(--gold); text-decoration: none; font-size: 0.82rem;">🌐 公開本棚（広告塔） →</a>
-      <button class="attraction-add-btn" id="booklog-embed-btn" style="margin: 0; padding: 0.45rem 1rem;">📚 ブクログ埋込</button>
-      <a id="booklog-profile-link" class="yomu-link" href="https://booklog.jp/users/mucchimuchimo" target="_blank" rel="noopener" style="padding: 0.45rem 1rem; border: 1px solid var(--faint); border-radius: 999px; color: var(--dim); text-decoration: none; font-size: 0.78rem;">📖 ブクログ →</a>
-      <input type="file" id="booklog-csv-input" accept=".csv,text/csv" style="display:none;">
-      <button class="attraction-add-btn" id="booklog-csv-btn" style="margin: 0; padding: 0.45rem 1rem;">📥 CSV を取込</button>
-      <span id="booklog-csv-status" style="font-size:0.78rem; color: var(--dim); align-self:center;"></span>
+    <!-- 名言 -->
+    <div class="archive-pane" data-arc-pane="quote">
+      <div class="yomu-quote-list" id="yomu-quotes">
+        <div class="yomu-loading yomu-empty">読み込み中…</div>
+      </div>
     </div>
+
+    <!-- メモ -->
+    <div class="archive-pane" data-arc-pane="memo" hidden>
+      <div class="yomu-quote-list" id="yomu-memos">
+        <div class="yomu-loading yomu-empty">読み込み中…</div>
+      </div>
+    </div>
+
+    <!-- 読書（ブクログ系はトグル内に） -->
+    <div class="archive-pane" data-arc-pane="book" hidden>
+      <small id="book-stats-detail" style="color:var(--dim); font-size:0.78rem; display:block; margin-bottom:0.5rem;">本棚プロジェクトで管理中…</small>
+      <div class="booklog-actions" style="display:flex; gap:0.4rem; flex-wrap:wrap; margin-bottom:0.6rem; align-items:center;">
+        <a class="yomu-link" href="honbako/" style="padding: 0.4rem 0.9rem; border: 1px solid var(--gold); border-radius: 999px; background: var(--gold); color: #07090f; text-decoration: none; font-size: 0.78rem; font-weight: 600;">📚 本棚を開く</a>
+        <a class="yomu-link" href="honbako/?public=1" target="_blank" rel="noopener" style="padding: 0.4rem 0.9rem; border: 1px solid var(--gold); border-radius: 999px; color: var(--gold); text-decoration: none; font-size: 0.78rem;">🌐 公開本棚</a>
+        <details style="display:inline-block; margin-left:auto;">
+          <summary style="cursor:pointer; padding: 0.4rem 0.9rem; border: 1px solid var(--faint); border-radius: 999px; color: var(--dim); font-size: 0.74rem; list-style:none;">▼ ブクログ</summary>
+          <div style="margin-top:0.4rem; display:flex; gap:0.4rem; flex-wrap:wrap;">
+            <button class="attraction-add-btn" id="booklog-embed-btn" style="margin: 0; padding: 0.4rem 0.9rem; font-size:0.78rem;">📚 埋込表示</button>
+            <a id="booklog-profile-link" class="yomu-link" href="https://booklog.jp/users/mucchimuchimo" target="_blank" rel="noopener" style="padding: 0.4rem 0.9rem; border: 1px solid var(--faint); border-radius: 999px; color: var(--dim); text-decoration: none; font-size: 0.74rem;">📖 ブクログを開く</a>
+            <input type="file" id="booklog-csv-input" accept=".csv,text/csv" style="display:none;">
+            <button class="attraction-add-btn" id="booklog-csv-btn" style="margin: 0; padding: 0.4rem 0.9rem; font-size:0.78rem;">📥 CSV 取込</button>
+            <span id="booklog-csv-status" style="font-size:0.74rem; color: var(--dim); align-self:center;"></span>
+          </div>
+        </details>
+      </div>
     <div id="booklog-embed-wrap" hidden style="margin-bottom: 1rem; border: 1px solid var(--faint); border-radius: 0.6rem; overflow: hidden; background: var(--bg-elev);">
       <div style="padding: 0.5rem 0.8rem; font-size: 0.78rem; color: var(--dim); border-bottom: 1px solid var(--faint); display:flex; justify-content:space-between; align-items:center;">
         <span>📚 ブクログ本棚（埋め込み・読み取り専用）</span>
@@ -3086,10 +3106,11 @@ main { padding-bottom: 5.2rem; }
         「🔍 別タブで開く」から閲覧してください。
       </div>
     </div>
-    <div class="yomu-book-list" id="yomu-books">
-      <div class="yomu-loading yomu-empty">読み込み中…</div>
-    </div>
-  </section>
+      <div class="yomu-book-list" id="yomu-books">
+        <div class="yomu-loading yomu-empty">読み込み中…</div>
+      </div>
+    </div><!-- /archive-pane book -->
+  </section><!-- /yomu-archive-section -->
 
   <!-- 今日のタスク（ホーム） -->
   <section class="today-feed reveal">
@@ -7896,6 +7917,15 @@ function bootstrap() {
   if (mRefresh) mRefresh.addEventListener('click', () => { try { UIKI.yomu.renderMonthlyReview && UIKI.yomu.renderMonthlyReview(); } catch(e){} showToast('🔄 集計更新'); });
   if (mPrev) mPrev.addEventListener('click', () => { try { UIKI.yomu.monthlyPrev && UIKI.yomu.monthlyPrev(); } catch(e){} });
   if (mNext) mNext.addEventListener('click', () => { try { UIKI.yomu.monthlyNext && UIKI.yomu.monthlyNext(); } catch(e){} });
+
+  // v2.54 読雨アーカイブ内部タブ（quote / memo / book）
+  document.querySelectorAll('.archive-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const target = tab.dataset.arc;
+      document.querySelectorAll('.archive-tab').forEach(t => t.classList.toggle('active', t.dataset.arc === target));
+      document.querySelectorAll('.archive-pane').forEach(p => p.hidden = (p.dataset.arcPane !== target));
+    });
+  });
 
   // v2.51 カレンダー一覧ナビ（両タブの全ボタンを class で一括バインド）
   document.querySelectorAll('.cal-prev-btn').forEach(b => b.addEventListener('click', () => { try { UIKI.yomu.calPrev(); } catch(e){} }));
