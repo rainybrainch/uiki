@@ -39,6 +39,59 @@
   --tab-accent-rgb: 36, 86, 184;
 }
 
+/* Vision 進捗バー（v2.28 / 2026-05-17） */
+.vision-progress {
+  display: none;
+  width: 100%;
+  margin-top: 0.4rem;
+}
+.vision-progress .vp-bar {
+  width: 100%;
+  height: 6px;
+  background: rgba(var(--tab-accent-rgb), 0.1);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.vision-progress .vp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #e74c3c, var(--tab-accent));
+  width: 5%;
+  transition: width 0.4s ease;
+}
+
+/* 公開モード（v2.28 / 2026-05-17） */
+body.public-mode .sand-section,
+body.public-mode .today-feed,
+body.public-mode .projects,
+body.public-mode #today-summary-home,
+body.public-mode #monthly-review,
+body.public-mode .attraction-pane,
+body.public-mode .tab-page[data-tab="uwiki"],
+body.public-mode .tab-page[data-tab="tasks"],
+body.public-mode .tab-page[data-tab="projects"],
+body.public-mode .tab-page[data-tab="log"],
+body.public-mode #tab-bar,
+body.public-mode #menu-toggle,
+body.public-mode .uwiki-bigcard.attraction-bigcard,
+body.public-mode .booklog-actions #booklog-embed-btn,
+body.public-mode .booklog-actions #booklog-csv-btn,
+body.public-mode .booklog-actions #booklog-csv-input,
+body.public-mode .booklog-actions #booklog-profile-link,
+body.public-mode #booklog-embed-wrap {
+  display: none !important;
+}
+body.public-mode header::after {
+  content: '🌐 公開モード（広告ページ） ── 紹介された本のリンクから購入すると、運営の助けになります';
+  display: block;
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--gold);
+  padding: 0.5rem 1rem;
+  background: rgba(201,168,76,0.08);
+  border-top: 1px solid rgba(201,168,76,0.3);
+  margin-top: 0.5rem;
+}
+
 /* 今日のサマリー（v2.24 / 2026-05-17） */
 .today-summary {
   margin: 1.5rem 0 2rem;
@@ -3665,11 +3718,12 @@ UIKI.vision = (function() {
 
   // ───── 公開：fullAnalyze（分析 + 投入を一気通貫） ─────
   async function fullAnalyze(imageUrl, kind, onProgress, fileId) {
-    onProgress && onProgress('画像を取得中…');
+    // 進捗を progress percent + status text の 2 引数で呼ぶ
+    onProgress && onProgress('📥 画像を取得中…', 25);
     const result = await analyzeImage(imageUrl, kind, fileId);
-    onProgress && onProgress('AI 応答を解析中…');
+    onProgress && onProgress('🤖 AI 応答を解析中…', 70);
     const written = await writeToYomu(kind, result.parsed, imageUrl);
-    onProgress && onProgress('読雨に ' + written + ' 件投入完了（' + result.provider + '）');
+    onProgress && onProgress('☔ 読雨に ' + written + ' 件投入完了（' + result.provider + '）', 100);
     return { ...result, written };
   }
 
@@ -6414,9 +6468,22 @@ function bootstrap() {
       btn.disabled = true;
       btn.textContent = '🔍 解析中…';
       if (status) status.textContent = '画像取得中…';
+      // 進捗バー表示
+      let progress = status ? status.parentNode.querySelector('.vision-progress') : null;
+      if (status && !progress) {
+        progress = document.createElement('div');
+        progress.className = 'vision-progress';
+        progress.innerHTML = '<div class="vp-bar"><div class="vp-fill"></div></div>';
+        status.parentNode.appendChild(progress);
+      }
+      if (progress) {
+        progress.style.display = 'block';
+        progress.querySelector('.vp-fill').style.width = '5%';
+      }
       try {
-        const result = await UIKI.vision.fullAnalyze(imgUrl, kind, msg => {
+        const result = await UIKI.vision.fullAnalyze(imgUrl, kind, (msg, pct) => {
           if (status) status.textContent = msg;
+          if (progress && pct != null) progress.querySelector('.vp-fill').style.width = pct + '%';
         }, latest.id);
         const provider = result.provider;
         const written = result.written;
@@ -6443,7 +6510,10 @@ function bootstrap() {
       } finally {
         btn.disabled = false;
         btn.textContent = orig;
-        setTimeout(() => { if (status) status.textContent = ''; }, 10000);
+        setTimeout(() => {
+          if (status) status.textContent = '';
+          if (progress) progress.style.display = 'none';
+        }, 10000);
       }
     });
   }
@@ -6702,6 +6772,11 @@ function bootstrap() {
 
   // ⑤ PAT 期限チェック
   UIKI.config.checkPATAge();
+
+  // v2.28 公開モード（?public=1）：名言・読書・本棚導線だけが見える広告ページ化
+  if (new URLSearchParams(location.search).get('public') === '1') {
+    document.body.classList.add('public-mode');
+  }
 
   // フォーム
   const toggle = document.getElementById('invoke-toggle');
