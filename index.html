@@ -3229,6 +3229,18 @@ main { padding-bottom: 5.2rem; }
       <span>自動分析を有効にする（v2.23）</span>
       <small>Drive 同期（5分ごと）で新しい画像を検知したら、自動で Vision にかけて読雨に投入。1 画像につき 1 回まで（同じ画像の重複分析はしない）。</small>
     </label>
+    <div style="display:flex; gap:0.4rem; flex-wrap:wrap; margin-top:0.6rem;">
+      <button type="button" id="cfg-vision-test" class="attraction-add-btn" style="margin:0; padding:0.4rem 0.9rem; font-size:0.78rem;">🔬 Vision 動作テスト</button>
+      <button type="button" id="cfg-vision-history" class="attraction-add-btn" style="margin:0; padding:0.4rem 0.9rem; font-size:0.78rem;">📋 直近 20 回の履歴</button>
+      <span id="cfg-vision-test-result" style="font-size:0.76rem; color:var(--dim); align-self:center;"></span>
+    </div>
+    <hr style="border: none; border-top: 1px solid var(--faint); margin: 1.2rem 0;">
+    <h3 style="font-size: 1rem; color: var(--gold); margin-bottom: 0.5rem;">データ管理（v2.30 / 2026-05-17）</h3>
+    <div style="display:flex; gap:0.4rem; flex-wrap:wrap;">
+      <button type="button" id="cfg-export-yomu" class="attraction-add-btn" style="margin:0; padding:0.4rem 0.9rem; font-size:0.78rem;">📥 読雨データを JSON でダウンロード</button>
+      <button type="button" id="cfg-export-local" class="attraction-add-btn" style="margin:0; padding:0.4rem 0.9rem; font-size:0.78rem;">📥 localStorage 全エクスポート</button>
+    </div>
+    <small style="display:block; margin-top:0.4rem; color:var(--dim);">読雨 Gist の中身と localStorage（タスク・砂のログ・設定）を JSON でバックアップできます。</small>
     <hr style="border: none; border-top: 1px solid var(--faint); margin: 1.2rem 0;">
     <h3 style="font-size: 1rem; color: var(--gold); margin-bottom: 0.5rem;">ブクログ連携（v2.17 / 2026-05-17・任意）</h3>
     <label>ブクログ ユーザー名
@@ -6887,6 +6899,105 @@ function bootstrap() {
   document.getElementById('open-config').addEventListener('click', () => UIKI.config.open());
   document.getElementById('cfg-cancel').addEventListener('click', () => UIKI.config.close());
   document.getElementById('cfg-save').addEventListener('click', () => UIKI.config.save());
+
+  // v2.30 Vision 動作テスト
+  const visionTestBtn = document.getElementById('cfg-vision-test');
+  if (visionTestBtn) {
+    visionTestBtn.addEventListener('click', async () => {
+      const result = document.getElementById('cfg-vision-test-result');
+      const cfg = UIKI.store.get('config', {});
+      if (!cfg.geminiKey && !cfg.claudeKey) { result.textContent = '✗ キー未設定'; return; }
+      visionTestBtn.disabled = true;
+      const orig = visionTestBtn.textContent;
+      visionTestBtn.textContent = '🔬 テスト中…';
+      result.textContent = '';
+      try {
+        // Drive の最新画像（自撮り優先）を取って分析せず base64 化までを試す
+        const states = UIKI.drive.state ? UIKI.drive.state() : null;
+        let testFile = null;
+        ['body', 'scale', 'meal'].forEach(k => {
+          if (!testFile && states && states[k] && states[k].files && states[k].files.length) testFile = states[k].files[0];
+        });
+        if (!testFile) {
+          result.textContent = '✗ Drive に画像が無い';
+          return;
+        }
+        result.textContent = '📥 画像取得中…';
+        const imgUrl = (testFile.thumbnailLink || '').replace(/=s\d+(-c)?$/, '=s2000');
+        const res = await fetch('https://www.googleapis.com/drive/v3/files/' + encodeURIComponent(testFile.id) + '?alt=media&key=' + encodeURIComponent(cfg.driveKey || ''));
+        if (!res.ok) {
+          result.textContent = '✗ Drive API 失敗 HTTP ' + res.status;
+          return;
+        }
+        const blob = await res.blob();
+        result.textContent = '✓ 画像取得 OK（' + Math.round(blob.size / 1024) + 'KB ' + blob.type + '）── Vision API 呼び出しは「🔍 AI で〇〇」ボタンから';
+      } catch(e) {
+        result.textContent = '✗ ' + (e.message || '失敗').slice(0, 80);
+      } finally {
+        visionTestBtn.disabled = false;
+        visionTestBtn.textContent = orig;
+      }
+    });
+  }
+
+  // v2.30 Vision 履歴を見る
+  const visionHistBtn = document.getElementById('cfg-vision-history');
+  if (visionHistBtn) {
+    visionHistBtn.addEventListener('click', () => {
+      const history = UIKI.store.get('vision_history', []);
+      if (!history.length) {
+        alert('Vision 履歴はまだありません。\n手動 or 自動で分析を実行すると記録されます。');
+        return;
+      }
+      const lines = history.map((h, i) =>
+        (i + 1) + '. ' + (h.ok ? '✓' : '✗') + ' ' + h.kind + ' @ ' + (h.ts || '').slice(0, 16).replace('T', ' ') + (h.error ? '\n   → ' + h.error : '')
+      ).join('\n');
+      alert('Vision 直近 ' + history.length + ' 回:\n\n' + lines);
+    });
+  }
+
+  // v2.30 読雨 JSON エクスポート
+  const exportYomuBtn = document.getElementById('cfg-export-yomu');
+  if (exportYomuBtn) {
+    exportYomuBtn.addEventListener('click', () => {
+      try {
+        const state = UIKI.yomu.state ? UIKI.yomu.state() : { entries: [] };
+        const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const ts = new Date().toISOString().slice(0, 10);
+        a.href = url; a.download = 'yomu-export-' + ts + '.json';
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        showToast('✓ 読雨 JSON をダウンロード');
+      } catch(e) { showToast('✗ ' + (e.message || '失敗')); }
+    });
+  }
+
+  // v2.30 localStorage 全エクスポート
+  const exportLocalBtn = document.getElementById('cfg-export-local');
+  if (exportLocalBtn) {
+    exportLocalBtn.addEventListener('click', () => {
+      try {
+        const all = {};
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (k && (k.startsWith('uiki_') || k.startsWith('shared_'))) {
+            try { all[k] = JSON.parse(localStorage.getItem(k)); }
+            catch(e) { all[k] = localStorage.getItem(k); }
+          }
+        }
+        const blob = new Blob([JSON.stringify(all, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const ts = new Date().toISOString().slice(0, 10);
+        a.href = url; a.download = 'uiki-localstorage-' + ts + '.json';
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        showToast('✓ localStorage を JSON でダウンロード');
+      } catch(e) { showToast('✗ ' + (e.message || '失敗')); }
+    });
+  }
 
   // ───── タブ切替 ─────
   function switchTab(name) {
