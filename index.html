@@ -2961,6 +2961,7 @@ main { padding-bottom: 5.2rem; }
 
 <header class="app-header">
   <div class="logo">☔ 雨域 <span style="font-size: 0.65rem; letter-spacing: 0.3em; color: var(--dim); margin-left: 0.4em;">UIKI</span></div>
+  <div id="header-now" style="margin-left: auto; margin-right: 0.8rem; font-family: var(--mono); font-size: 0.78rem; color: var(--dim); white-space: nowrap;"></div>
   <button id="menu-toggle" class="menu-btn" aria-label="メニュー">☰</button>
 </header>
 
@@ -4975,7 +4976,8 @@ UIKI.yomu = (function() {
       return;
     }
     books.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
-    const top = books.slice(0, 5);
+    const showAll = wrap.dataset.showAll === '1';
+    const top = showAll ? books : books.slice(0, 5);
     wrap.innerHTML = top.map(b => {
       const star = b.stars ? '★'.repeat(b.stars) : '';
       const chap = b.chapter ? '第' + b.chapter + '話' : '';
@@ -4986,6 +4988,14 @@ UIKI.yomu = (function() {
         (b.raw ? '<p>' + escapeHtml(b.raw) + '</p>' : '') +
         '</div>';
     }).join('');
+    if (!showAll && books.length > 5) {
+      const btn = document.createElement('button');
+      btn.className = 'attraction-add-btn';
+      btn.style.cssText = 'margin: 0.6rem 0 0; padding: 0.35rem 0.9rem; font-size: 0.78rem;';
+      btn.textContent = 'もっと見る（残り ' + (books.length - 5) + ' 件）';
+      btn.onclick = () => { wrap.dataset.showAll = '1'; renderBooks(); };
+      wrap.appendChild(btn);
+    }
   }
 
   function renderError() {
@@ -5216,11 +5226,13 @@ UIKI.yomu = (function() {
   function renderMemos() {
     const wrap = document.getElementById('yomu-memos');
     if (!wrap) return;
-    const memos = byType('memo').sort((a, b) => (b.created_at || '').localeCompare(a.created_at || '')).slice(0, 5);
-    if (!memos.length) {
+    const allMemos = byType('memo').sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+    if (!allMemos.length) {
       wrap.innerHTML = '<div class="yomu-empty">まだメモがない。砂のログに書いて「📝 メモとして保存」を押すと、ここに表示されます。</div>';
       return;
     }
+    const showAll = wrap.dataset.showAll === '1';
+    const memos = showAll ? allMemos : allMemos.slice(0, 5);
     wrap.innerHTML = memos.map(m => {
       const date = (m.created_at || m.date || '').slice(0, 10);
       return '<blockquote class="yomu-quote-item" data-yomu-id="' + escapeHtml(m.id || '') + '">' +
@@ -5228,6 +5240,14 @@ UIKI.yomu = (function() {
         '<footer>' + escapeHtml(date) + (m.weight ? ' ｜ 重力 ' + m.weight : '') + '</footer>' +
         '</blockquote>';
     }).join('');
+    if (!showAll && allMemos.length > 5) {
+      const btn = document.createElement('button');
+      btn.className = 'attraction-add-btn';
+      btn.style.cssText = 'margin: 0.6rem 0 0; padding: 0.35rem 0.9rem; font-size: 0.78rem;';
+      btn.textContent = 'もっと見る（残り ' + (allMemos.length - 5) + ' 件）';
+      btn.onclick = () => { wrap.dataset.showAll = '1'; renderMemos(); };
+      wrap.appendChild(btn);
+    }
   }
 
   // v2.27 月次振り返り：雨域 AI への材料
@@ -8413,6 +8433,17 @@ function bootstrap() {
     document.getElementById('pwa-install-banner').hidden = true;
     showToast('✓ ホーム画面に追加されました');
   });
+
+  // v2.59 ヘッダーに今日の日時表示（1分ごとに更新）
+  function updateHeaderTime() {
+    const el = document.getElementById('header-now');
+    if (!el) return;
+    const d = new Date();
+    const dow = ['日','月','火','水','木','金','土'][d.getDay()];
+    el.textContent = (d.getMonth()+1) + '/' + d.getDate() + ' (' + dow + ') ' + ('0'+d.getHours()).slice(-2) + ':' + ('0'+d.getMinutes()).slice(-2);
+  }
+  updateHeaderTime();
+  setInterval(updateHeaderTime, 60000);
 
   // v2.46 テーマ適用：常に dark（青背景）で安定（ユーザー指示「安定して背景青」）
   function applyTheme() {
