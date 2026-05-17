@@ -1,0 +1,1534 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https:; connect-src https://api.github.com https://www.googleapis.com https://accounts.google.com https://oauth2.googleapis.com https://generativelanguage.googleapis.com https://api.anthropic.com https://www.googleapis.com/books/v1/ https://app.rakuten.co.jp/ https://www.googleapis.com/customsearch/v1/;">
+<title>本棚 ── 砂の積層を、外に開く</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2456b8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;600;700&family=Zen+Kaku+Gothic+New:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f0f4fa;
+  --bg-elev: #ffffff;
+  --ink: #1a1f2e;
+  --ink-dim: rgba(26, 31, 46, 0.6);
+  --ink-faint: rgba(26, 31, 46, 0.18);
+  --accent: #2456b8;
+  --accent-soft: rgba(36, 86, 184, 0.12);
+  --gold: #c9a84c;
+  --serif: 'Noto Serif JP', serif;
+  --sans: 'Zen Kaku Gothic New', sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+  --star: #d4a82e;
+  --status-pile: #b87a2a;
+  --status-reading: #2456b8;
+  --status-done: #4a8c4a;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: 16px;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ──────────── レイアウト ──────────── */
+.app {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem 1.2rem 4rem;
+}
+
+header {
+  position: sticky;
+  top: 0;
+  background: rgba(240, 244, 250, 0.85);
+  backdrop-filter: blur(10px);
+  z-index: 10;
+  padding: 0.8rem 0;
+  border-bottom: 1px solid var(--ink-faint);
+  margin-bottom: 1.5rem;
+}
+
+.header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1.2rem;
+}
+
+.brand {
+  font-family: var(--serif);
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.brand-sub {
+  font-size: 0.7rem;
+  font-family: var(--sans);
+  color: var(--ink-dim);
+  letter-spacing: 0.3em;
+  margin-left: 0.4rem;
+}
+
+.header-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.btn {
+  font-family: var(--sans);
+  font-size: 0.82rem;
+  padding: 0.45rem 1rem;
+  border: 1px solid var(--ink-faint);
+  border-radius: 999px;
+  background: var(--bg-elev);
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn:hover { border-color: var(--accent); color: var(--accent); }
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.btn-primary:hover { background: #1d4798; color: #fff; }
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--ink-faint);
+}
+
+.hero {
+  text-align: center;
+  padding: 1.5rem 0 2rem;
+}
+.hero h1 {
+  font-family: var(--serif);
+  font-size: clamp(1.8rem, 5vw, 2.6rem);
+  color: var(--accent);
+  letter-spacing: 0.18em;
+  font-weight: 700;
+}
+.hero .sub {
+  display: block;
+  font-family: var(--sans);
+  font-size: 0.72rem;
+  letter-spacing: 0.4em;
+  color: rgba(36, 86, 184, 0.55);
+  margin-top: 0.3rem;
+}
+.hero .tagline {
+  margin-top: 0.8rem;
+  font-size: 0.88rem;
+  color: rgba(36, 86, 184, 0.7);
+  line-height: 1.6;
+}
+.hero .meta {
+  margin-top: 1rem;
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  color: var(--accent);
+  flex-wrap: wrap;
+}
+.hero .meta b {
+  font-size: 1.2rem;
+  margin: 0 0.2rem;
+}
+
+/* ──────────── 検索・フィルタバー ──────────── */
+.toolbar {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 1.2rem;
+  padding: 0.8rem;
+  background: var(--bg-elev);
+  border: 1px solid var(--ink-faint);
+  border-radius: 0.6rem;
+}
+.toolbar input[type="search"] {
+  flex: 1 1 200px;
+  min-width: 150px;
+  padding: 0.5rem 0.9rem;
+  border: 1px solid var(--ink-faint);
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 0.9rem;
+}
+.toolbar input[type="search"]:focus { outline: none; border-color: var(--accent); }
+
+.filter-chip {
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  padding: 0.35rem 0.9rem;
+  border: 1px solid var(--ink-faint);
+  border-radius: 999px;
+  background: var(--bg-elev);
+  color: var(--ink-dim);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.filter-chip:hover { border-color: var(--accent); color: var(--accent); }
+.filter-chip.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* ──────────── 本棚グリッド（ブクログ風） ──────────── */
+.shelf {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 1.2rem 0.8rem;
+  margin-top: 1rem;
+}
+
+.book-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-elev);
+  border: 1px solid var(--ink-faint);
+  border-radius: 0.4rem;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+.book-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(36, 86, 184, 0.15);
+}
+.book-cover-wrap {
+  position: relative;
+  aspect-ratio: 2 / 3;
+  background: linear-gradient(135deg, #d6dee8 0%, #b5c0d0 100%);
+  overflow: hidden;
+}
+.book-cover-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.book-cover-wrap.no-cover {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.8rem;
+  text-align: center;
+}
+.book-cover-wrap.no-cover .placeholder {
+  font-family: var(--serif);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink-dim);
+  line-height: 1.4;
+}
+
+.book-status-badge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  font-family: var(--sans);
+  font-size: 0.62rem;
+  font-weight: 600;
+  padding: 0.18rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.95);
+  letter-spacing: 0.06em;
+  pointer-events: none;
+}
+.book-status-badge.pile { color: var(--status-pile); }
+.book-status-badge.reading { color: var(--status-reading); }
+.book-status-badge.done { color: var(--status-done); }
+
+.book-new-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: #e74c3c;
+  color: #fff;
+  font-family: var(--sans);
+  font-size: 0.62rem;
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  letter-spacing: 0.06em;
+}
+
+.book-public-badge {
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  background: rgba(36, 86, 184, 0.9);
+  color: #fff;
+  font-family: var(--sans);
+  font-size: 0.56rem;
+  font-weight: 600;
+  padding: 0.12rem 0.4rem;
+  border-radius: 4px;
+  letter-spacing: 0.06em;
+}
+
+.book-meta {
+  padding: 0.5rem 0.6rem 0.65rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.book-title {
+  font-family: var(--serif);
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--ink);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.book-author {
+  font-family: var(--sans);
+  font-size: 0.72rem;
+  color: var(--ink-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.book-stars {
+  font-size: 0.78rem;
+  color: var(--star);
+  letter-spacing: 0.06em;
+}
+
+/* ──────────── 詳細モーダル ──────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 14, 22, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+.modal-overlay[hidden] { display: none; }
+.modal {
+  background: var(--bg-elev);
+  border-radius: 0.8rem;
+  max-width: 720px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 1.5rem;
+  border: 1px solid var(--ink-faint);
+  position: relative;
+}
+.modal-close {
+  position: absolute;
+  top: 0.8rem;
+  right: 0.8rem;
+  background: transparent;
+  border: none;
+  font-size: 1.4rem;
+  cursor: pointer;
+  color: var(--ink-dim);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+}
+.modal-close:hover { background: var(--ink-faint); color: var(--ink); }
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 1.2rem;
+  margin-bottom: 1rem;
+}
+@media (max-width: 600px) {
+  .detail-grid { grid-template-columns: 1fr; }
+}
+.detail-cover {
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  background: linear-gradient(135deg, #d6dee8 0%, #b5c0d0 100%);
+  border-radius: 0.4rem;
+  overflow: hidden;
+}
+.detail-cover img { width: 100%; height: 100%; object-fit: cover; }
+.detail-fields h2 {
+  font-family: var(--serif);
+  font-size: 1.3rem;
+  margin-bottom: 0.4rem;
+  color: var(--ink);
+  line-height: 1.4;
+}
+.detail-author {
+  font-family: var(--sans);
+  color: var(--ink-dim);
+  font-size: 0.92rem;
+  margin-bottom: 0.8rem;
+}
+.detail-row {
+  display: flex;
+  gap: 0.6rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.86rem;
+}
+.detail-row strong {
+  color: var(--ink-dim);
+  font-weight: 500;
+  min-width: 4em;
+}
+
+.affiliate-buttons {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+}
+.affiliate-btn {
+  flex: 1 1 140px;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--ink-faint);
+  border-radius: 0.4rem;
+  background: var(--bg-elev);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-decoration: none;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.affiliate-btn.amazon {
+  background: #ff9900;
+  color: #111;
+  border-color: #ff9900;
+}
+.affiliate-btn.amazon:hover { background: #ffb13a; }
+.affiliate-btn.rakuten {
+  background: #bf0000;
+  color: #fff;
+  border-color: #bf0000;
+}
+.affiliate-btn.rakuten:hover { background: #e10000; }
+
+.review-section {
+  margin-top: 1.5rem;
+  border-top: 1px solid var(--ink-faint);
+  padding-top: 1rem;
+}
+.review-section h3 {
+  font-family: var(--serif);
+  font-size: 1rem;
+  margin-bottom: 0.6rem;
+  color: var(--accent);
+}
+.review-text {
+  font-family: var(--serif);
+  font-size: 0.92rem;
+  line-height: 1.7;
+  color: var(--ink);
+  white-space: pre-wrap;
+}
+
+/* ──────────── 設定モーダル ──────────── */
+.cfg-modal label {
+  display: block;
+  margin: 0.8rem 0;
+}
+.cfg-modal label > input,
+.cfg-modal label > select,
+.cfg-modal label > textarea {
+  display: block;
+  width: 100%;
+  padding: 0.55rem 0.8rem;
+  margin-top: 0.3rem;
+  background: var(--bg);
+  border: 1px solid var(--ink-faint);
+  border-radius: 0.4rem;
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 0.88rem;
+}
+.cfg-modal small {
+  display: block;
+  margin-top: 0.3rem;
+  color: var(--ink-dim);
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+.cfg-modal hr {
+  border: none;
+  border-top: 1px solid var(--ink-faint);
+  margin: 1.4rem 0;
+}
+.cfg-modal h3 {
+  font-family: var(--serif);
+  font-size: 1rem;
+  color: var(--accent);
+  margin-bottom: 0.4rem;
+}
+.cfg-actions {
+  display: flex;
+  gap: 0.6rem;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--ink-faint);
+}
+
+/* ──────────── 追加モーダル ──────────── */
+.add-modal .add-step {
+  margin: 1rem 0;
+}
+.add-modal .add-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  margin-top: 0.6rem;
+}
+@media (max-width: 480px) {
+  .add-modal .add-options { grid-template-columns: 1fr; }
+}
+.add-option {
+  padding: 1rem;
+  border: 1px solid var(--ink-faint);
+  border-radius: 0.5rem;
+  background: var(--bg-elev);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.add-option:hover { border-color: var(--accent); background: var(--accent-soft); }
+.add-option .ao-icon { font-size: 1.6rem; }
+.add-option .ao-label {
+  font-family: var(--sans);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink);
+  margin-top: 0.3rem;
+}
+.add-option .ao-desc {
+  font-size: 0.72rem;
+  color: var(--ink-dim);
+  margin-top: 0.2rem;
+}
+
+/* ──────────── トースト ──────────── */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink);
+  color: #fff;
+  padding: 0.7rem 1.4rem;
+  border-radius: 999px;
+  font-family: var(--sans);
+  font-size: 0.85rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.3s;
+  z-index: 200;
+  max-width: 92vw;
+  text-align: center;
+}
+.toast.visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ──────────── 公開モード ──────────── */
+body.public-mode .private-only { display: none !important; }
+body.public-mode .public-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  background: linear-gradient(90deg, var(--accent) 0%, #1d4798 100%);
+  color: #fff;
+  padding: 0.5rem 1rem;
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  border-radius: 0.4rem;
+  margin-bottom: 1rem;
+}
+.public-banner { display: none; }
+
+/* 空状態 */
+.empty {
+  text-align: center;
+  padding: 4rem 1rem;
+  color: var(--ink-dim);
+  font-family: var(--serif);
+}
+.empty .em-icon { font-size: 3rem; margin-bottom: 0.5rem; }
+.empty .em-title { font-size: 1.1rem; margin-bottom: 0.5rem; color: var(--ink); }
+.empty .em-body { font-size: 0.9rem; line-height: 1.6; }
+
+/* ──────────── スマホ ──────────── */
+@media (max-width: 600px) {
+  .app { padding: 0.6rem 0.8rem 4rem; }
+  .header-inner { padding: 0 0.8rem; }
+  .brand-sub { display: none; }
+  .shelf {
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 1rem 0.6rem;
+  }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <a href="./" class="brand">📚 本棚<span class="brand-sub">SHELF</span></a>
+    <div class="header-actions">
+      <button class="btn private-only" id="btn-add">＋ 本を追加</button>
+      <button class="btn-ghost btn private-only" id="btn-config" title="設定">⚙️</button>
+      <a class="btn-ghost btn" href="https://rainybrainch.github.io/uiki/" target="_blank" rel="noopener" title="雨域へ">☔</a>
+    </div>
+  </div>
+</header>
+
+<main class="app">
+
+  <div class="public-banner">
+    <span>📖 これは公開ページです ── 紹介された本のリンクから購入すると、運営の助けになります</span>
+  </div>
+
+  <section class="hero">
+    <h1>本棚<span class="sub">SHELF</span></h1>
+    <p class="tagline">
+      砂の積層を、外に密度として開く。<br>
+      読了 <b id="hero-count-done">0</b> / 読み中 <b id="hero-count-reading">0</b> / 積読 <b id="hero-count-pile">0</b>
+    </p>
+  </section>
+
+  <div class="toolbar">
+    <input type="search" id="search" placeholder="🔍 タイトル・著者で検索">
+    <button class="filter-chip active" data-status="all">全て</button>
+    <button class="filter-chip" data-status="reading">📖 読み中</button>
+    <button class="filter-chip" data-status="done">✓ 読了</button>
+    <button class="filter-chip" data-status="pile">📚 積読</button>
+    <button class="filter-chip private-only" data-status="public">🌐 公開中</button>
+  </div>
+
+  <div class="shelf" id="shelf">
+    <div class="empty"><div class="em-icon">⏳</div><div class="em-body">読み込み中…</div></div>
+  </div>
+
+</main>
+
+<!-- 詳細モーダル -->
+<div class="modal-overlay" id="detail-modal" hidden>
+  <div class="modal">
+    <button class="modal-close" id="detail-close" aria-label="閉じる">×</button>
+    <div id="detail-content"></div>
+  </div>
+</div>
+
+<!-- 追加モーダル -->
+<div class="modal-overlay" id="add-modal" hidden>
+  <div class="modal add-modal">
+    <button class="modal-close" id="add-close" aria-label="閉じる">×</button>
+    <h2 style="font-family: var(--serif); font-size: 1.3rem; margin-bottom: 0.4rem;">本を追加</h2>
+    <p style="font-size: 0.82rem; color: var(--ink-dim);">追加の方法を選んでください。</p>
+    <div class="add-step">
+      <div class="add-options">
+        <div class="add-option" id="opt-isbn">
+          <div class="ao-icon">📷</div>
+          <div class="ao-label">ISBN・タイトルで検索</div>
+          <div class="ao-desc">Google Books から自動取得</div>
+        </div>
+        <div class="add-option" id="opt-cover-photo">
+          <div class="ao-icon">🤳</div>
+          <div class="ao-label">表紙を撮影</div>
+          <div class="ao-desc">Vision AI で書名抽出</div>
+        </div>
+        <div class="add-option" id="opt-manual">
+          <div class="ao-icon">✍️</div>
+          <div class="ao-label">手入力</div>
+          <div class="ao-desc">タイトル・著者を直接入力</div>
+        </div>
+        <div class="add-option" id="opt-csv">
+          <div class="ao-icon">📥</div>
+          <div class="ao-label">ブクログ CSV</div>
+          <div class="ao-desc">CSV ファイルから一括取込</div>
+        </div>
+      </div>
+    </div>
+    <div id="add-form" style="display:none; margin-top:1rem;"></div>
+  </div>
+</div>
+
+<!-- 設定モーダル -->
+<div class="modal-overlay" id="config-modal" hidden>
+  <div class="modal cfg-modal">
+    <button class="modal-close" id="config-close" aria-label="閉じる">×</button>
+    <h2 style="font-family: var(--serif); font-size: 1.3rem; margin-bottom: 0.5rem;">本棚 設定</h2>
+    <p style="font-size: 0.78rem; color: var(--ink-dim); margin-bottom: 0.8rem;">
+      雨域 UIKI で設定した PAT / Gist ID / Vision キーを使います（同期）。
+    </p>
+    <h3>GitHub 連携</h3>
+    <label>GitHub Personal Access Token (Gists scope)
+      <input type="password" id="cfg-pat" autocomplete="off">
+      <small>fine-grained PAT 推奨。雨域 UIKI と同じトークンを使えます。</small>
+    </label>
+    <label>読雨 Gist ID
+      <input type="text" id="cfg-gistid" autocomplete="off" placeholder="cffc5abcf62103b27effe2efba25ca6a">
+      <small>type=book エントリの保存先。雨域 UIKI と共有。</small>
+    </label>
+    <hr>
+    <h3>Vision AI（任意）</h3>
+    <label>Gemini API キー
+      <input type="password" id="cfg-gemini-key" autocomplete="off" placeholder="AIza...">
+      <small><a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a> で無料発行。表紙画像から書名抽出に使用。</small>
+    </label>
+    <hr>
+    <h3>アフィリエイト（任意）</h3>
+    <label>Amazon アソシエイト ID
+      <input type="text" id="cfg-amazon-id" autocomplete="off" placeholder="例: fukurouzo-22">
+      <small><a href="https://affiliate.amazon.co.jp/" target="_blank" rel="noopener">Amazon アソシエイト</a> 登録後の tag。空欄なら普通の Amazon リンク。</small>
+    </label>
+    <label>楽天アフィリエイト ID
+      <input type="text" id="cfg-rakuten-id" autocomplete="off" placeholder="例: 1a2b3c4d.e5f6g7h8.1a2b3c4d.e5f6g7h8">
+      <small><a href="https://affiliate.rakuten.co.jp/" target="_blank" rel="noopener">楽天アフィリエイト</a> 登録後の ID。空欄なら普通の楽天リンク。</small>
+    </label>
+    <hr>
+    <h3>公開設定</h3>
+    <label>公開ページ URL
+      <input type="text" readonly id="cfg-public-url" value="">
+      <small>このURLを SNS で共有すると、🌐 公開中の本だけが見える本棚として機能します。</small>
+    </label>
+    <div class="cfg-actions">
+      <button class="btn-ghost btn" id="cfg-cancel">閉じる</button>
+      <button class="btn btn-primary" id="cfg-save">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+const SHELF = {};
+
+// ──────────── store ────────────
+SHELF.store = {
+  KEY: 'shelf_',
+  get(k, def) {
+    try { const v = localStorage.getItem(this.KEY + k); return v == null ? def : JSON.parse(v); }
+    catch(e) { return def; }
+  },
+  set(k, v) { localStorage.setItem(this.KEY + k, JSON.stringify(v)); },
+  del(k) { localStorage.removeItem(this.KEY + k); }
+};
+
+// ──────────── ユーティリティ ────────────
+function $(sel) { return document.querySelector(sel); }
+function $$(sel) { return Array.from(document.querySelectorAll(sel)); }
+function escHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function showToast(msg) {
+  const t = $('#toast');
+  if (!t) return;
+  t.textContent = msg;
+  t.classList.add('visible');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('visible'), 2800);
+}
+
+// ──────────── 公開モード判定 ────────────
+function isPublicMode() {
+  const params = new URLSearchParams(location.search);
+  return params.get('public') === '1';
+}
+if (isPublicMode()) {
+  document.body.classList.add('public-mode');
+}
+
+// ──────────── 読雨 Gist 連携 ────────────
+SHELF.gist = (function() {
+  const FILENAME = 'yomu-data.json';
+
+  async function fetchData() {
+    const cfg = SHELF.store.get('config', {});
+    if (!cfg.gistId) throw new Error('読雨 Gist ID が未設定');
+    const url = 'https://api.github.com/gists/' + encodeURIComponent(cfg.gistId);
+    const headers = { 'Accept': 'application/vnd.github+json' };
+    if (cfg.pat) headers['Authorization'] = 'Bearer ' + cfg.pat;
+    const res = await fetch(url, { headers });
+    if (!res.ok) throw new Error('Gist 取得失敗：HTTP ' + res.status);
+    const data = await res.json();
+    const file = data.files && data.files[FILENAME];
+    if (!file) return { entries: [] };
+    let parsed;
+    try {
+      parsed = file.content ? JSON.parse(file.content) : { entries: [] };
+    } catch(e) {
+      throw new Error('読雨 Gist の JSON 解析失敗');
+    }
+    if (!parsed.entries) parsed.entries = [];
+    return parsed;
+  }
+
+  async function saveData(data) {
+    const cfg = SHELF.store.get('config', {});
+    if (!cfg.pat) throw new Error('PAT が未設定（書き込み不可）');
+    if (!cfg.gistId) throw new Error('読雨 Gist ID が未設定');
+    const url = 'https://api.github.com/gists/' + encodeURIComponent(cfg.gistId);
+    const body = {
+      files: {
+        [FILENAME]: { content: JSON.stringify(data, null, 2) }
+      }
+    };
+    const res = await fetch(url, {
+      method: 'PATCH',
+      headers: {
+        'Accept': 'application/vnd.github+json',
+        'Authorization': 'Bearer ' + cfg.pat,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) {
+      const txt = await res.text().catch(() => '');
+      throw new Error('Gist 保存失敗：HTTP ' + res.status + ' ' + txt.slice(0, 80));
+    }
+    return await res.json();
+  }
+
+  return { fetchData, saveData };
+})();
+
+// ──────────── 本データ管理 ────────────
+SHELF.books = (function() {
+  let _cache = [];
+  let _lastFetched = 0;
+
+  async function load(force) {
+    if (!force && _cache.length && Date.now() - _lastFetched < 60000) return _cache;
+    try {
+      const data = await SHELF.gist.fetchData();
+      _cache = (data.entries || []).filter(e => e.type === 'book');
+      _lastFetched = Date.now();
+      return _cache;
+    } catch(e) {
+      console.warn('books load failed', e);
+      throw e;
+    }
+  }
+
+  async function add(book) {
+    const data = await SHELF.gist.fetchData();
+    if (!data.entries) data.entries = [];
+    const entry = Object.assign({
+      type: 'book',
+      id: 'b_' + Math.random().toString(36).slice(2, 9) + Date.now().toString(36),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      status: 'pile',
+      is_public: false,
+      stars: 0
+    }, book);
+    data.entries.push(entry);
+    await SHELF.gist.saveData(data);
+    _cache = []; _lastFetched = 0;
+    return entry;
+  }
+
+  async function update(id, patch) {
+    const data = await SHELF.gist.fetchData();
+    const idx = (data.entries || []).findIndex(e => e.id === id);
+    if (idx < 0) throw new Error('本が見つからない');
+    data.entries[idx] = Object.assign({}, data.entries[idx], patch, { updated_at: new Date().toISOString() });
+    await SHELF.gist.saveData(data);
+    _cache = []; _lastFetched = 0;
+    return data.entries[idx];
+  }
+
+  async function remove(id) {
+    const data = await SHELF.gist.fetchData();
+    data.entries = (data.entries || []).filter(e => e.id !== id);
+    await SHELF.gist.saveData(data);
+    _cache = []; _lastFetched = 0;
+  }
+
+  function cached() { return _cache; }
+
+  return { load, add, update, remove, cached };
+})();
+
+// ──────────── アフィリエイト URL ────────────
+SHELF.affiliate = (function() {
+  function amazonUrl(book) {
+    const cfg = SHELF.store.get('config', {});
+    const isbn = book.isbn || '';
+    if (!isbn) {
+      const q = encodeURIComponent((book.title || '') + ' ' + (book.author || ''));
+      return 'https://www.amazon.co.jp/s?k=' + q + (cfg.amazonId ? '&tag=' + encodeURIComponent(cfg.amazonId) : '');
+    }
+    return 'https://www.amazon.co.jp/dp/' + encodeURIComponent(isbn) + (cfg.amazonId ? '?tag=' + encodeURIComponent(cfg.amazonId) : '');
+  }
+  function rakutenUrl(book) {
+    const cfg = SHELF.store.get('config', {});
+    const q = encodeURIComponent((book.title || '') + ' ' + (book.author || ''));
+    const base = 'https://search.rakuten.co.jp/search/mall/' + q + '/';
+    if (!cfg.rakutenId) return base;
+    // 楽天アフィリエイトリンク（hb.afl.rakuten.co.jp 経由）
+    return 'https://hb.afl.rakuten.co.jp/hgc/' + encodeURIComponent(cfg.rakutenId) + '/?pc=' + encodeURIComponent(base) + '&m=' + encodeURIComponent(base);
+  }
+  function bookwalkerUrl(book) {
+    const q = encodeURIComponent((book.title || ''));
+    return 'https://bookwalker.jp/search/?word=' + q;
+  }
+  function booklogUrl(book) {
+    if (book.isbn) return 'https://booklog.jp/item/1/' + encodeURIComponent(book.isbn);
+    return 'https://booklog.jp/search?keyword=' + encodeURIComponent(book.title || '');
+  }
+  return { amazonUrl, rakutenUrl, bookwalkerUrl, booklogUrl };
+})();
+
+// ──────────── Google Books API ────────────
+SHELF.googleBooks = (function() {
+  async function searchByISBN(isbn) {
+    const url = 'https://www.googleapis.com/books/v1/volumes?q=isbn:' + encodeURIComponent(isbn);
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Google Books API エラー: HTTP ' + res.status);
+    const data = await res.json();
+    if (!data.items || !data.items.length) throw new Error('該当する本が見つからない');
+    return normalizeBook(data.items[0], isbn);
+  }
+  async function searchByKeyword(q, maxResults) {
+    const url = 'https://www.googleapis.com/books/v1/volumes?q=' + encodeURIComponent(q) + '&maxResults=' + (maxResults || 8) + '&langRestrict=ja';
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Google Books API エラー: HTTP ' + res.status);
+    const data = await res.json();
+    return (data.items || []).map(it => normalizeBook(it));
+  }
+  function normalizeBook(item, fallbackIsbn) {
+    const v = item.volumeInfo || {};
+    let isbn = fallbackIsbn || '';
+    if (!isbn && v.industryIdentifiers) {
+      const i13 = v.industryIdentifiers.find(x => x.type === 'ISBN_13');
+      const i10 = v.industryIdentifiers.find(x => x.type === 'ISBN_10');
+      isbn = (i13 && i13.identifier) || (i10 && i10.identifier) || '';
+    }
+    return {
+      title: v.title || '',
+      author: (v.authors || []).join(' / '),
+      publisher: v.publisher || '',
+      published: v.publishedDate || '',
+      cover_url: (v.imageLinks && (v.imageLinks.thumbnail || v.imageLinks.smallThumbnail)) || '',
+      isbn,
+      description: v.description || '',
+      pageCount: v.pageCount || null,
+      source: 'google_books'
+    };
+  }
+  return { searchByISBN, searchByKeyword };
+})();
+
+// ──────────── Vision AI（表紙画像 → 書名・著者抽出） ────────────
+SHELF.vision = (function() {
+  async function imageFileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result;
+        const comma = result.indexOf(',');
+        if (comma < 0) return reject(new Error('base64 変換失敗'));
+        resolve({ mimeType: file.type || 'image/jpeg', data: result.slice(comma + 1) });
+      };
+      reader.onerror = () => reject(new Error('FileReader 失敗'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function extractBookFromImage(file) {
+    const cfg = SHELF.store.get('config', {});
+    if (!cfg.geminiKey) throw new Error('Gemini API キーが未設定（設定モーダルから登録）');
+    const { mimeType, data } = await imageFileToBase64(file);
+    const prompt = `この画像は本の表紙です。書名・著者・ISBN を読み取り、以下の JSON のみ返してください。読めない項目は空文字。説明文・前置きは禁止。
+
+{
+  "title": "<書名>",
+  "author": "<著者名>",
+  "isbn": "<ISBN(13桁または10桁)・無ければ空>",
+  "publisher": "<出版社・無ければ空>"
+}`;
+    const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=' + encodeURIComponent(cfg.geminiKey);
+    const body = {
+      contents: [{
+        parts: [
+          { text: prompt },
+          { inline_data: { mime_type: mimeType, data } }
+        ]
+      }],
+      generationConfig: { temperature: 0.1, response_mime_type: 'application/json' }
+    };
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error('Gemini API エラー: ' + res.status + ' ' + err.slice(0, 100));
+    }
+    const respData = await res.json();
+    const text = respData?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    let parsed;
+    try { parsed = JSON.parse(text); }
+    catch(e) {
+      const m = text.match(/\{[\s\S]*\}/);
+      if (m) { try { parsed = JSON.parse(m[0]); } catch(e2) {} }
+    }
+    if (!parsed || !parsed.title) throw new Error('Vision で書名を抽出できなかった');
+    return parsed;
+  }
+
+  return { extractBookFromImage };
+})();
+
+// ──────────── ブクログ CSV 取込 ────────────
+SHELF.booklog = (function() {
+  function parseCSV(text) {
+    if (!text) return [];
+    if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+    const rows = []; let row = []; let cur = ''; let inQuote = false;
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (inQuote) {
+        if (c === '"' && text[i+1] === '"') { cur += '"'; i++; }
+        else if (c === '"') { inQuote = false; }
+        else { cur += c; }
+      } else {
+        if (c === '"') inQuote = true;
+        else if (c === ',') { row.push(cur); cur = ''; }
+        else if (c === '\n') { row.push(cur); rows.push(row); row = []; cur = ''; }
+        else if (c === '\r') {}
+        else cur += c;
+      }
+    }
+    if (cur || row.length) { row.push(cur); rows.push(row); }
+    return rows;
+  }
+
+  async function importCSV(file) {
+    const text = await file.text();
+    const rows = parseCSV(text);
+    if (rows.length < 2) throw new Error('CSV が空');
+    const headers = rows[0];
+    const hMap = {};
+    const targets = {
+      title: ['タイトル', 'title'],
+      author: ['著者', 'author'],
+      isbn: ['ISBN'],
+      publisher: ['出版社', 'publisher'],
+      stars: ['評価', 'rating'],
+      status: ['カテゴリ', 'status', '読書状態'],
+      review: ['レビュー', '感想']
+    };
+    Object.keys(targets).forEach(k => {
+      const idx = headers.findIndex(h => targets[k].some(t => (h||'').toLowerCase().includes(t.toLowerCase())));
+      hMap[k] = idx;
+    });
+
+    const data = await SHELF.gist.fetchData();
+    if (!data.entries) data.entries = [];
+    const existing = data.entries.filter(e => e.type === 'book');
+    const existingIsbns = new Set(existing.map(e => (e.isbn || '').replace(/[^0-9X]/g, '')));
+    const existingTitles = new Set(existing.map(e => (e.title || '').replace(/\s+/g, '').toLowerCase()));
+
+    let added = 0, dup = 0;
+    for (let i = 1; i < rows.length; i++) {
+      const r = rows[i];
+      if (!r || r.length < 1) continue;
+      const title = (hMap.title >= 0 ? r[hMap.title] : '') || '';
+      if (!title.trim()) continue;
+      const isbn = (hMap.isbn >= 0 ? (r[hMap.isbn] || '').replace(/[^0-9X]/g, '') : '');
+      const titleNorm = title.replace(/\s+/g, '').toLowerCase();
+      if ((isbn && existingIsbns.has(isbn)) || existingTitles.has(titleNorm)) { dup++; continue; }
+      const statusRaw = hMap.status >= 0 ? (r[hMap.status] || '') : '';
+      let status = 'pile';
+      if (/読み終わ|読了|read/i.test(statusRaw)) status = 'done';
+      else if (/読み中|読書中|reading/i.test(statusRaw)) status = 'reading';
+      else if (/積読|つんどく|to.?read/i.test(statusRaw)) status = 'pile';
+      const stars = parseInt((hMap.stars >= 0 ? r[hMap.stars] : '') || '0', 10) || 0;
+      data.entries.push({
+        type: 'book',
+        id: 'b_' + Math.random().toString(36).slice(2, 9) + Date.now().toString(36) + '_' + i,
+        title: title.trim(),
+        author: (hMap.author >= 0 ? r[hMap.author] : '') || '',
+        isbn,
+        publisher: (hMap.publisher >= 0 ? r[hMap.publisher] : '') || '',
+        stars: Math.max(0, Math.min(5, stars)),
+        status,
+        review: (hMap.review >= 0 ? r[hMap.review] : '') || '',
+        is_public: false,
+        source: 'booklog_csv',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
+      added++;
+      if (isbn) existingIsbns.add(isbn);
+      existingTitles.add(titleNorm);
+    }
+    await SHELF.gist.saveData(data);
+    return { added, dup, total: rows.length - 1 };
+  }
+
+  return { importCSV };
+})();
+
+// ──────────── UI 描画 ────────────
+const ui = (function() {
+  let _allBooks = [];
+  let _filter = { status: 'all', q: '' };
+
+  function statusLabel(s) {
+    return s === 'reading' ? '読み中' : s === 'done' ? '読了' : '積読';
+  }
+  function statusClass(s) {
+    return s === 'reading' ? 'reading' : s === 'done' ? 'done' : 'pile';
+  }
+
+  function makeStars(n) {
+    n = Math.max(0, Math.min(5, parseInt(n, 10) || 0));
+    return '★'.repeat(n) + '☆'.repeat(5 - n);
+  }
+
+  function bookCard(b, idx) {
+    const cover = b.cover_url || '';
+    const newBadge = idx === 0 && !isPublicMode() ? '<span class="book-new-badge">NEW</span>' : '';
+    const publicBadge = b.is_public ? '<span class="book-public-badge">公開中</span>' : '';
+    const coverHtml = cover
+      ? '<img src="' + escHtml(cover) + '" alt="' + escHtml(b.title) + '" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display=\'none\'; this.parentNode.classList.add(\'no-cover\'); this.parentNode.innerHTML+=\'<div class=placeholder>\'+\''+escHtml(b.title).slice(0,20).replace(/'/g,'\\\'')+'\'+\'</div>\';">'
+      : '<div class="placeholder">' + escHtml((b.title || '').slice(0, 20)) + '</div>';
+    return '<div class="book-card" data-id="' + escHtml(b.id) + '">' +
+      '<div class="book-cover-wrap' + (cover ? '' : ' no-cover') + '">' +
+        coverHtml +
+        '<span class="book-status-badge ' + statusClass(b.status) + '">' + escHtml(statusLabel(b.status)) + '</span>' +
+        newBadge + publicBadge +
+      '</div>' +
+      '<div class="book-meta">' +
+        '<div class="book-title">' + escHtml(b.title || '無題') + '</div>' +
+        '<div class="book-author">' + escHtml(b.author || '') + '</div>' +
+        (b.stars ? '<div class="book-stars">' + makeStars(b.stars) + '</div>' : '') +
+      '</div>' +
+    '</div>';
+  }
+
+  function applyFilter(books) {
+    return books.filter(b => {
+      if (isPublicMode() && !b.is_public) return false;
+      if (_filter.status === 'public' && !b.is_public) return false;
+      if (_filter.status !== 'all' && _filter.status !== 'public' && b.status !== _filter.status) return false;
+      if (_filter.q) {
+        const q = _filter.q.toLowerCase();
+        const t = (b.title || '').toLowerCase();
+        const a = (b.author || '').toLowerCase();
+        if (!t.includes(q) && !a.includes(q)) return false;
+      }
+      return true;
+    });
+  }
+
+  function render(books) {
+    _allBooks = books || _allBooks;
+    const sorted = [..._allBooks].sort((a, b) => (b.updated_at || b.created_at || '').localeCompare(a.updated_at || a.created_at || ''));
+    const filtered = applyFilter(sorted);
+    const wrap = $('#shelf');
+    if (!filtered.length) {
+      const emptyMsg = isPublicMode()
+        ? { title: '公開中の本がまだありません', body: '管理者が公開設定にした本が、ここに並びます。' }
+        : { title: 'まだ本がありません', body: '右上の「＋ 本を追加」から最初の 1 冊を登録してください。' };
+      wrap.innerHTML = '<div class="empty"><div class="em-icon">📭</div><div class="em-title">' + emptyMsg.title + '</div><div class="em-body">' + emptyMsg.body + '</div></div>';
+    } else {
+      wrap.innerHTML = filtered.map((b, i) => bookCard(b, i)).join('');
+    }
+    // カウンター更新
+    const cnt = { done: 0, reading: 0, pile: 0 };
+    _allBooks.forEach(b => { if (cnt[b.status] != null) cnt[b.status]++; });
+    $('#hero-count-done').textContent = cnt.done;
+    $('#hero-count-reading').textContent = cnt.reading;
+    $('#hero-count-pile').textContent = cnt.pile;
+  }
+
+  function openDetail(book) {
+    const aff = SHELF.affiliate;
+    const isPublic = isPublicMode();
+    const html =
+      '<div class="detail-grid">' +
+        '<div class="detail-cover">' + (book.cover_url ? '<img src="' + escHtml(book.cover_url) + '" alt="' + escHtml(book.title) + '" referrerpolicy="no-referrer">' : '<div style="display:grid;place-items:center;height:100%;color:rgba(0,0,0,0.4);">No Cover</div>') + '</div>' +
+        '<div class="detail-fields">' +
+          '<h2>' + escHtml(book.title || '無題') + '</h2>' +
+          '<div class="detail-author">' + escHtml(book.author || '') + '</div>' +
+          (book.publisher ? '<div class="detail-row"><strong>出版</strong><span>' + escHtml(book.publisher) + '</span></div>' : '') +
+          (book.isbn ? '<div class="detail-row"><strong>ISBN</strong><span>' + escHtml(book.isbn) + '</span></div>' : '') +
+          '<div class="detail-row"><strong>状態</strong><span>' + escHtml(statusLabel(book.status)) + '</span></div>' +
+          (book.stars ? '<div class="detail-row"><strong>評価</strong><span class="book-stars">' + makeStars(book.stars) + '</span></div>' : '') +
+          '<div class="affiliate-buttons">' +
+            '<a class="affiliate-btn amazon" href="' + escHtml(aff.amazonUrl(book)) + '" target="_blank" rel="noopener nofollow sponsored">📦 Amazon で見る</a>' +
+            '<a class="affiliate-btn rakuten" href="' + escHtml(aff.rakutenUrl(book)) + '" target="_blank" rel="noopener nofollow sponsored">🛒 楽天で見る</a>' +
+            '<a class="affiliate-btn" href="' + escHtml(aff.booklogUrl(book)) + '" target="_blank" rel="noopener">📚 ブクログ</a>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      (book.review ? '<div class="review-section"><h3>📝 感想</h3><div class="review-text">' + escHtml(book.review) + '</div></div>' : '') +
+      (!isPublic ? '<div class="review-section private-only" id="detail-edit-section">' +
+        '<h3>編集</h3>' +
+        '<div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.6rem;">' +
+          '<button class="btn" data-action="status" data-value="pile">📚 積読</button>' +
+          '<button class="btn" data-action="status" data-value="reading">📖 読み中</button>' +
+          '<button class="btn" data-action="status" data-value="done">✓ 読了</button>' +
+          '<button class="btn ' + (book.is_public ? 'btn-primary' : '') + '" data-action="public">' + (book.is_public ? '🌐 公開中' : '🔒 非公開') + '</button>' +
+          '<button class="btn" data-action="edit">✍️ 詳細編集</button>' +
+          '<button class="btn" data-action="delete" style="margin-left:auto; color: #c0392b; border-color:#c0392b;">🗑 削除</button>' +
+        '</div>' +
+      '</div>' : '');
+    $('#detail-content').innerHTML = html;
+
+    // 編集ボタン配線
+    $$('#detail-content [data-action]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const action = btn.dataset.action;
+        try {
+          if (action === 'status') {
+            await SHELF.books.update(book.id, { status: btn.dataset.value });
+            showToast('✓ ' + statusLabel(btn.dataset.value) + ' に変更');
+          } else if (action === 'public') {
+            await SHELF.books.update(book.id, { is_public: !book.is_public });
+            showToast(!book.is_public ? '🌐 公開しました' : '🔒 非公開にしました');
+          } else if (action === 'delete') {
+            if (!confirm('本当に削除しますか？')) return;
+            await SHELF.books.remove(book.id);
+            showToast('🗑 削除しました');
+            closeDetail();
+            await refresh();
+            return;
+          } else if (action === 'edit') {
+            openEditForm(book);
+            return;
+          }
+          closeDetail();
+          await refresh();
+        } catch(e) {
+          showToast('✗ ' + (e.message || '失敗').slice(0, 80));
+        }
+      });
+    });
+    $('#detail-modal').hidden = false;
+  }
+  function closeDetail() { $('#detail-modal').hidden = true; }
+
+  function openEditForm(book) {
+    const html =
+      '<div class="modal cfg-modal" style="max-width: 540px;">' +
+        '<button class="modal-close" id="edit-form-close">×</button>' +
+        '<h2 style="font-family: var(--serif); font-size: 1.2rem; margin-bottom: 0.8rem;">詳細編集：' + escHtml(book.title.slice(0,30)) + '</h2>' +
+        '<label>タイトル <input type="text" id="ef-title" value="' + escHtml(book.title || '') + '"></label>' +
+        '<label>著者 <input type="text" id="ef-author" value="' + escHtml(book.author || '') + '"></label>' +
+        '<label>出版社 <input type="text" id="ef-publisher" value="' + escHtml(book.publisher || '') + '"></label>' +
+        '<label>ISBN <input type="text" id="ef-isbn" value="' + escHtml(book.isbn || '') + '"></label>' +
+        '<label>表紙画像URL <input type="text" id="ef-cover" value="' + escHtml(book.cover_url || '') + '"></label>' +
+        '<label>評価（0-5） <input type="number" min="0" max="5" id="ef-stars" value="' + (book.stars || 0) + '"></label>' +
+        '<label>感想・メモ <textarea id="ef-review" rows="6">' + escHtml(book.review || '') + '</textarea></label>' +
+        '<div class="cfg-actions"><button class="btn-ghost btn" id="ef-cancel">キャンセル</button><button class="btn btn-primary" id="ef-save">保存</button></div>' +
+      '</div>';
+    $('#detail-content').innerHTML = html;
+    $('#edit-form-close').addEventListener('click', closeDetail);
+    $('#ef-cancel').addEventListener('click', () => openDetail(book));
+    $('#ef-save').addEventListener('click', async () => {
+      const patch = {
+        title: $('#ef-title').value.trim(),
+        author: $('#ef-author').value.trim(),
+        publisher: $('#ef-publisher').value.trim(),
+        isbn: $('#ef-isbn').value.trim(),
+        cover_url: $('#ef-cover').value.trim(),
+        stars: parseInt($('#ef-stars').value, 10) || 0,
+        review: $('#ef-review').value
+      };
+      try {
+        await SHELF.books.update(book.id, patch);
+        showToast('✓ 更新');
+        closeDetail();
+        await refresh();
+      } catch(e) {
+        showToast('✗ ' + (e.message || '失敗').slice(0, 80));
+      }
+    });
+  }
+
+  return { render, openDetail, closeDetail, setFilter(p) { Object.assign(_filter, p); render(); }, getFilter() { return _filter; }, getAllBooks() { return _allBooks; } };
+})();
+
+async function refresh() {
+  try {
+    const books = await SHELF.books.load(true);
+    ui.render(books);
+  } catch(e) {
+    $('#shelf').innerHTML = '<div class="empty"><div class="em-icon">⚠️</div><div class="em-title">読み込み失敗</div><div class="em-body">' + escHtml(e.message || String(e)) + '</div></div>';
+  }
+}
+
+// ──────────── 追加フロー ────────────
+async function showAddIsbnSearch() {
+  $('#add-form').style.display = 'block';
+  $('#add-form').innerHTML =
+    '<label style="display:block;">ISBN or タイトル・著者で検索<input type="search" id="add-q" placeholder="例: 9784834000829 / 吾輩は猫である" style="width:100%;padding:0.55rem;margin-top:0.3rem;border:1px solid var(--ink-faint);border-radius:0.4rem;"></label>' +
+    '<div style="display:flex;gap:0.5rem;margin-top:0.6rem;"><button class="btn btn-primary" id="add-q-search">検索</button></div>' +
+    '<div id="add-q-results" style="margin-top:0.8rem;"></div>';
+  $('#add-q').focus();
+  $('#add-q-search').addEventListener('click', async () => {
+    const q = $('#add-q').value.trim();
+    if (!q) return;
+    const wrap = $('#add-q-results');
+    wrap.innerHTML = '<small>検索中…</small>';
+    try {
+      let results = [];
+      if (/^[0-9X\-]+$/.test(q) && q.replace(/[^0-9X]/g, '').length >= 10) {
+        results = [await SHELF.googleBooks.searchByISBN(q.replace(/[^0-9X]/g, ''))];
+      } else {
+        results = await SHELF.googleBooks.searchByKeyword(q);
+      }
+      if (!results.length) { wrap.innerHTML = '<small>該当なし</small>'; return; }
+      wrap.innerHTML = results.map((r, i) =>
+        '<div style="display:flex;gap:0.6rem;padding:0.5rem;border-bottom:1px solid var(--ink-faint);align-items:center;">' +
+          (r.cover_url ? '<img src="' + escHtml(r.cover_url) + '" style="width:50px;height:70px;object-fit:cover;border-radius:3px;" referrerpolicy="no-referrer">' : '<div style="width:50px;height:70px;background:var(--ink-faint);border-radius:3px;"></div>') +
+          '<div style="flex:1;">' +
+            '<div style="font-weight:600;font-size:0.88rem;">' + escHtml(r.title) + '</div>' +
+            '<div style="font-size:0.78rem;color:var(--ink-dim);">' + escHtml(r.author) + (r.publisher ? ' / ' + escHtml(r.publisher) : '') + '</div>' +
+            (r.isbn ? '<div style="font-size:0.72rem;color:var(--ink-dim);">ISBN: ' + escHtml(r.isbn) + '</div>' : '') +
+          '</div>' +
+          '<button class="btn btn-primary" data-idx="' + i + '">追加</button>' +
+        '</div>'
+      ).join('');
+      wrap.querySelectorAll('[data-idx]').forEach(b => {
+        b.addEventListener('click', async () => {
+          const idx = parseInt(b.dataset.idx, 10);
+          const book = results[idx];
+          b.disabled = true; b.textContent = '追加中…';
+          try {
+            await SHELF.books.add(book);
+            showToast('✓ 「' + book.title.slice(0, 20) + '」を追加');
+            $('#add-modal').hidden = true;
+            await refresh();
+          } catch(e) {
+            showToast('✗ ' + (e.message || '失敗').slice(0, 80));
+            b.disabled = false; b.textContent = '追加';
+          }
+        });
+      });
+    } catch(e) {
+      wrap.innerHTML = '<small style="color:#c0392b;">エラー: ' + escHtml(e.message || '失敗') + '</small>';
+    }
+  });
+  $('#add-q').addEventListener('keydown', e => { if (e.key === 'Enter') $('#add-q-search').click(); });
+}
+
+async function showAddCoverPhoto() {
+  $('#add-form').style.display = 'block';
+  $('#add-form').innerHTML =
+    '<label style="display:block;">表紙画像を選択<input type="file" id="add-cover-file" accept="image/*" capture="environment" style="display:block;margin-top:0.3rem;"></label>' +
+    '<div id="add-cover-result" style="margin-top:0.8rem;"></div>';
+  $('#add-cover-file').addEventListener('change', async e => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const wrap = $('#add-cover-result');
+    wrap.innerHTML = '<small>Vision で書名を抽出中…</small>';
+    try {
+      const extracted = await SHELF.vision.extractBookFromImage(file);
+      wrap.innerHTML = '<small>「' + escHtml(extracted.title) + '」を検出。Google Books で正式情報を取得中…</small>';
+      // Google Books で詳細取得（ISBN優先 → タイトル）
+      let final = extracted;
+      try {
+        if (extracted.isbn) {
+          final = await SHELF.googleBooks.searchByISBN(extracted.isbn.replace(/[^0-9X]/g, ''));
+        } else {
+          const results = await SHELF.googleBooks.searchByKeyword(extracted.title + ' ' + (extracted.author || ''), 1);
+          if (results.length) final = results[0];
+        }
+      } catch(e) { /* Google Books 失敗時は Vision の結果を使う */ }
+      await SHELF.books.add(final);
+      showToast('✓ 「' + final.title.slice(0, 20) + '」を追加');
+      $('#add-modal').hidden = true;
+      await refresh();
+    } catch(e) {
+      wrap.innerHTML = '<small style="color:#c0392b;">エラー: ' + escHtml(e.message || '失敗') + '</small>';
+    }
+  });
+}
+
+async function showAddManual() {
+  $('#add-form').style.display = 'block';
+  $('#add-form').innerHTML =
+    '<label>タイトル <input type="text" id="am-title" style="width:100%;padding:0.5rem;margin-top:0.3rem;border:1px solid var(--ink-faint);border-radius:0.4rem;"></label>' +
+    '<label>著者 <input type="text" id="am-author" style="width:100%;padding:0.5rem;margin-top:0.3rem;border:1px solid var(--ink-faint);border-radius:0.4rem;"></label>' +
+    '<label>ISBN（任意） <input type="text" id="am-isbn" style="width:100%;padding:0.5rem;margin-top:0.3rem;border:1px solid var(--ink-faint);border-radius:0.4rem;"></label>' +
+    '<div style="display:flex;gap:0.5rem;margin-top:0.6rem;"><button class="btn btn-primary" id="am-save">追加</button></div>';
+  $('#am-save').addEventListener('click', async () => {
+    const title = $('#am-title').value.trim();
+    if (!title) { showToast('タイトル必須'); return; }
+    try {
+      await SHELF.books.add({
+        title,
+        author: $('#am-author').value.trim(),
+        isbn: $('#am-isbn').value.trim(),
+        source: 'manual'
+      });
+      showToast('✓ 追加');
+      $('#add-modal').hidden = true;
+      await refresh();
+    } catch(e) {
+      showToast('✗ ' + (e.message || '失敗').slice(0, 80));
+    }
+  });
+}
+
+async function showAddCSV() {
+  $('#add-form').style.display = 'block';
+  $('#add-form').innerHTML =
+    '<label>ブクログ CSV ファイル <input type="file" id="ac-file" accept=".csv,text/csv" style="display:block;margin-top:0.3rem;"></label>' +
+    '<small>ブクログのCSVエクスポートは現在 Plus プラン限定の可能性があります。</small>' +
+    '<div id="ac-result" style="margin-top:0.8rem;"></div>';
+  $('#ac-file').addEventListener('change', async e => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const wrap = $('#ac-result');
+    wrap.innerHTML = '<small>取込中…</small>';
+    try {
+      const r = await SHELF.booklog.importCSV(file);
+      wrap.innerHTML = '<small>✓ 新規 ' + r.added + ' / 重複 ' + r.dup + ' / 全 ' + r.total + '</small>';
+      showToast('✓ ブクログ取込：新規 ' + r.added + ' 件');
+      setTimeout(() => { $('#add-modal').hidden = true; refresh(); }, 1500);
+    } catch(e) {
+      wrap.innerHTML = '<small style="color:#c0392b;">エラー: ' + escHtml(e.message || '失敗') + '</small>';
+    }
+  });
+}
+
+// ──────────── 設定 ────────────
+function openConfig() {
+  const cfg = SHELF.store.get('config', {});
+  $('#cfg-pat').value = cfg.pat || '';
+  $('#cfg-gistid').value = cfg.gistId || 'cffc5abcf62103b27effe2efba25ca6a';
+  $('#cfg-gemini-key').value = cfg.geminiKey || '';
+  $('#cfg-amazon-id').value = cfg.amazonId || '';
+  $('#cfg-rakuten-id').value = cfg.rakutenId || '';
+  $('#cfg-public-url').value = location.origin + location.pathname + '?public=1';
+  $('#config-modal').hidden = false;
+}
+function saveConfig() {
+  SHELF.store.set('config', {
+    pat: $('#cfg-pat').value.trim(),
+    gistId: $('#cfg-gistid').value.trim() || 'cffc5abcf62103b27effe2efba25ca6a',
+    geminiKey: $('#cfg-gemini-key').value.trim(),
+    amazonId: $('#cfg-amazon-id').value.trim(),
+    rakutenId: $('#cfg-rakuten-id').value.trim()
+  });
+  showToast('✓ 設定保存');
+  $('#config-modal').hidden = true;
+  refresh();
+}
+
+// ──────────── 初期化 ────────────
+(function init() {
+  // 雨域からの自動移行：雨域の localStorage を読んで、本棚の cfg にコピー
+  try {
+    const yomuCfg = JSON.parse(localStorage.getItem('uiki_config') || 'null');
+    const currentCfg = SHELF.store.get('config', null);
+    if (yomuCfg && !currentCfg) {
+      SHELF.store.set('config', {
+        pat: yomuCfg.pat || '',
+        gistId: 'cffc5abcf62103b27effe2efba25ca6a',
+        geminiKey: yomuCfg.geminiKey || '',
+        amazonId: '',
+        rakutenId: ''
+      });
+    }
+  } catch(e) {}
+
+  // ヘッダーボタン
+  $('#btn-add').addEventListener('click', () => {
+    $('#add-form').style.display = 'none';
+    $('#add-form').innerHTML = '';
+    $('#add-modal').hidden = false;
+  });
+  $('#btn-config').addEventListener('click', openConfig);
+  $('#cfg-save').addEventListener('click', saveConfig);
+  $('#cfg-cancel').addEventListener('click', () => $('#config-modal').hidden = true);
+  $('#config-close').addEventListener('click', () => $('#config-modal').hidden = true);
+  $('#add-close').addEventListener('click', () => $('#add-modal').hidden = true);
+  $('#detail-close').addEventListener('click', () => $('#detail-modal').hidden = true);
+
+  // 追加オプション
+  $('#opt-isbn').addEventListener('click', showAddIsbnSearch);
+  $('#opt-cover-photo').addEventListener('click', showAddCoverPhoto);
+  $('#opt-manual').addEventListener('click', showAddManual);
+  $('#opt-csv').addEventListener('click', showAddCSV);
+
+  // 検索・フィルタ
+  $('#search').addEventListener('input', e => ui.setFilter({ q: e.target.value }));
+  $$('.filter-chip').forEach(c => {
+    c.addEventListener('click', () => {
+      $$('.filter-chip').forEach(x => x.classList.remove('active'));
+      c.classList.add('active');
+      ui.setFilter({ status: c.dataset.status });
+    });
+  });
+
+  // カードクリック → 詳細モーダル
+  $('#shelf').addEventListener('click', e => {
+    const card = e.target.closest('.book-card');
+    if (!card) return;
+    const id = card.dataset.id;
+    const book = ui.getAllBooks().find(b => b.id === id);
+    if (book) ui.openDetail(book);
+  });
+
+  // モーダル背景クリックで閉じる
+  $$('.modal-overlay').forEach(o => {
+    o.addEventListener('click', e => { if (e.target === o) o.hidden = true; });
+  });
+
+  // 初回読み込み
+  refresh();
+  // 5 分ごとに再fetch
+  setInterval(refresh, 5 * 60 * 1000);
+})();
+</script>
+</body>
+</html>
