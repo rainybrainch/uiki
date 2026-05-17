@@ -3611,6 +3611,21 @@ main { padding-bottom: 5.2rem; }
 
       <!-- 食事履歴（最近 7 食） -->
       <div style="margin-bottom: 1rem;">
+        <h4 style="font-size:0.88rem; font-family:var(--serif); color: rgba(var(--tab-accent-rgb), 0.85); margin-bottom: 0.5rem;">🥗 今日の PFC バランス</h4>
+        <div id="meal-pfc-chart" style="margin-bottom: 0.8rem; padding: 0.6rem 0.9rem; background: rgba(255,255,255,0.04); border-radius: 0.4rem;">
+          <div style="display:grid; grid-template-columns: 5em 1fr auto; gap: 0.4rem 0.6rem; font-size: 0.78rem; align-items: center;">
+            <span style="color: #e74c3c;">🥩 Protein</span>
+            <div class="pfc-bar" style="height: 8px; background: rgba(231,76,60,0.15); border-radius: 999px; overflow: hidden;"><div id="pfc-p-fill" style="height:100%; background:#e74c3c; width:0%; transition:width 0.5s;"></div></div>
+            <span id="pfc-p-val" style="font-family: var(--mono); color: var(--dim);">— g</span>
+            <span style="color: #d4915c;">🥑 Fat</span>
+            <div class="pfc-bar" style="height: 8px; background: rgba(212,145,92,0.15); border-radius: 999px; overflow: hidden;"><div id="pfc-f-fill" style="height:100%; background:#d4915c; width:0%; transition:width 0.5s;"></div></div>
+            <span id="pfc-f-val" style="font-family: var(--mono); color: var(--dim);">— g</span>
+            <span style="color: #6db96d;">🍞 Carb</span>
+            <div class="pfc-bar" style="height: 8px; background: rgba(109,185,109,0.15); border-radius: 999px; overflow: hidden;"><div id="pfc-c-fill" style="height:100%; background:#6db96d; width:0%; transition:width 0.5s;"></div></div>
+            <span id="pfc-c-val" style="font-family: var(--mono); color: var(--dim);">— g</span>
+          </div>
+          <div style="margin-top: 0.4rem; font-size: 0.7rem; color: var(--dim); text-align: center;" id="pfc-total">🍽 合計カロリー —</div>
+        </div>
         <h4 style="font-size:0.88rem; font-family:var(--serif); color: rgba(var(--tab-accent-rgb), 0.85); margin-bottom: 0.5rem;">📋 最近の食事（7 件）</h4>
         <div id="meal-recent-list">
           <div class="yomu-empty">食事画像を「🔍 AI で食事推定」で読み取ると、ここにメニュー＋栄養素が並びます</div>
@@ -5817,6 +5832,45 @@ UIKI.yomu = (function() {
     } else {
       calEl.textContent = '—';
       calSubEl.textContent = '食事を「🔍 栄養推定」で分析';
+    }
+    // v2.70 PFC バランス描画
+    const todayP = entries.filter(e => e.type === 'health' && e.metric === 'meal_protein' && (e.date === todayYmd || e.date === todayY)).reduce((s,e) => s + Number(e.value||0), 0);
+    const todayF = entries.filter(e => e.type === 'health' && e.metric === 'meal_fat' && (e.date === todayYmd || e.date === todayY)).reduce((s,e) => s + Number(e.value||0), 0);
+    const todayC = entries.filter(e => e.type === 'health' && e.metric === 'meal_carb' && (e.date === todayYmd || e.date === todayY)).reduce((s,e) => s + Number(e.value||0), 0);
+    const maxPFC = Math.max(todayP, todayF, todayC, 30); // 最小 30g で割らないように
+    const pfcPFill = document.getElementById('pfc-p-fill');
+    const pfcFFill = document.getElementById('pfc-f-fill');
+    const pfcCFill = document.getElementById('pfc-c-fill');
+    const pfcPVal = document.getElementById('pfc-p-val');
+    const pfcFVal = document.getElementById('pfc-f-val');
+    const pfcCVal = document.getElementById('pfc-c-val');
+    const pfcTotal = document.getElementById('pfc-total');
+    if (pfcPFill) {
+      pfcPFill.style.width = (todayP / maxPFC * 100).toFixed(0) + '%';
+      pfcFFill.style.width = (todayF / maxPFC * 100).toFixed(0) + '%';
+      pfcCFill.style.width = (todayC / maxPFC * 100).toFixed(0) + '%';
+      pfcPVal.textContent = todayP.toFixed(0) + ' g';
+      pfcFVal.textContent = todayF.toFixed(0) + ' g';
+      pfcCVal.textContent = todayC.toFixed(0) + ' g';
+      const totalCal = todayCalories.reduce((s, e) => s + Number(e.value || 0), 0);
+      pfcTotal.textContent = totalCal > 0 ? ('🍽 合計 ' + totalCal.toFixed(0) + ' kcal') : '🍽 今日まだ食事記録なし';
+    }
+    // 最近の食事リスト
+    const mealList = document.getElementById('meal-recent-list');
+    if (mealList) {
+      const mealEntries = entries.filter(e => e.type === 'health' && e.metric === 'meal_calories').sort((a,b) => (b.date||b.created_at||'').localeCompare(a.date||a.created_at||''));
+      const recent = mealEntries.slice(0, 7);
+      if (!recent.length) {
+        mealList.innerHTML = '<div class="yomu-empty">食事画像を「🔍 AI で食事推定」で読み取ると、ここにメニュー＋栄養素が並びます</div>';
+      } else {
+        mealList.innerHTML = recent.map(m => {
+          const items = (m.memo || '').split(/ ── /)[0] || '記録なし';
+          return '<div style="padding: 0.5rem 0.8rem; margin: 0.3rem 0; background: rgba(255,255,255,0.03); border-left: 2px solid rgba(var(--tab-accent-rgb), 0.5); border-radius: 0.3rem; font-size: 0.85rem;">' +
+            '<div>' + escapeHtml(items.slice(0, 80)) + '</div>' +
+            '<div style="font-size: 0.7rem; color: var(--dim); margin-top: 0.2rem;">' + escapeHtml((m.date || '').toString().slice(0, 10)) + ' ／ ' + Math.round(Number(m.value)) + ' kcal</div>' +
+            '</div>';
+        }).join('');
+      }
     }
     // sparkline：直近 14 日の日次カロリー合計
     const calByDay = {};
