@@ -3315,6 +3315,15 @@ main { padding-bottom: 5.2rem; }
       </div>
     </div>
 
+    <!-- v2.66 「今日まだ体組成計測定なし」リマインダー -->
+    <div id="scale-reminder" hidden style="margin: 0.4rem auto 0.8rem; max-width: 720px; padding: 0.7rem 1.2rem; background: rgba(58,111,201,0.12); border: 1px solid rgba(58,111,201,0.4); border-radius: 0.4rem; font-size: 0.85rem; color: rgba(255,255,255,0.85); display:flex; align-items:center; justify-content:space-between; gap:0.6rem; flex-wrap:wrap;">
+      <span>⚖️ <strong>今日まだ体組成計測定していない</strong> ── 朝の計測がベスト</span>
+      <div style="display:flex; gap:0.4rem;">
+        <button id="scale-reminder-now" style="background: #2456b8; color: #fff; border: none; padding: 0.4rem 0.9rem; border-radius: 999px; font-size: 0.78rem; cursor: pointer; font-weight: 600;">📸 今から撮る</button>
+        <button id="scale-reminder-dismiss" style="background: transparent; border: 1px solid var(--faint); color: var(--dim); padding: 0.3rem 0.7rem; border-radius: 999px; font-size: 0.74rem; cursor: pointer;">後で</button>
+      </div>
+    </div>
+
     <!-- 読雨統合バナー（v2.5 / 2026-05-16） -->
     <div class="yomu-banner">
       <div class="yomu-banner-info">
@@ -3894,7 +3903,13 @@ main { padding-bottom: 5.2rem; }
         <p style="font-size: 0.85rem;">他ページに飛ばなくても、ここで完結します。</p>
       </div>
     </div>
-    <div style="padding: 0.8rem 1.2rem; border-top: 1px solid var(--faint); display: flex; gap: 0.5rem;">
+    <div style="padding: 0.5rem 1.2rem 0; display: flex; gap: 0.3rem; flex-wrap: wrap; border-top: 1px solid var(--faint);">
+      <button class="uwiki-quick-btn" data-quick="今日 △△ をやる" style="background: transparent; border: 1px solid var(--faint); color: var(--dim); padding: 0.25rem 0.6rem; border-radius: 999px; font-size: 0.72rem; cursor: pointer;">📝 タスク</button>
+      <button class="uwiki-quick-btn" data-quick="刻んで：" style="background: transparent; border: 1px solid var(--faint); color: var(--dim); padding: 0.25rem 0.6rem; border-radius: 999px; font-size: 0.72rem; cursor: pointer;">⚡ 名言</button>
+      <button class="uwiki-quick-btn" data-quick="体重 " style="background: transparent; border: 1px solid var(--faint); color: var(--dim); padding: 0.25rem 0.6rem; border-radius: 999px; font-size: 0.72rem; cursor: pointer;">⚖️ 体重</button>
+      <button class="uwiki-quick-btn" data-quick="このすば 話読んだ ★" style="background: transparent; border: 1px solid var(--faint); color: var(--dim); padding: 0.25rem 0.6rem; border-radius: 999px; font-size: 0.72rem; cursor: pointer;">📖 読書</button>
+    </div>
+    <div style="padding: 0.5rem 1.2rem 0.8rem; display: flex; gap: 0.5rem;">
       <textarea id="uwikiai-input" placeholder="雨域に投入したいことを呟く..." rows="2" style="flex: 1; resize: none; padding: 0.6rem; border: 1px solid var(--faint); border-radius: 0.4rem; background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 0.92rem;"></textarea>
       <button id="uwikiai-send" aria-label="UwikiAI に送信" style="background: linear-gradient(135deg, #b87a3a, #3a6fc9); color: #fff; border: none; padding: 0.6rem 1.2rem; border-radius: 0.4rem; cursor: pointer; font-weight: 600;">送信</button>
     </div>
@@ -5227,6 +5242,17 @@ UIKI.yomu = (function() {
       const inMorning = hour >= 5 && hour < 13;
       const show = inMorning && !todayHasScan && dismissed !== todayStr;
       reminder.hidden = !show;
+    }
+    // v2.66 「今日まだ体組成計測定なし」リマインダー
+    const scaleReminder = document.getElementById('scale-reminder');
+    if (scaleReminder) {
+      const hour = today.getHours();
+      const dismissed = UIKI.store.get('scale_reminder_dismissed', '');
+      const scaleEntries = entries.filter(e => e.type === 'health' && e.metric === 'weight');
+      const todayHasScale = scaleEntries.some(e => e.date === todayYmd || e.date === todayStr);
+      const inMorning = hour >= 5 && hour < 12;
+      const show = inMorning && !todayHasScale && dismissed !== todayStr;
+      scaleReminder.hidden = !show;
     }
   }
 
@@ -7913,6 +7939,16 @@ https://rainybrainch.github.io/uiki/?add=...
       if (confirm('UwikiAI の会話履歴を全削除しますか？')) clearHistory();
     });
     if (modal) modal.addEventListener('click', e => { if (e.target === modal) close(); });
+    // v2.66 クイック起動候補
+    document.querySelectorAll('.uwiki-quick-btn').forEach(b => {
+      b.addEventListener('click', () => {
+        const text = b.dataset.quick || '';
+        if (input) {
+          input.value = (input.value + ' ' + text).trim();
+          input.focus();
+        }
+      });
+    });
     // 雨域 URL クリック → 内部で取り込み（外部遷移せず現ページに反映）
     document.addEventListener('click', e => {
       const a = e.target.closest('a[data-uwiki-url]');
@@ -8790,12 +8826,49 @@ function bootstrap() {
     });
   }
 
+  // v2.66 体組成計リマインダー
+  const scaleDismiss = document.getElementById('scale-reminder-dismiss');
+  if (scaleDismiss) {
+    scaleDismiss.addEventListener('click', () => {
+      const todayStr = new Date().toISOString().slice(0, 10);
+      UIKI.store.set('scale_reminder_dismissed', todayStr);
+      document.getElementById('scale-reminder').hidden = true;
+    });
+  }
+  const scaleNow = document.getElementById('scale-reminder-now');
+  if (scaleNow) {
+    scaleNow.addEventListener('click', () => {
+      switchTab('uwiki');
+      setTimeout(() => {
+        const uploadInput = document.getElementById('drive-upload-scale-input');
+        if (uploadInput) uploadInput.click();
+        else {
+          const btn = document.getElementById('drive-upload-scale-btn');
+          if (btn) { btn.scrollIntoView({ behavior: 'smooth', block: 'center' }); btn.click(); }
+        }
+      }, 300);
+    });
+  }
+
   // v2.60 ロゴクリックで雨域メインへ
   const headerLogo = document.getElementById('header-logo');
   if (headerLogo) {
     headerLogo.addEventListener('click', () => { try { switchTab('uwiki-main'); } catch(e) {} });
     headerLogo.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); switchTab('uwiki-main'); } });
   }
+
+  // v2.66 引力タブ：today-summary をカレンダー直下スロットに移動
+  try {
+    const todaySummary = document.getElementById('today-summary');
+    const slot = document.getElementById('uwiki-cal-summary-slot');
+    if (todaySummary && slot) {
+      slot.appendChild(todaySummary);
+      // セクション → div に降格（既に section の中なので）
+      todaySummary.style.padding = '0';
+      todaySummary.style.background = 'transparent';
+      todaySummary.style.border = 'none';
+    }
+  } catch(e) { console.warn('today-summary move failed', e); }
 
   // v2.59 ヘッダーに今日の日時表示（1分ごとに更新）
   function updateHeaderTime() {
