@@ -119,7 +119,50 @@ body.delete-mode [data-yomu-id]:hover::after { background: rgba(220, 50, 30, 1);
 }
 @media (max-width: 600px) { .self-spark { flex: 0 0 60px; } }
 
-/* モバイル下部クイック FAB（v2.31 / 2026-05-17） */
+/* モバイル下部 FAB ── v2.45 シングル UwikiAI ボタン */
+.quick-fab-single {
+  position: fixed;
+  bottom: 80px;
+  right: 16px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.25);
+  background: linear-gradient(135deg, #d4915c 0%, #3a6fc9 100%);
+  color: #fff;
+  font-size: 1.8rem;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+  z-index: 60;
+  transition: transform 0.2s, box-shadow 0.2s;
+  display: grid;
+  place-items: center;
+}
+.quick-fab-single:hover {
+  transform: scale(1.08);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+}
+.quick-fab-single::after {
+  content: 'UwikiAI';
+  position: absolute;
+  right: 70px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(7,9,15,0.92);
+  color: #fff;
+  font-size: 0.74rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  font-family: var(--sans);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+.quick-fab-single:hover::after { opacity: 1; }
+body.public-mode .quick-fab-single { display: none !important; }
+
+/* モバイル下部クイック FAB（旧・v2.31 ── 互換のため残存） */
 .quick-fab {
   position: fixed;
   bottom: 80px;
@@ -184,6 +227,51 @@ body.tab-uwiki .qf-item {
   border-color: rgba(0,0,0,0.12);
 }
 body.public-mode .quick-fab { display: none !important; }
+
+/* UwikiAI チャット（v2.45 / 2026-05-17） */
+.uw-msg {
+  margin-bottom: 0.8rem;
+  padding: 0.6rem 0.9rem;
+  border-radius: 0.5rem;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  max-width: 90%;
+}
+.uw-msg p { margin: 0 0 0.3rem; }
+.uw-msg p:last-child { margin-bottom: 0; }
+.uw-msg-ai {
+  background: rgba(58, 111, 201, 0.1);
+  border-left: 3px solid var(--rain-blue);
+  color: var(--ink);
+  margin-right: auto;
+}
+.uw-msg-user {
+  background: rgba(212, 145, 92, 0.15);
+  border-right: 3px solid #d4915c;
+  margin-left: auto;
+  text-align: right;
+}
+.uw-msg a {
+  color: var(--rain-blue);
+  text-decoration: underline;
+  word-break: break-all;
+  display: inline-block;
+  padding: 0.2rem 0.4rem;
+  background: rgba(58, 111, 201, 0.08);
+  border-radius: 0.3rem;
+  margin: 0.2rem 0;
+}
+.uw-msg a:hover { background: rgba(58, 111, 201, 0.18); }
+.uw-msg-loading {
+  background: rgba(255, 255, 255, 0.04);
+  font-style: italic;
+  color: var(--dim);
+}
+.uw-msg-error {
+  background: rgba(231, 76, 60, 0.12);
+  border-left: 3px solid #e74c3c;
+  color: #e74c3c;
+}
 
 /* Vision 進捗バー（v2.28 / 2026-05-17） */
 .vision-progress {
@@ -3443,19 +3531,8 @@ main { padding-bottom: 5.2rem; }
   </button>
 </nav>
 
-<!-- モバイル下部クイックアクション（v2.44：UwikiAI 起動追加） -->
-<div class="quick-fab" id="quick-fab" role="toolbar" aria-label="クイックアクション">
-  <button type="button" id="qf-toggle" class="qf-main" aria-label="クイック操作">＋</button>
-  <div class="qf-menu" id="qf-menu" hidden>
-    <button type="button" data-qf="uwikiai" class="qf-item qf-primary" title="UwikiAI（雨域の AI 管理人）を開く"><span>🤖</span><span class="qf-label">UwikiAI</span></button>
-    <button type="button" data-qf="quick-task" class="qf-item" title="タスクを即追加"><span>📝</span><span class="qf-label">タスク追加</span></button>
-    <button type="button" data-qf="sand" class="qf-item" title="砂を沈める（重力雨域へ）"><span>✨</span><span class="qf-label">砂</span></button>
-    <button type="button" data-qf="quote" class="qf-item" title="名言として刻む（読雨へ）"><span>⚡</span><span class="qf-label">名言</span></button>
-    <button type="button" data-qf="analyze" class="qf-item" title="引力雨域の全画像を AI 分析"><span>🔍</span><span class="qf-label">分析</span></button>
-    <button type="button" data-qf="retry" class="qf-item" title="Vision 直前失敗をリトライ"><span>🔁</span><span class="qf-label">リトライ</span></button>
-    <button type="button" data-qf="config" class="qf-item" title="設定（PAT・キー・テーマ等）"><span>⚙️</span><span class="qf-label">設定</span></button>
-  </div>
-</div>
+<!-- モバイル下部 FAB（v2.45：UwikiAI 直接起動・他機能はチャット経由） -->
+<button type="button" class="quick-fab-single" id="quick-fab" aria-label="UwikiAI を開く" title="UwikiAI ── 雨域の AI 管理人">🤖</button>
 
 <!-- v2.35 クイックタスク追加ダイアログ（FAB から起動） -->
 <div class="modal-overlay" id="qf-task-modal" hidden>
@@ -3651,6 +3728,36 @@ main { padding-bottom: 5.2rem; }
     <div class="modal-buttons">
       <button id="cfg-cancel">閉じる</button>
       <button id="cfg-save">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- v2.45 UwikiAI チャットモーダル（雨域内・他ページに飛ばない） -->
+<div class="modal-overlay" id="uwikiai-modal" hidden>
+  <div class="modal" style="max-width: 720px; width: 100%; max-height: 92vh; display: flex; flex-direction: column; padding: 0;">
+    <div style="display:flex; align-items:center; justify-content:space-between; padding: 0.9rem 1.2rem; border-bottom: 1px solid var(--faint); background: linear-gradient(135deg, rgba(212,145,92,0.18) 0%, rgba(58,111,201,0.18) 100%);">
+      <div>
+        <span style="font-family: var(--serif); font-size: 1.1rem; font-weight: 600;">🤖 UwikiAI</span>
+        <span style="font-size: 0.74rem; color: var(--dim); margin-left: 0.6rem;">雨域の AI 管理人</span>
+      </div>
+      <button id="uwikiai-close" style="background: transparent; border: none; color: var(--ink); font-size: 1.4rem; cursor: pointer; width: 32px; height: 32px; border-radius: 50%;">×</button>
+    </div>
+    <div id="uwikiai-messages" style="flex: 1 1 auto; overflow-y: auto; padding: 1rem 1.2rem; min-height: 320px; max-height: 60vh;">
+      <div class="uw-msg uw-msg-ai">
+        <p>こんにちは、服牢。雨域の AI 管理人 <strong>UwikiAI</strong> です。</p>
+        <p>話しかけてくれれば、雨域に投入できる URL に自動変換して返します：</p>
+        <ul style="margin: 0.5rem 0 0.5rem 1.2rem; font-size: 0.85rem; color: var(--dim);">
+          <li>「明日 マネぼう完成させる」→ タスク追加</li>
+          <li>「このすば30話読んだ ★5」→ 読書記録</li>
+          <li>「体重 68.5kg」→ 健康データ</li>
+          <li>「刻んで：創造性は重力に逆らう知性」→ 名言</li>
+        </ul>
+        <p style="font-size: 0.85rem;">他ページに飛ばなくても、ここで完結します。</p>
+      </div>
+    </div>
+    <div style="padding: 0.8rem 1.2rem; border-top: 1px solid var(--faint); display: flex; gap: 0.5rem;">
+      <textarea id="uwikiai-input" placeholder="雨域に投入したいことを呟く..." rows="2" style="flex: 1; resize: none; padding: 0.6rem; border: 1px solid var(--faint); border-radius: 0.4rem; background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 0.92rem;"></textarea>
+      <button id="uwikiai-send" style="background: linear-gradient(135deg, #d4915c, #3a6fc9); color: #fff; border: none; padding: 0.6rem 1.2rem; border-radius: 0.4rem; cursor: pointer; font-weight: 600;">送信</button>
     </div>
   </div>
 </div>
@@ -7006,6 +7113,225 @@ UIKI.notify = (() => {
 // ─────────────────────────────────────────────────────────
 // config: 設定モーダル
 // ─────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────
+// uwikiai: 雨域 AI チャット（v2.45 / 2026-05-17）
+// 他ページに飛ばずに、雨域内でテキスト → 雨域 URL 変換を実行
+// ─────────────────────────────────────────────────────────
+UIKI.uwikiai = (function() {
+  const SYSTEM_PROMPT = `あなたは雨域 UIKI のモバイル AI 管理人「UwikiAI」です。
+ユーザー（服牢／円舵）が何か呟いたら、雨域が受信できる URL に自動変換して返してください。
+
+雨域のベース URL: https://rainybrainch.github.io/uiki/
+
+# 7 つの入力パターン
+
+## ① タスク追加
+キーワード：「やる」「する」「明日 △△」「TODO」
+URL: ?add=<task>&project=<projectId>&device=<mobile/pc/any>&deadline=<YYYY-MM-DD>
+
+## ② 読書感想
+キーワード：「読んだ」「読書」「面白い」「★」「推し」
+URL: ?type=book&title=<>&raw=<>&series=<>&chapter=<>&stars=<>&url=<>&tags=<>
+
+## ③ 健康データ単発
+URL: ?type=health&metric=<>&value=<>&unit=<>&date=<>&memo=<>
+
+## ④ 体組成計一括
+URL: ?type=health_full&date=<>&time=<>&weight=<>&body_fat=<>&muscle=<>&water=<>&visceral_fat=<>&bone_mass=<>&basal_metabolism=<>&bmi=<>
+
+## ⑤ 自撮り URL
+URL: ?type=body_scan&image_url=<>&memo=<>&date=<>&time=<>&rank=<>&skin=<>&edema=<>&fatigue=<>&energy=<>
+
+## ⑥ 名言
+キーワード：「刻んで」「名言」
+URL: ?type=quote&quote=<>&core=<1-5>&source=<>&tags=<>
+※ 必ず is_draft: true
+
+## ⑦ メモ
+URL: ?type=memo&text=<>&date=<>
+
+# プロジェクト ID 一覧
+p_rbai_inc / p_shonigan / p_shinmane / p_manebou / p_manebou_todo
+p_raina / p_amesekai / p_fukurouzo / p_story / p_atelier
+p_askup / p_sasuke / p_omasasu / p_uiki / p_zaitoku
+
+# 変換ルール
+1. 走り書きのまま投げる（清書禁止）
+2. 日本語は URL エンコード
+3. 必須フィールドだけ埋める
+4. クリック可能な完全 URL を返す（HTML aタグでなく、生 URL でよい・改行で区切る）
+5. 複数同時なら URL を複数返す
+6. device 判定：mobile（連絡）/pc（コード）/any（思考）
+7. date 省略時は雨域側で今日を自動補完
+
+# 出力フォーマット
+
+1-2 行の確認 + URL（複数なら箇条書き）。
+例：
+☔ 雨域に投げました：
+https://rainybrainch.github.io/uiki/?add=...
+
+タップで投入されます。`;
+
+  let messages = []; // 履歴
+  function escHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function linkifyUrls(text) {
+    return escHtml(text).replace(/(https?:\/\/[^\s<]+)/g, m => {
+      // 雨域 URL は内部処理で投入できる
+      const isUiki = /rainybrainch\.github\.io\/uiki/.test(m);
+      const tap = isUiki ? ' data-uwiki-url="1"' : '';
+      return '<a href="' + m + '"' + (isUiki ? '' : ' target="_blank" rel="noopener"') + tap + '>' + m + '</a>';
+    });
+  }
+  function addMessage(role, text, opts) {
+    opts = opts || {};
+    const wrap = document.getElementById('uwikiai-messages');
+    if (!wrap) return null;
+    const div = document.createElement('div');
+    div.className = 'uw-msg uw-msg-' + role + (opts.cls ? ' ' + opts.cls : '');
+    if (role === 'ai') div.innerHTML = linkifyUrls(text).replace(/\n/g, '<br>');
+    else if (role === 'loading') div.textContent = text;
+    else div.innerHTML = '<p>' + escHtml(text).replace(/\n/g, '<br>') + '</p>';
+    wrap.appendChild(div);
+    wrap.scrollTop = wrap.scrollHeight;
+    return div;
+  }
+  async function send(userText) {
+    if (!userText.trim()) return;
+    const cfg = UIKI.store.get('config', {});
+    if (!cfg.geminiKey && !cfg.claudeKey) {
+      addMessage('error', 'Gemini または Claude のキーが必要 ── 設定モーダルから登録してください', {cls: 'uw-msg-error'});
+      return;
+    }
+    addMessage('user', userText);
+    messages.push({ role: 'user', content: userText });
+    const loadingDiv = addMessage('loading', '🌧 UwikiAI が考えています…', {cls: 'uw-msg-loading'});
+    try {
+      let replyText;
+      // Gemini 優先（無料）→ Claude フォールバック
+      if (cfg.geminiKey) {
+        replyText = await callGemini(userText);
+      } else {
+        replyText = await callClaude(userText);
+      }
+      if (loadingDiv) loadingDiv.remove();
+      addMessage('ai', replyText);
+      messages.push({ role: 'assistant', content: replyText });
+    } catch (e) {
+      if (loadingDiv) loadingDiv.remove();
+      addMessage('error', '✗ ' + (e.message || '失敗'), {cls: 'uw-msg-error'});
+    }
+  }
+  async function callGemini(userText) {
+    const cfg = UIKI.store.get('config', {});
+    const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+    const body = {
+      systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+      contents: messages.map(m => ({
+        role: m.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: m.content }]
+      })),
+      generationConfig: { temperature: 0.3, maxOutputTokens: 800 }
+    };
+    let lastErr;
+    for (const model of GEMINI_MODELS) {
+      try {
+        const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + encodeURIComponent(cfg.geminiKey), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        if (!res.ok) {
+          if (res.status === 404) { lastErr = new Error(model + ' 404'); continue; }
+          const t = await res.text();
+          throw new Error('Gemini ' + res.status + ' ' + t.slice(0, 100));
+        }
+        const data = await res.json();
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!text) throw new Error('Gemini 応答が空');
+        return text;
+      } catch (e) {
+        lastErr = e;
+        if (!/404/.test(String(e.message || ''))) throw e;
+      }
+    }
+    throw lastErr || new Error('Gemini 全モデル失敗');
+  }
+  async function callClaude(userText) {
+    const cfg = UIKI.store.get('config', {});
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': cfg.claudeKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1024,
+        system: SYSTEM_PROMPT,
+        messages: messages.map(m => ({ role: m.role, content: m.content }))
+      })
+    });
+    if (!res.ok) {
+      const t = await res.text();
+      throw new Error('Claude ' + res.status + ' ' + t.slice(0, 100));
+    }
+    const data = await res.json();
+    const text = data?.content?.[0]?.text;
+    if (!text) throw new Error('Claude 応答が空');
+    return text;
+  }
+
+  function open() {
+    document.getElementById('uwikiai-modal').hidden = false;
+    setTimeout(() => document.getElementById('uwikiai-input').focus(), 100);
+  }
+  function close() {
+    document.getElementById('uwikiai-modal').hidden = true;
+  }
+  function init() {
+    const sendBtn = document.getElementById('uwikiai-send');
+    const input = document.getElementById('uwikiai-input');
+    const closeBtn = document.getElementById('uwikiai-close');
+    const modal = document.getElementById('uwikiai-modal');
+    if (sendBtn) sendBtn.addEventListener('click', () => {
+      const v = input.value.trim();
+      if (!v) return;
+      input.value = '';
+      send(v);
+    });
+    if (input) input.addEventListener('keydown', e => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); sendBtn.click(); }
+    });
+    if (closeBtn) closeBtn.addEventListener('click', close);
+    if (modal) modal.addEventListener('click', e => { if (e.target === modal) close(); });
+    // 雨域 URL クリック → 内部で取り込み（外部遷移せず現ページに反映）
+    document.addEventListener('click', e => {
+      const a = e.target.closest('a[data-uwiki-url]');
+      if (!a) return;
+      e.preventDefault();
+      const url = a.href;
+      try {
+        const u = new URL(url);
+        // 現ページの URL を書き換え → 雨域の ingest を起動
+        history.replaceState(null, '', u.pathname + u.search);
+        if (UIKI.yomu && UIKI.yomu.ingestFromQuery) UIKI.yomu.ingestFromQuery();
+        if (typeof showToast === 'function') showToast('☔ 雨域に取り込みました');
+        close();
+        // 念のため履歴を戻す
+        setTimeout(() => history.replaceState(null, '', location.pathname), 1000);
+      } catch (e) {
+        window.open(url, '_self');
+      }
+    });
+  }
+  return { open, close, init, send };
+})();
+
 UIKI.config = (() => {
   function open() {
     const cfg = UIKI.store.get('config', { pat: '', gistId: '', notifEnabled: false });
@@ -7174,6 +7500,7 @@ function bootstrap() {
 
   // ④ 読雨統合（v2.5 / 2026-05-16 / Gist 読取・5分polling）
   try { UIKI.yomu.init(); } catch(e) { console.warn('yomu init failed', e); }
+  try { UIKI.uwikiai.init(); } catch(e) { console.warn('uwikiai init failed', e); }
 
   // ⑤ Drive 自動表示（v2.8 / 2026-05-16 / API キー方式・5分polling）
   try { UIKI.drive.init(); } catch(e) { console.warn('drive init failed', e); }
@@ -7915,8 +8242,16 @@ function bootstrap() {
     });
   }
 
-  // v2.31 モバイル下部クイック FAB
-  const fab = document.getElementById('quick-fab');
+  // v2.45 FAB: シングルボタンで UwikiAI 直接起動
+  const fabSingle = document.getElementById('quick-fab');
+  if (fabSingle && fabSingle.classList.contains('quick-fab-single')) {
+    fabSingle.addEventListener('click', () => {
+      try { UIKI.uwikiai.open(); }
+      catch(e) { showToast('UwikiAI モジュール未ロード'); }
+    });
+  }
+  // v2.31 旧 FAB（互換・実際は新 FAB で置き換え済）
+  const fab = document.getElementById('quick-fab-legacy');
   const fabBtn = document.getElementById('qf-toggle');
   const fabMenu = document.getElementById('qf-menu');
   if (fab && fabBtn && fabMenu) {
@@ -7932,10 +8267,8 @@ function bootstrap() {
       fabMenu.setAttribute('hidden', '');
       fab.classList.remove('open');
       if (act === 'uwikiai') {
-        // v2.44 UwikiAI（Claude プロジェクト）を別タブで開く
-        // ユーザーが Claude モバイルアプリで「UwikiAI」プロジェクトを開く想定
-        window.open('https://claude.ai/projects', '_blank', 'noopener');
-        showToast('🤖 Claude を開きました ── 「UwikiAI」プロジェクトを選択');
+        // v2.45 UwikiAI チャットを雨域内モーダルで開く（外部遷移しない）
+        UIKI.uwikiai.open();
       } else if (act === 'quick-task') {
         // v2.35 クイックタスク追加ダイアログを開く
         document.getElementById('qf-task-text').value = '';
