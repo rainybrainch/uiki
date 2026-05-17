@@ -3296,11 +3296,55 @@ main { padding-bottom: 5.2rem; }
 <div class="quick-fab" id="quick-fab" role="toolbar" aria-label="クイックアクション">
   <button type="button" id="qf-toggle" class="qf-main" aria-label="クイック操作">＋</button>
   <div class="qf-menu" id="qf-menu" hidden>
-    <button type="button" data-qf="add-task" class="qf-item" title="タスク追加"><span>📝</span><span class="qf-label">タスク</span></button>
+    <button type="button" data-qf="quick-task" class="qf-item" title="タスクを即追加"><span>📝</span><span class="qf-label">タスク追加</span></button>
     <button type="button" data-qf="sand" class="qf-item" title="砂を沈める"><span>✨</span><span class="qf-label">砂</span></button>
     <button type="button" data-qf="quote" class="qf-item" title="名言として刻む"><span>⚡</span><span class="qf-label">名言</span></button>
     <button type="button" data-qf="analyze" class="qf-item" title="今すぐ全て分析"><span>🔍</span><span class="qf-label">分析</span></button>
+    <button type="button" data-qf="retry" class="qf-item" title="Vision 直前失敗をリトライ"><span>🔁</span><span class="qf-label">リトライ</span></button>
     <button type="button" data-qf="config" class="qf-item" title="設定"><span>⚙️</span><span class="qf-label">設定</span></button>
+  </div>
+</div>
+
+<!-- v2.35 クイックタスク追加ダイアログ（FAB から起動） -->
+<div class="modal-overlay" id="qf-task-modal" hidden>
+  <div class="modal cfg-modal" style="max-width: 480px;">
+    <button class="modal-close" id="qf-task-close" aria-label="閉じる">×</button>
+    <h2 style="font-family: var(--serif); font-size: 1.1rem; margin-bottom: 0.8rem;">📝 タスクをクイック追加</h2>
+    <label>内容
+      <input type="text" id="qf-task-text" autocomplete="off" placeholder="例: ぽもじかんの XP 表示確認">
+    </label>
+    <label>プロジェクト
+      <select id="qf-task-project">
+        <option value="p_rbai_inc">RBAI Inc.（既定）</option>
+        <option value="p_uiki">UIKI（雨域）</option>
+        <option value="p_zaitoku">ぽもじかん</option>
+        <option value="p_shinmane">新マネぼう</option>
+        <option value="p_manebou">マネぼう塾HP</option>
+        <option value="p_shonigan">小児がんAIコーチ</option>
+        <option value="p_raina">RAINA</option>
+        <option value="p_amesekai">雨と世界</option>
+        <option value="p_fukurouzo">服牢井像</option>
+        <option value="p_story">物語工房</option>
+        <option value="p_atelier">電脳工房</option>
+        <option value="p_askup">ASK-UP</option>
+        <option value="p_sasuke">SASUKE</option>
+        <option value="p_omasasu">OMASASU</option>
+      </select>
+    </label>
+    <label>デバイス
+      <select id="qf-task-device">
+        <option value="any">🌐 思考・判断</option>
+        <option value="pc">💻 PC（コード/編集）</option>
+        <option value="mobile">📱 モバイル（連絡/確認）</option>
+      </select>
+    </label>
+    <label>期限（任意）
+      <input type="date" id="qf-task-deadline">
+    </label>
+    <div class="cfg-actions">
+      <button id="qf-task-cancel" class="btn-ghost">キャンセル</button>
+      <button id="qf-task-add" class="btn-primary" style="background: var(--tab-accent); color: #fff; border: none; padding: 0.5rem 1.4rem; border-radius: 0.4rem; cursor: pointer;">追加</button>
+    </div>
   </div>
 </div>
 
@@ -7456,13 +7500,29 @@ function bootstrap() {
       const act = item.dataset.qf;
       fabMenu.setAttribute('hidden', '');
       fab.classList.remove('open');
-      if (act === 'add-task') {
-        // 重力タブの「タスク追加」入力欄にフォーカス
-        switchTab('home');
-        setTimeout(() => {
-          const inp = document.querySelector('#home-tasks-list-wrap .task-add-input, #task-add-input, .filter-search');
-          if (inp) { inp.focus(); inp.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
-        }, 200);
+      if (act === 'quick-task') {
+        // v2.35 クイックタスク追加ダイアログを開く
+        document.getElementById('qf-task-text').value = '';
+        document.getElementById('qf-task-modal').hidden = false;
+        setTimeout(() => document.getElementById('qf-task-text').focus(), 100);
+      } else if (act === 'retry') {
+        // v2.35 Vision 直前失敗をリトライ
+        const lastFail = UIKI.store.get('vision_last_failed', null);
+        if (!lastFail || !lastFail.btnId) {
+          showToast('直前の失敗データがありません');
+          return;
+        }
+        if (Date.now() - lastFail.ts > 60 * 60 * 1000) {
+          showToast('失敗から 1 時間以上経過 ── 通常ボタンから実行を');
+          return;
+        }
+        const btn = document.getElementById(lastFail.btnId);
+        if (btn) {
+          switchTab('uwiki');
+          setTimeout(() => { btn.click(); btn.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 200);
+        } else {
+          showToast('リトライ対象のボタンが見つかりません');
+        }
       } else if (act === 'sand') {
         switchTab('home');
         setTimeout(() => {
@@ -7493,6 +7553,54 @@ function bootstrap() {
         fabMenu.setAttribute('hidden', '');
         fab.classList.remove('open');
       }
+    });
+  }
+
+  // v2.35 クイックタスク追加ダイアログ配線
+  const qfTaskModal = document.getElementById('qf-task-modal');
+  const qfTaskClose = document.getElementById('qf-task-close');
+  const qfTaskCancel = document.getElementById('qf-task-cancel');
+  const qfTaskAdd = document.getElementById('qf-task-add');
+  const qfTaskText = document.getElementById('qf-task-text');
+  const closeQfTask = () => { if (qfTaskModal) qfTaskModal.hidden = true; };
+  if (qfTaskClose) qfTaskClose.addEventListener('click', closeQfTask);
+  if (qfTaskCancel) qfTaskCancel.addEventListener('click', closeQfTask);
+  if (qfTaskModal) qfTaskModal.addEventListener('click', e => { if (e.target === qfTaskModal) closeQfTask(); });
+  if (qfTaskAdd) {
+    qfTaskAdd.addEventListener('click', () => {
+      const text = (qfTaskText.value || '').trim();
+      if (!text) { showToast('内容を入力'); return; }
+      const projectId = document.getElementById('qf-task-project').value;
+      const device = document.getElementById('qf-task-device').value;
+      const deadline = document.getElementById('qf-task-deadline').value || null;
+      try {
+        const tasks = UIKI.store.get('tasks', []);
+        const newTask = {
+          id: 't_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+          projectId, text, device, deadline,
+          date: new Date().toISOString().slice(0, 10),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          stain: false,
+          completed: false,
+          completedAt: null
+        };
+        tasks.unshift(newTask);
+        UIKI.store.set('tasks', tasks);
+        showToast('✓ タスク追加：' + text.slice(0, 30));
+        closeQfTask();
+        // 重力タブのタスク表示を更新（UIKI.rain.init() で再描画）
+        try { UIKI.rain && UIKI.rain.refresh && UIKI.rain.refresh(); } catch(e) {}
+        // 重力タブにいる場合は画面更新
+        setTimeout(() => { try { location.reload(); } catch(e) {} }, 800);
+      } catch (e) {
+        showToast('✗ ' + (e.message || '失敗'));
+      }
+    });
+  }
+  if (qfTaskText) {
+    qfTaskText.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); qfTaskAdd.click(); }
     });
   }
 
