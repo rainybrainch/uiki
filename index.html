@@ -113,6 +113,15 @@
   color: var(--dim);
   font-family: var(--sans);
 }
+.ts-spark {
+  display: block;
+  width: 100%;
+  height: 28px;
+  margin-top: 0.4rem;
+  opacity: 0.7;
+}
+.ts-spark path { fill: none; stroke: var(--tab-accent); stroke-width: 1.4; }
+.ts-spark .ts-spark-fill { fill: rgba(var(--tab-accent-rgb), 0.12); stroke: none; }
 
 /* 引力タブ：白系・明るいテーマ（v2.21 / 2026-05-17） */
 body.tab-uwiki {
@@ -2650,8 +2659,10 @@ main { padding-bottom: 5.2rem; }
     <h3>📖 読雨から ── 最近の読書 <span class="yomu-from">type=book</span></h3>
     <p class="yomu-desc">読書感想の最近 5 件。RAINA・服牢井像への素材候補。</p>
     <div class="booklog-actions" style="display:flex; gap:0.6rem; flex-wrap:wrap; margin-bottom:0.8rem; align-items:center;">
-      <button class="attraction-add-btn" id="booklog-embed-btn" style="margin: 0; padding: 0.45rem 1rem;">📚 ブクログ本棚を表示</button>
-      <a id="booklog-profile-link" class="yomu-link" href="https://booklog.jp/users/mucchimuchimo" target="_blank" rel="noopener" style="padding: 0.45rem 1rem; border: 1px solid var(--gold); border-radius: 999px; color: var(--gold); text-decoration: none; font-size: 0.82rem;">🔍 別タブで開く →</a>
+      <a class="yomu-link" href="honbako/" style="padding: 0.45rem 1rem; border: 1px solid var(--gold); border-radius: 999px; background: var(--gold); color: #07090f; text-decoration: none; font-size: 0.82rem; font-weight: 600;">📚 自分の本棚を開く →</a>
+      <a class="yomu-link" href="honbako/?public=1" target="_blank" rel="noopener" style="padding: 0.45rem 1rem; border: 1px solid var(--gold); border-radius: 999px; color: var(--gold); text-decoration: none; font-size: 0.82rem;">🌐 公開本棚（広告塔） →</a>
+      <button class="attraction-add-btn" id="booklog-embed-btn" style="margin: 0; padding: 0.45rem 1rem;">📚 ブクログ埋込</button>
+      <a id="booklog-profile-link" class="yomu-link" href="https://booklog.jp/users/mucchimuchimo" target="_blank" rel="noopener" style="padding: 0.45rem 1rem; border: 1px solid var(--faint); border-radius: 999px; color: var(--dim); text-decoration: none; font-size: 0.78rem;">📖 ブクログ →</a>
       <input type="file" id="booklog-csv-input" accept=".csv,text/csv" style="display:none;">
       <button class="attraction-add-btn" id="booklog-csv-btn" style="margin: 0; padding: 0.45rem 1rem;">📥 CSV を取込</button>
       <span id="booklog-csv-status" style="font-size:0.78rem; color: var(--dim); align-self:center;"></span>
@@ -2902,11 +2913,13 @@ main { padding-bottom: 5.2rem; }
           <div class="ts-label">⚖️ 体重</div>
           <div class="ts-value" id="ts-weight">—</div>
           <div class="ts-sub" id="ts-weight-trend">変動なし</div>
+          <svg class="ts-spark" id="ts-weight-spark" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true"></svg>
         </div>
         <div class="ts-card ts-calories">
           <div class="ts-label">🍽 今日のカロリー</div>
           <div class="ts-value" id="ts-calories">—</div>
           <div class="ts-sub" id="ts-calories-sub">PFC 未計算</div>
+          <svg class="ts-spark" id="ts-calories-spark" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true"></svg>
         </div>
       </div>
     </section>
@@ -4286,7 +4299,7 @@ UIKI.yomu = (function() {
       rankMemoEl.textContent = '自撮りを「🔍 AI でランク評価」で分析';
     }
 
-    // 2) 最新の体重 + 推移
+    // 2) 最新の体重 + 推移 + sparkline
     const weights = entries.filter(e => e.type === 'health' && e.metric === 'weight').sort((a,b) => (b.date||b.created_at||'').localeCompare(a.date||a.created_at||''));
     const weightEl = document.getElementById('ts-weight');
     const weightTrendEl = document.getElementById('ts-weight-trend');
@@ -4301,9 +4314,11 @@ UIKI.yomu = (function() {
       } else {
         weightTrendEl.textContent = '初回記録';
       }
+      drawSparkline('ts-weight-spark', weights.slice(0, 14).reverse().map(w => Number(w.value)));
     } else {
       weightEl.textContent = '—';
       weightTrendEl.textContent = '体組成計を「🔍 数値化」で分析';
+      drawSparkline('ts-weight-spark', []);
     }
 
     // 3) 今日のカロリー合計
@@ -4320,6 +4335,34 @@ UIKI.yomu = (function() {
       calEl.textContent = '—';
       calSubEl.textContent = '食事を「🔍 栄養推定」で分析';
     }
+    // sparkline：直近 14 日の日次カロリー合計
+    const calByDay = {};
+    entries.filter(e => e.type === 'health' && e.metric === 'meal_calories' && e.date).forEach(e => {
+      const d = (e.date || '').replace(/-/g, '').slice(0, 8);
+      if (!d) return;
+      calByDay[d] = (calByDay[d] || 0) + Number(e.value || 0);
+    });
+    const days = Object.keys(calByDay).sort().slice(-14);
+    drawSparkline('ts-calories-spark', days.map(d => calByDay[d]));
+  }
+
+  // sparkline 描画：SVG path 生成
+  function drawSparkline(id, values) {
+    const svg = document.getElementById(id);
+    if (!svg) return;
+    if (!values || values.length < 2) {
+      svg.innerHTML = '';
+      return;
+    }
+    const w = 100, h = 28;
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const range = max - min || 1;
+    const stepX = values.length > 1 ? w / (values.length - 1) : 0;
+    const points = values.map((v, i) => [i * stepX, h - ((v - min) / range) * (h - 2) - 1]);
+    const linePath = 'M' + points.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' L');
+    const fillPath = linePath + ' L' + w + ',' + h + ' L0,' + h + ' Z';
+    svg.innerHTML = '<path class="ts-spark-fill" d="' + fillPath + '"/><path d="' + linePath + '"/>';
 
     // 4) 自動分析チップ
     const cfg = UIKI.store.get('config', {});
