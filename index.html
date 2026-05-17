@@ -13,7 +13,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;600;700&family=Zen+Kaku+Gothic+New:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #07090f;
+  --bg: #0a1530;  /* v2.46: 全タブ統一の濃い青背景 */
   --gold: #c9a84c;
   --rain-blue: #3a6fc9;
   --sand: #b87a2a;
@@ -293,29 +293,14 @@ body.public-mode .quick-fab { display: none !important; }
   transition: width 0.4s ease;
 }
 
-/* ライトテーマ（v2.39 / 2026-05-17）── 引力タブはそのまま白系・それ以外のタブで明るく */
-body.theme-light:not(.tab-uwiki):not(.tab-uwiki-main) {
-  background: #f7f5ed;
-}
-body.theme-light:not(.tab-uwiki):not(.tab-uwiki-main) .tab-page[data-tab="home"],
-body.theme-light:not(.tab-uwiki):not(.tab-uwiki-main) .tab-page[data-tab="tasks"],
-body.theme-light:not(.tab-uwiki):not(.tab-uwiki-main) .tab-page[data-tab="projects"],
-body.theme-light:not(.tab-uwiki):not(.tab-uwiki-main) .tab-page[data-tab="log"] {
-  color: rgba(26, 31, 46, 0.85);
-}
-body.theme-light:not(.tab-uwiki):not(.tab-uwiki-main) .yomu-section {
-  background: rgba(255, 255, 255, 0.85);
-  border-color: rgba(0, 0, 0, 0.12);
-}
-body.theme-light:not(.tab-uwiki):not(.tab-uwiki-main) .uwiki-pane,
-body.theme-light:not(.tab-uwiki):not(.tab-uwiki-main) .today-summary {
-  background: rgba(255, 255, 255, 0.8);
-  border-color: rgba(0, 0, 0, 0.12);
-}
+/* v2.46: ライトテーマ撤廃 ── 全タブ濃い青に統一（安定背景） */
 
-/* v2.42 雨域メインタブ：濃い青基調（重力黒 / 引力白 と区別する基幹色） */
+/* v2.42→v2.46 雨域メインタブ：濃い青基調（既定の --bg と同じ・他タブと統一） */
 body.tab-uwiki-main {
   background: #0a1530 !important;
+}
+body.tab-home, body.tab-uwiki {
+  background: #0a1530 !important;  /* v2.46 全タブ統一 */
 }
 body.tab-uwiki-main::before,
 body.tab-uwiki-main::after {
@@ -481,103 +466,7 @@ body.public-mode header::after {
 .ts-spark path { fill: none; stroke: var(--tab-accent); stroke-width: 1.4; }
 .ts-spark .ts-spark-fill { fill: rgba(var(--tab-accent-rgb), 0.12); stroke: none; }
 
-/* 引力タブ：白系・明るいテーマ（v2.21 / 2026-05-17） */
-body.tab-uwiki {
-  background: #f0f4fa;
-}
-body.tab-uwiki::before,
-body.tab-uwiki::after {
-  opacity: 0.25;
-  filter: invert(1) hue-rotate(180deg);
-}
-.tab-page[data-tab="uwiki"] {
-  color: rgba(0, 0, 0, 0.82);
-}
-.tab-page[data-tab="uwiki"] .hero h1 {
-  color: var(--tab-accent);
-}
-.tab-page[data-tab="uwiki"] .subtitle-roman,
-.tab-page[data-tab="uwiki"] .tagline {
-  color: rgba(var(--tab-accent-rgb), 0.7);
-}
-.tab-page[data-tab="uwiki"] .yomu-section {
-  background: rgba(255, 255, 255, 0.7);
-  border-color: rgba(0, 0, 0, 0.1);
-  border-left-color: rgba(var(--tab-accent-rgb), 0.45);
-}
-.tab-page[data-tab="uwiki"] .today-summary {
-  background: rgba(255, 255, 255, 0.7);
-  border-color: rgba(0, 0, 0, 0.1);
-  border-left-color: var(--tab-accent);
-}
-.tab-page[data-tab="uwiki"] .ts-header h3 {
-  color: rgba(0, 0, 0, 0.85);
-}
-.tab-page[data-tab="uwiki"] .ts-card {
-  background: rgba(255, 255, 255, 0.8);
-  border-color: rgba(0, 0, 0, 0.1);
-}
-.tab-page[data-tab="uwiki"] .ts-label,
-.tab-page[data-tab="uwiki"] .ts-sub {
-  color: rgba(0, 0, 0, 0.55);
-}
-.tab-page[data-tab="uwiki"] .yomu-section h3 {
-  color: rgba(0, 0, 0, 0.85);
-}
-.tab-page[data-tab="uwiki"] .yomu-desc,
-.tab-page[data-tab="uwiki"] .pane-desc {
-  color: rgba(0, 0, 0, 0.55);
-}
-.tab-page[data-tab="uwiki"] .yomu-empty,
-.tab-page[data-tab="uwiki"] .yomu-loading {
-  color: rgba(0, 0, 0, 0.5);
-}
-.tab-page[data-tab="uwiki"] .uwiki-pane,
-.tab-page[data-tab="uwiki"] .attraction-pane {
-  background: rgba(255, 255, 255, 0.75);
-  border-color: rgba(0, 0, 0, 0.1);
-}
-.tab-page[data-tab="uwiki"] .attraction-pane h2 {
-  color: rgba(0, 0, 0, 0.85);
-}
-.tab-page[data-tab="uwiki"] .pane-header h2 {
-  color: rgba(0, 0, 0, 0.85);
-}
-.tab-page[data-tab="uwiki"] .pane-role {
-  color: rgba(0, 0, 0, 0.5);
-}
-.tab-page[data-tab="uwiki"] .attraction-add-btn,
-.tab-page[data-tab="uwiki"] button:not(.sand-submit):not(.weight-btn):not(.uwiki-tab):not(.menu-btn):not(.drawer-close) {
-  color: rgba(0, 0, 0, 0.8);
-  border-color: rgba(0, 0, 0, 0.18);
-  background: rgba(255, 255, 255, 0.5);
-}
-.tab-page[data-tab="uwiki"] code {
-  background: rgba(0, 0, 0, 0.06);
-  color: rgba(0, 0, 0, 0.78);
-}
-.tab-page[data-tab="uwiki"] strong {
-  color: rgba(0, 0, 0, 0.92);
-}
-.tab-page[data-tab="uwiki"] .yomu-section h3 .yomu-from {
-  background: rgba(var(--tab-accent-rgb), 0.1);
-  color: rgba(var(--tab-accent-rgb), 0.85);
-  border-color: rgba(var(--tab-accent-rgb), 0.3);
-}
-/* 引力タブ：体組成計／食事／自撮りグリッドの背景も明るく */
-.tab-page[data-tab="uwiki"] .body-scan-grid .scan-card {
-  background: rgba(255, 255, 255, 0.85);
-  border-color: rgba(0, 0, 0, 0.1);
-}
-.tab-page[data-tab="uwiki"] .scan-card .scan-memo,
-.tab-page[data-tab="uwiki"] .scan-card .scan-date {
-  color: rgba(0, 0, 0, 0.72);
-}
-.tab-page[data-tab="uwiki"] .health-card {
-  background: rgba(255, 255, 255, 0.8);
-  border-color: rgba(0, 0, 0, 0.1);
-  color: rgba(0, 0, 0, 0.82);
-}
+/* v2.46: 引力タブの白系撤廃 ── 全タブ青背景で統一、アクセント色のみ各タブで切替 */
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -8058,16 +7947,10 @@ function bootstrap() {
     showToast('✓ ホーム画面に追加されました');
   });
 
-  // v2.39 テーマ適用（auto / dark / light）── v2.43: デフォルトを dark に変更
+  // v2.46 テーマ適用：常に dark（青背景）で安定（ユーザー指示「安定して背景青」）
   function applyTheme() {
-    const c = UIKI.store.get('config', {});
-    const theme = c.theme || 'dark';  // v2.43: 既定を dark に固定（背景不安定の解消）
     document.body.classList.remove('theme-dark', 'theme-light');
-    let active = theme;
-    if (theme === 'auto') {
-      active = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
-    }
-    document.body.classList.add('theme-' + active);
+    document.body.classList.add('theme-dark');
   }
   applyTheme();
   if (window.matchMedia) {
