@@ -4830,10 +4830,21 @@ UIKI.drive = (function() {
       const tb = b._date ? b._date.getTime() : 0;
       return tb - ta;
     });
-    const top = enriched.slice(0, 60);
+    const top = enriched.slice(0, 100);
     const sourceLabel = { name: '📁', exif: '📷', created: '☁️', modified: '🔄' };
     const sourceTitle = { name: 'ファイル名から', exif: 'EXIF撮影時刻', created: 'アップロード時刻', modified: '更新時刻' };
-    wrap.innerHTML = top.map((f, idx) => {
+    // v2.71 日付別グループ表示
+    const grouped = {};
+    top.forEach((f, idx) => {
+      const dateKey = f._date ? (f._date.getFullYear() + '-' + ('0'+(f._date.getMonth()+1)).slice(-2) + '-' + ('0'+f._date.getDate()).slice(-2)) : '日付不明';
+      if (!grouped[dateKey]) grouped[dateKey] = [];
+      grouped[dateKey].push({ f, idx });
+    });
+    const groupKeys = Object.keys(grouped).sort((a,b) => b.localeCompare(a)); // 新しい日付から
+    const todayKey = new Date().getFullYear() + '-' + ('0'+(new Date().getMonth()+1)).slice(-2) + '-' + ('0'+new Date().getDate()).slice(-2);
+    const yesterdayD = new Date(); yesterdayD.setDate(yesterdayD.getDate() - 1);
+    const yesterdayKey = yesterdayD.getFullYear() + '-' + ('0'+(yesterdayD.getMonth()+1)).slice(-2) + '-' + ('0'+yesterdayD.getDate()).slice(-2);
+    const buildCard = (f, idx) => {
       const thumb = f.thumbnailLink
         ? f.thumbnailLink.replace(/=s\d+/, '=s400')
         : 'https://drive.google.com/thumbnail?id=' + f.id + '&sz=w400';
@@ -4846,14 +4857,25 @@ UIKI.drive = (function() {
       return '<a class="body-scan-card' + newBadge + '" href="' + escapeHtml(view) + '" target="_blank" rel="noopener" title="' + escapeHtml(f.name + ' / ' + dateStr + ' [' + srcTitle + ']') + '">' +
         '<img src="' + escapeHtml(thumb) + '" alt="' + escapeHtml(f.name) + '" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display=\'none\'; this.parentNode.classList.add(\'bs-broken\');">' +
         '<div class="bs-meta">' +
-          '<div class="bs-date"><span title="' + escapeHtml(srcTitle) + '">' + srcIcon + '</span> ' + escapeHtml(dateStr) + '</div>' +
+          '<div class="bs-date"><span title="' + escapeHtml(srcTitle) + '">' + srcIcon + '</span> ' + escapeHtml(formatJpDate(f._date).slice(5)) + '</div>' +
           '<div class="bs-memo">' + escapeHtml(baseName.slice(0, 30)) + '</div>' +
         '</div>' +
       '</a>';
-    }).join('');
+    };
+    let html = '';
+    groupKeys.forEach(dateKey => {
+      const items = grouped[dateKey];
+      let label = dateKey;
+      if (dateKey === todayKey) label = '📅 今日 ── ' + dateKey;
+      else if (dateKey === yesterdayKey) label = '📆 昨日 ── ' + dateKey;
+      else label = '📆 ' + dateKey;
+      html += '<div class="drive-date-group" style="margin: 0.8rem 0 0.4rem; padding: 0.3rem 0.6rem; font-size: 0.78rem; color: rgba(var(--tab-accent-rgb), 0.85); border-bottom: 1px solid rgba(var(--tab-accent-rgb), 0.25); font-weight: 600;">' + label + ' <span style="color: var(--dim); font-weight: 400; margin-left: 0.4rem;">(' + items.length + ' 枚)</span></div>';
+      html += '<div class="body-scan-grid">' + items.map(({f, idx}) => buildCard(f, idx)).join('') + '</div>';
+    });
+    wrap.innerHTML = html;
     if (meta) {
       const fetchedAt = st.fetchedAt ? new Date(st.fetchedAt).toLocaleTimeString('ja-JP', {hour:'2-digit', minute:'2-digit'}) : '';
-      meta.textContent = st.files.length + ' 枚（同期: ' + fetchedAt + '）';
+      meta.textContent = st.files.length + ' 枚 ／ ' + groupKeys.length + ' 日（同期: ' + fetchedAt + '）';
     }
   }
 
