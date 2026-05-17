@@ -1,7 +1,7 @@
 // 雨域図 UIKI ── Service Worker
 // network-first for HTML, cache-first for fonts/manifest, no-cache for Gist API.
 
-const CACHE_NAME = 'uiki-v1';
+const CACHE_NAME = 'uiki-v2.27';
 const PRECACHE = ['./', './index.html', './manifest.json'];
 
 self.addEventListener('install', (event) => {

@@ -2901,7 +2901,10 @@ main { padding-bottom: 5.2rem; }
     <section class="today-summary reveal" id="today-summary">
       <div class="ts-header">
         <h3>📊 今日のサマリー</h3>
-        <span class="ts-auto-chip" id="ts-auto-chip" title="設定の「自動分析を有効にする」">自動分析: 確認中…</span>
+        <div style="display:flex; gap:0.4rem; align-items:center; flex-wrap:wrap;">
+          <button id="ts-analyze-now" class="attraction-add-btn" style="margin:0; padding:0.3rem 0.8rem; font-size:0.78rem;">🔍 今すぐ全て分析</button>
+          <span class="ts-auto-chip" id="ts-auto-chip" title="設定の「自動分析を有効にする」">自動分析: 確認中…</span>
+        </div>
       </div>
       <div class="ts-grid">
         <div class="ts-card ts-rank">
@@ -2991,6 +2994,48 @@ main { padding-bottom: 5.2rem; }
       <p class="yomu-desc">UwikiAI 経由で「画像 URL ＋ Vision メモ」付きで記録した画像。<br>投入：<code>?type=body_scan&image_url=...&memo=...&date=YYYYMMDD</code></p>
       <div class="body-scan-grid" id="yomu-body-scans">
         <div class="yomu-loading yomu-empty">読み込み中…</div>
+      </div>
+    </section>
+
+    <!-- 月次振り返り（v2.27 / 2026-05-17 / 雨域 AI の前段） -->
+    <section class="yomu-section reveal" id="monthly-review">
+      <h3>📅 月次振り返り <span class="yomu-from" id="monthly-period">今月</span></h3>
+      <p class="yomu-desc">今月のデータ集約。雨域 AI への材料。<br>
+        <button class="attraction-add-btn" id="monthly-refresh" style="margin: 0.4rem 0 0; padding: 0.4rem 0.9rem; font-size: 0.78rem;">🔄 集計を更新</button>
+        <button class="attraction-add-btn" id="monthly-prev" style="margin: 0.4rem 0.3rem 0; padding: 0.4rem 0.9rem; font-size: 0.78rem;">← 先月</button>
+        <button class="attraction-add-btn" id="monthly-next" style="margin: 0.4rem 0 0; padding: 0.4rem 0.9rem; font-size: 0.78rem;">来月 →</button>
+      </p>
+      <div class="ts-grid" id="monthly-grid">
+        <div class="ts-card">
+          <div class="ts-label">⚖️ 体重平均</div>
+          <div class="ts-value" id="m-weight-avg">—</div>
+          <div class="ts-sub" id="m-weight-delta">変動 —</div>
+        </div>
+        <div class="ts-card">
+          <div class="ts-label">🤳 ランク最頻</div>
+          <div class="ts-value" id="m-rank-mode">—</div>
+          <div class="ts-sub" id="m-rank-count">記録 —</div>
+        </div>
+        <div class="ts-card">
+          <div class="ts-label">🍽 カロリー平均</div>
+          <div class="ts-value" id="m-cal-avg">—</div>
+          <div class="ts-sub" id="m-cal-days">日 —</div>
+        </div>
+        <div class="ts-card">
+          <div class="ts-label">☑ 完了タスク</div>
+          <div class="ts-value" id="m-tasks-done">—</div>
+          <div class="ts-sub" id="m-tasks-rate">日 — 件平均</div>
+        </div>
+        <div class="ts-card">
+          <div class="ts-label">✨ 砂のログ</div>
+          <div class="ts-value" id="m-sand-count">—</div>
+          <div class="ts-sub" id="m-sand-weight">重力合計 —</div>
+        </div>
+        <div class="ts-card">
+          <div class="ts-label">📖 読書</div>
+          <div class="ts-value" id="m-book-count">—</div>
+          <div class="ts-sub" id="m-book-stars">★ 平均 —</div>
+        </div>
       </div>
     </section>
 
@@ -4239,6 +4284,114 @@ UIKI.yomu = (function() {
     renderBooks();
     renderTodaySummary();
     renderHomeTodaySummary();
+    renderMonthlyReview();
+  }
+
+  // v2.27 月次振り返り：雨域 AI への材料
+  let _monthlyOffset = 0; // 0 = 今月 / -1 = 先月 / +1 = 来月
+  function renderMonthlyReview() {
+    const wrap = document.getElementById('monthly-review');
+    if (!wrap) return;
+    const now = new Date();
+    now.setMonth(now.getMonth() + _monthlyOffset);
+    const y = now.getFullYear();
+    const m = now.getMonth();
+    const monthLabel = y + '-' + ('0' + (m + 1)).slice(-2);
+    const periodEl = document.getElementById('monthly-period');
+    if (periodEl) periodEl.textContent = monthLabel + (_monthlyOffset === 0 ? '（今月）' : _monthlyOffset === -1 ? '（先月）' : '');
+
+    const isThisMonth = e => {
+      const d = e.date ? e.date.replace(/-/g, '').slice(0, 8) : (e.created_at || '').replace(/[-T:]/g, '').slice(0, 8);
+      if (!d || d.length < 6) return false;
+      const ey = +d.slice(0, 4), em = +d.slice(4, 6) - 1;
+      return ey === y && em === m;
+    };
+
+    const entries = state.entries || [];
+
+    // 体重平均
+    const weights = entries.filter(e => e.type === 'health' && e.metric === 'weight' && isThisMonth(e));
+    const wAvgEl = document.getElementById('m-weight-avg');
+    const wDelEl = document.getElementById('m-weight-delta');
+    if (weights.length) {
+      const vals = weights.map(e => Number(e.value)).filter(v => !isNaN(v));
+      const avg = vals.reduce((s, v) => s + v, 0) / vals.length;
+      const sorted = weights.slice().sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+      const first = Number(sorted[0].value);
+      const last = Number(sorted[sorted.length - 1].value);
+      const delta = last - first;
+      wAvgEl.textContent = avg.toFixed(1) + ' kg';
+      wDelEl.textContent = (delta >= 0 ? '+' : '') + delta.toFixed(1) + ' kg（月内）';
+    } else {
+      wAvgEl.textContent = '—';
+      wDelEl.textContent = '記録なし';
+    }
+
+    // ランク最頻
+    const scans = entries.filter(e => e.type === 'body_scan' && isThisMonth(e) && e.rank);
+    const rankModeEl = document.getElementById('m-rank-mode');
+    const rankCountEl = document.getElementById('m-rank-count');
+    if (scans.length) {
+      const cnt = {};
+      scans.forEach(s => { cnt[s.rank] = (cnt[s.rank] || 0) + 1; });
+      const top = Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a])[0];
+      rankModeEl.textContent = top;
+      rankCountEl.textContent = scans.length + ' 回記録';
+    } else {
+      rankModeEl.textContent = '—';
+      rankCountEl.textContent = '記録なし';
+    }
+
+    // カロリー平均
+    const calEntries = entries.filter(e => e.type === 'health' && e.metric === 'meal_calories' && isThisMonth(e));
+    const calByDay = {};
+    calEntries.forEach(e => {
+      const d = (e.date || '').replace(/-/g, '').slice(0, 8);
+      if (!d) return;
+      calByDay[d] = (calByDay[d] || 0) + Number(e.value || 0);
+    });
+    const days = Object.keys(calByDay);
+    const cAvgEl = document.getElementById('m-cal-avg');
+    const cDaysEl = document.getElementById('m-cal-days');
+    if (days.length) {
+      const total = days.reduce((s, d) => s + calByDay[d], 0);
+      cAvgEl.textContent = (total / days.length).toFixed(0) + ' kcal';
+      cDaysEl.textContent = days.length + ' 日記録';
+    } else {
+      cAvgEl.textContent = '—';
+      cDaysEl.textContent = '記録なし';
+    }
+
+    // 完了タスク
+    const tasks = UIKI.store.get('tasks', []);
+    const tDone = tasks.filter(t => t.completed && t.completedAt && (() => {
+      const d = t.completedAt.slice(0, 10);
+      const dy = +d.slice(0, 4), dm = +d.slice(5, 7) - 1;
+      return dy === y && dm === m;
+    })());
+    document.getElementById('m-tasks-done').textContent = tDone.length;
+    document.getElementById('m-tasks-rate').textContent = (tDone.length / new Date(y, m + 1, 0).getDate()).toFixed(1) + ' 件/日';
+
+    // 砂のログ
+    const sand = UIKI.store.get('sand_log', []);
+    const sThis = sand.filter(s => {
+      const d = (s.date || '').replace(/-/g, '');
+      if (d.length < 6) return false;
+      return +d.slice(0, 4) === y && +d.slice(4, 6) - 1 === m;
+    });
+    document.getElementById('m-sand-count').textContent = sThis.length;
+    document.getElementById('m-sand-weight').textContent = '重力合計 ' + sThis.reduce((s, x) => s + (Number(x.weight) || 0), 0);
+
+    // 読書
+    const books = entries.filter(e => e.type === 'book' && isThisMonth(e));
+    document.getElementById('m-book-count').textContent = books.length;
+    const starsBooks = books.filter(b => b.stars && Number(b.stars) > 0);
+    if (starsBooks.length) {
+      const avg = starsBooks.reduce((s, b) => s + Number(b.stars), 0) / starsBooks.length;
+      document.getElementById('m-book-stars').textContent = '★ 平均 ' + avg.toFixed(1);
+    } else {
+      document.getElementById('m-book-stars').textContent = '★ 記録なし';
+    }
   }
 
   // 重力タブの今日のサマリー（v2.24）
@@ -4603,7 +4756,13 @@ UIKI.yomu = (function() {
     setInterval(fetchYomu, POLL_MS);
   }
 
-  return { init, fetch: fetchYomu, addEntry, addEntriesBatch, ingestFromQuery, state: () => state };
+  return {
+    init, fetch: fetchYomu, addEntry, addEntriesBatch, ingestFromQuery,
+    state: () => state,
+    renderMonthlyReview,
+    monthlyPrev: () => { _monthlyOffset--; renderMonthlyReview(); },
+    monthlyNext: () => { if (_monthlyOffset < 0) { _monthlyOffset++; renderMonthlyReview(); } }
+  };
 })();
 
 // ─────────────────────────────────────────────────────────
@@ -6291,6 +6450,49 @@ function bootstrap() {
   bindAnalyzeButton('drive-analyze-body-btn', 'body', 'drive-upload-status');
   bindAnalyzeButton('drive-analyze-scale-btn', 'scale', 'drive-upload-scale-status');
   bindAnalyzeButton('drive-analyze-meal-btn', 'meal', 'drive-upload-meal-status');
+
+  // v2.27 月次振り返りナビ
+  const mRefresh = document.getElementById('monthly-refresh');
+  const mPrev = document.getElementById('monthly-prev');
+  const mNext = document.getElementById('monthly-next');
+  if (mRefresh) mRefresh.addEventListener('click', () => { try { UIKI.yomu.renderMonthlyReview && UIKI.yomu.renderMonthlyReview(); } catch(e){} showToast('🔄 集計更新'); });
+  if (mPrev) mPrev.addEventListener('click', () => { try { UIKI.yomu.monthlyPrev && UIKI.yomu.monthlyPrev(); } catch(e){} });
+  if (mNext) mNext.addEventListener('click', () => { try { UIKI.yomu.monthlyNext && UIKI.yomu.monthlyNext(); } catch(e){} });
+
+  // 「今すぐ全て分析」ボタン
+  const tsAnalyzeNow = document.getElementById('ts-analyze-now');
+  if (tsAnalyzeNow) {
+    tsAnalyzeNow.addEventListener('click', async () => {
+      const cfg = UIKI.store.get('config', {});
+      if (!cfg.geminiKey && !cfg.claudeKey) {
+        showToast('Gemini/Claude キー未設定 ── 設定モーダルを開きます');
+        setTimeout(() => UIKI.config.open(), 1200);
+        return;
+      }
+      if (!cfg.pat) {
+        showToast('PAT 未設定 ── 設定モーダルを開きます');
+        setTimeout(() => UIKI.config.open(), 1200);
+        return;
+      }
+      tsAnalyzeNow.disabled = true;
+      tsAnalyzeNow.textContent = '🔍 全て解析中…';
+      try {
+        // last_auto_analyzed をリセットして自動分析を強制発火させるため、fetchOne を呼ぶ
+        ['body', 'scale', 'meal'].forEach(k => UIKI.store.set('last_auto_analyzed_' + k, null));
+        await Promise.all([
+          UIKI.drive.fetchOne('body'),
+          UIKI.drive.fetchOne('scale'),
+          UIKI.drive.fetchOne('meal')
+        ]);
+        showToast('✓ 全ジャンルの最新画像を分析開始（数秒〜数十秒で読雨に反映）');
+      } catch(e) {
+        showToast('✗ ' + (e.message || '失敗').slice(0, 80));
+      } finally {
+        tsAnalyzeNow.disabled = false;
+        tsAnalyzeNow.textContent = '🔍 今すぐ全て分析';
+      }
+    });
+  }
 
   // Drive アップロードボタン共通処理（v2.11）
   function bindUploadButton(btnId, inputId, statusId, kind) {
