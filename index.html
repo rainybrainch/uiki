@@ -192,6 +192,27 @@ body.public-mode .quick-fab { display: none !important; }
   transition: width 0.4s ease;
 }
 
+/* ライトテーマ（v2.39 / 2026-05-17）── 引力タブはそのまま白系・それ以外のタブで明るく */
+body.theme-light:not(.tab-uwiki) {
+  background: #f7f5ed;
+}
+body.theme-light:not(.tab-uwiki) .tab-page[data-tab="home"],
+body.theme-light:not(.tab-uwiki) .tab-page[data-tab="uwiki-main"],
+body.theme-light:not(.tab-uwiki) .tab-page[data-tab="tasks"],
+body.theme-light:not(.tab-uwiki) .tab-page[data-tab="projects"],
+body.theme-light:not(.tab-uwiki) .tab-page[data-tab="log"] {
+  color: rgba(26, 31, 46, 0.85);
+}
+body.theme-light:not(.tab-uwiki) .yomu-section {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(0, 0, 0, 0.12);
+}
+body.theme-light:not(.tab-uwiki) .uwiki-pane,
+body.theme-light:not(.tab-uwiki) .today-summary {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: rgba(0, 0, 0, 0.12);
+}
+
 /* 公開モード（v2.28 / 2026-05-17） */
 body.public-mode .sand-section,
 body.public-mode .today-feed,
@@ -3479,6 +3500,25 @@ main { padding-bottom: 5.2rem; }
       <span id="cfg-vision-test-result" style="font-size:0.76rem; color:var(--dim); align-self:center;"></span>
     </div>
     <hr style="border: none; border-top: 1px solid var(--faint); margin: 1.2rem 0;">
+    <h3 style="font-size: 1rem; color: var(--gold); margin-bottom: 0.5rem;">表示・同期（v2.39 / 2026-05-17）</h3>
+    <label>テーマ
+      <select id="cfg-theme" style="width: 100%; padding: 0.6rem; background: var(--bg-elev); border: 1px solid var(--faint); border-radius: 0.4rem; color: var(--ink);">
+        <option value="auto">🌗 自動（システム設定に追従）</option>
+        <option value="dark">🌑 ダーク（常時）</option>
+        <option value="light">🌕 ライト（常時）</option>
+      </select>
+      <small>引力雨域は常に白系。それ以外（重力雨域・タスク・プロジェクト・ログ）のテーマを切替。</small>
+    </label>
+    <label>Drive 同期間隔
+      <select id="cfg-drive-interval" style="width: 100%; padding: 0.6rem; background: var(--bg-elev); border: 1px solid var(--faint); border-radius: 0.4rem; color: var(--ink);">
+        <option value="60000">1 分（高頻度・スマホ撮ったらすぐ）</option>
+        <option value="300000">5 分（既定・通常）</option>
+        <option value="900000">15 分（節約）</option>
+        <option value="1800000">30 分（バッテリー優先）</option>
+      </select>
+      <small>Drive フォルダの再取得間隔。短いほど反映が早いが API クォータ消費も増える。</small>
+    </label>
+    <hr style="border: none; border-top: 1px solid var(--faint); margin: 1.2rem 0;">
     <h3 style="font-size: 1rem; color: var(--gold); margin-bottom: 0.5rem;">データ管理（v2.30-33 / 2026-05-17）</h3>
     <label class="cfg-checkbox" style="display:block; margin-bottom:0.6rem;">
       <input type="checkbox" id="cfg-delete-mode">
@@ -4342,11 +4382,16 @@ UIKI.drive = (function() {
 
   function init() {
     fetchDrive();
+    restartPoll();
+  }
+  function restartPoll() {
     if (pollTimer) clearInterval(pollTimer);
-    pollTimer = setInterval(fetchDrive, POLL_MS);
+    const cfg = UIKI.store.get('config', {});
+    const interval = Number(cfg.driveInterval) || POLL_MS;
+    pollTimer = setInterval(fetchDrive, interval);
   }
 
-  return { init, fetch: fetchDrive, fetchOne, parseFilenameDate, getEffectiveDate, state: () => STATES };
+  return { init, fetch: fetchDrive, fetchOne, parseFilenameDate, getEffectiveDate, restartPoll, state: () => STATES };
 })();
 
 // ─────────────────────────────────────────────────────────
@@ -6791,6 +6836,10 @@ UIKI.config = (() => {
     if (vaEl) vaEl.checked = !!cfg.visionAuto;
     const dmEl = document.getElementById('cfg-delete-mode');
     if (dmEl) dmEl.checked = !!cfg.deleteMode;
+    const themeEl = document.getElementById('cfg-theme');
+    if (themeEl) themeEl.value = cfg.theme || 'auto';
+    const intvEl = document.getElementById('cfg-drive-interval');
+    if (intvEl) intvEl.value = String(cfg.driveInterval || 300000);
     // Vision 警告：PAT または Gemini キー未設定なら警告バナーを表示
     const visionWarn = document.getElementById('cfg-vision-warn');
     if (visionWarn) {
@@ -6827,6 +6876,10 @@ UIKI.config = (() => {
     const visionAuto = vaEl2 ? vaEl2.checked : false;
     const dmEl2 = document.getElementById('cfg-delete-mode');
     const deleteMode = dmEl2 ? dmEl2.checked : false;
+    const themeEl2 = document.getElementById('cfg-theme');
+    const theme = themeEl2 ? themeEl2.value : 'auto';
+    const intvEl2 = document.getElementById('cfg-drive-interval');
+    const driveInterval = intvEl2 ? Number(intvEl2.value) : 300000;
 
     // v2.8 緩和：PAT または Drive キーのどちらかがあれば保存可
     if (!pat && !driveKey) {
@@ -6845,7 +6898,7 @@ UIKI.config = (() => {
       pat, gistId, notifEnabled,
       driveKey, driveFolderId, driveFolderIdMeal, driveFolderIdScale, driveOauthClientId,
       booklogUsername,
-      geminiKey, claudeKey, visionProvider, visionAuto, deleteMode,
+      geminiKey, claudeKey, visionProvider, visionAuto, deleteMode, theme, driveInterval,
       savedAt: new Date().toISOString()
     });
     showToast(pat ? '設定を保存した' : 'Drive 連携のみで保存した（PAT 未登録）');
@@ -6860,6 +6913,16 @@ UIKI.config = (() => {
       ['body', 'scale', 'meal'].forEach(k => UIKI.store.set('last_auto_analyzed_' + k, null));
       showToast('🔍 自動分析 ON ── 次回 Drive 同期で最新画像を分析します');
     }
+    // v2.39 テーマ・同期間隔を即時反映
+    try {
+      document.body.classList.remove('theme-dark', 'theme-light');
+      let active = theme;
+      if (theme === 'auto') {
+        active = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+      }
+      document.body.classList.add('theme-' + active);
+    } catch(e) {}
+    try { UIKI.drive && UIKI.drive.restartPoll && UIKI.drive.restartPoll(); } catch(e) {}
   }
   // PAT の経過日数チェック（330日経過で警告、365日超で error）
   function checkPATAge() {
@@ -7469,6 +7532,24 @@ function bootstrap() {
     document.getElementById('pwa-install-banner').hidden = true;
     showToast('✓ ホーム画面に追加されました');
   });
+
+  // v2.39 テーマ適用（auto / dark / light）
+  function applyTheme() {
+    const c = UIKI.store.get('config', {});
+    const theme = c.theme || 'auto';
+    document.body.classList.remove('theme-dark', 'theme-light');
+    let active = theme;
+    if (theme === 'auto') {
+      active = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+    }
+    document.body.classList.add('theme-' + active);
+  }
+  applyTheme();
+  if (window.matchMedia) {
+    const mq = window.matchMedia('(prefers-color-scheme: light)');
+    if (mq.addEventListener) mq.addEventListener('change', applyTheme);
+    else if (mq.addListener) mq.addListener(applyTheme);
+  }
 
   // v2.33 削除モード反映
   const cfg33 = UIKI.store.get('config', {});
