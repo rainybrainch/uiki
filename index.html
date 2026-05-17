@@ -2248,6 +2248,28 @@ main { padding-bottom: 5.2rem; }
   .body-scan-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
+/* ===== NEW バッジ (v2.18 / 2026-05-17) ===== */
+.body-scan-card.bs-new::before {
+  content: "🆕 NEW";
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  background: var(--gold);
+  color: var(--bg);
+  font-size: 0.62rem;
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+  border-radius: 3px;
+  z-index: 3;
+  letter-spacing: 0.05em;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  animation: bs-new-pulse 2s ease-in-out infinite;
+}
+@keyframes bs-new-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
 /* ===== 健康データ スパークライン + 変動値 (v2.16 / 2026-05-17) ===== */
 .yomu-health-card.has-spark {
   padding: 0.8rem 0.95rem;
@@ -2407,10 +2429,16 @@ main { padding-bottom: 5.2rem; }
     </div>
   </section>
 
-  <!-- 読雨統合：読書 -->
+  <!-- 読雨統合：読書 + ブクログ連携（v2.17） -->
   <section class="yomu-section reveal">
     <h3>📖 読雨から ── 最近の読書 <span class="yomu-from">type=book</span></h3>
     <p class="yomu-desc">読書感想の最近 5 件。RAINA・服牢井像への素材候補。</p>
+    <div class="booklog-actions" style="display:flex; gap:0.6rem; flex-wrap:wrap; margin-bottom:0.8rem; align-items:center;">
+      <a id="booklog-profile-link" class="yomu-link" href="https://booklog.jp/users/mucchimuchimo" target="_blank" rel="noopener" style="padding: 0.45rem 1rem; border: 1px solid var(--gold); border-radius: 999px; color: var(--gold); text-decoration: none; font-size: 0.82rem;">📚 ブクログ本棚を開く →</a>
+      <input type="file" id="booklog-csv-input" accept=".csv,text/csv" style="display:none;">
+      <button class="attraction-add-btn" id="booklog-csv-btn" style="margin: 0; padding: 0.45rem 1rem;">📥 CSV を取込</button>
+      <span id="booklog-csv-status" style="font-size:0.78rem; color: var(--dim); align-self:center;"></span>
+    </div>
     <div class="yomu-book-list" id="yomu-books">
       <div class="yomu-loading yomu-empty">読み込み中…</div>
     </div>
@@ -2795,6 +2823,12 @@ main { padding-bottom: 5.2rem; }
     <p class="cfg-help" style="font-size: 0.78rem;">
       <strong>API キー取得手順</strong>：① <a href="https://console.cloud.google.com/projectcreate" target="_blank">新規プロジェクト作成</a> → ② <a href="https://console.cloud.google.com/apis/library/drive.googleapis.com" target="_blank">Drive API を有効化</a> → ③ <a href="https://console.cloud.google.com/apis/credentials" target="_blank">認証情報 → API キー作成</a>。
     </p>
+    <hr style="border: none; border-top: 1px solid var(--faint); margin: 1.2rem 0;">
+    <h3 style="font-size: 1rem; color: var(--gold); margin-bottom: 0.5rem;">ブクログ連携（v2.17 / 2026-05-17・任意）</h3>
+    <label>ブクログ ユーザー名
+      <input type="text" id="cfg-booklog-username" autocomplete="off" placeholder="例: mucchimuchimo">
+      <small><a href="https://booklog.jp/" target="_blank" rel="noopener">booklog.jp</a> のユーザー名。設定すると雨域から自分の本棚へリンク表示。CSV エクスポート → 雨域から取込で読雨に流し込み可能。</small>
+    </label>
     <div class="modal-buttons">
       <button id="cfg-cancel">閉じる</button>
       <button id="cfg-save">保存</button>
@@ -2816,6 +2850,158 @@ main { padding-bottom: 5.2rem; }
 'use strict';
 
 const UIKI = {};
+
+// ─────────────────────────────────────────────────────────
+// booklog: ブクログ CSV 取込 (v2.17 / 2026-05-17)
+// 公開 RSS は CORS で読めないため、CSV エクスポート → 手動アップロード方式
+// ブクログ CSV を読雨 Gist の type=book エントリに変換して投入（重複防止）
+// ─────────────────────────────────────────────────────────
+UIKI.booklog = (function() {
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  // 簡易 CSV パーサ（"..." クォート対応・カンマ含むセル対応）
+  function parseCSV(text) {
+    if (!text) return [];
+    // BOM 除去
+    if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+    const rows = [];
+    let row = [];
+    let cur = '';
+    let inQuote = false;
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (inQuote) {
+        if (c === '"' && text[i + 1] === '"') { cur += '"'; i++; }
+        else if (c === '"') { inQuote = false; }
+        else { cur += c; }
+      } else {
+        if (c === '"') { inQuote = true; }
+        else if (c === ',') { row.push(cur); cur = ''; }
+        else if (c === '\n') { row.push(cur); rows.push(row); row = []; cur = ''; }
+        else if (c === '\r') { /* skip */ }
+        else { cur += c; }
+      }
+    }
+    if (cur !== '' || row.length) { row.push(cur); rows.push(row); }
+    return rows;
+  }
+
+  // ブクログ CSV ヘッダーの可能性マッピング（複数のフォーマットに対応）
+  const headerMap = {
+    title: ['タイトル', 'title', 'アイテム名'],
+    isbn: ['ISBN', 'ISBN-13', '13桁ISBN', 'isbn'],
+    isbn10: ['ISBN-10', '10桁ISBN'],
+    author: ['著者', 'author', '作者'],
+    stars: ['評価', 'rating', 'stars', '★'],
+    review: ['レビュー', 'review', '感想'],
+    tags: ['タグ', 'tags'],
+    status: ['読書状況', 'status', '状態'],
+    registered_at: ['登録日時', 'registered', '登録日'],
+    finished_at: ['読了日', 'finished', '完了日'],
+    memo: ['読書メモ', 'memo']
+  };
+
+  function findColumn(headers, candidates) {
+    for (let i = 0; i < headers.length; i++) {
+      const h = (headers[i] || '').trim();
+      if (candidates.includes(h)) return i;
+    }
+    return -1;
+  }
+
+  // CSV を解析して book エントリ配列を返す
+  function csvToBookEntries(csvText) {
+    const rows = parseCSV(csvText);
+    if (rows.length < 2) throw new Error('CSV データなし or ヘッダーのみ');
+    const headers = rows[0];
+    const cols = {};
+    Object.keys(headerMap).forEach(key => {
+      cols[key] = findColumn(headers, headerMap[key]);
+    });
+
+    if (cols.title < 0 && cols.isbn < 0) {
+      throw new Error('ブクログ CSV のタイトル列か ISBN 列が見つかりません');
+    }
+
+    const entries = [];
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i];
+      if (!row || !row.length) continue;
+      const get = (key) => cols[key] >= 0 ? (row[cols[key]] || '').trim() : '';
+      const title = get('title');
+      const isbn = get('isbn') || get('isbn10');
+      if (!title && !isbn) continue;
+
+      const stars = parseInt(get('stars'), 10);
+      const tagsStr = get('tags');
+      const tags = tagsStr ? tagsStr.split(/[,、]/).map(t => t.trim()).filter(Boolean) : null;
+      const review = get('review') || get('memo');
+
+      const entry = {
+        type: 'book',
+        title: title || ('ISBN: ' + isbn),
+        source: 'booklog'
+      };
+      if (isbn) entry.isbn = isbn;
+      if (get('author')) entry.author = get('author');
+      if (!isNaN(stars) && stars > 0) entry.stars = Math.max(1, Math.min(5, stars));
+      if (review) entry.raw = review;
+      if (tags) entry.tags = tags;
+      if (get('status')) entry.status = get('status');
+      if (get('registered_at')) entry.registered_at = get('registered_at');
+      if (get('finished_at')) entry.finished_at = get('finished_at');
+
+      entries.push(entry);
+    }
+    return entries;
+  }
+
+  // 既存読雨の book エントリと重複チェック（ISBN > タイトル一致）
+  function dedupAgainstYomu(newEntries) {
+    const existing = (UIKI.yomu.state().entries || []).filter(e => e && e.type === 'book');
+    const existingISBN = new Set(existing.map(e => e.isbn).filter(Boolean));
+    const existingTitles = new Set(existing.map(e => (e.title || '').toLowerCase()).filter(Boolean));
+    const fresh = [];
+    let dupCount = 0;
+    for (const e of newEntries) {
+      const isbnDup = e.isbn && existingISBN.has(e.isbn);
+      const titleDup = !isbnDup && existingTitles.has((e.title || '').toLowerCase());
+      if (isbnDup || titleDup) {
+        dupCount++;
+        continue;
+      }
+      fresh.push(e);
+    }
+    return { fresh, dupCount };
+  }
+
+  // メイン：File オブジェクトを受け取って読雨に投入
+  async function importCSVFile(file) {
+    if (!file) throw new Error('CSV ファイル未選択');
+    const text = await file.text();
+    const entries = csvToBookEntries(text);
+    if (!entries.length) throw new Error('CSV からエントリを抽出できませんでした');
+    const { fresh, dupCount } = dedupAgainstYomu(entries);
+    if (!fresh.length) {
+      return { total: entries.length, fresh: 0, dup: dupCount, added: [] };
+    }
+    // PAT が要る（addEntriesBatch 経由）
+    const cfg = UIKI.store.get('config', null);
+    if (!cfg || !cfg.pat) throw new Error('PAT 未設定（読雨 Gist 書き込みに必要）');
+    const added = await UIKI.yomu.addEntriesBatch(fresh);
+    return { total: entries.length, fresh: fresh.length, dup: dupCount, added };
+  }
+
+  function getProfileUrl() {
+    const cfg = UIKI.store.get('config', null);
+    const name = (cfg && cfg.booklogUsername) || 'mucchimuchimo';
+    return 'https://booklog.jp/users/' + encodeURIComponent(name);
+  }
+
+  return { parseCSV, csvToBookEntries, dedupAgainstYomu, importCSVFile, getProfileUrl };
+})();
 
 // ─────────────────────────────────────────────────────────
 // upload: Google Drive 画像アップロード（OAuth 認証付き）(v2.9 / 2026-05-16)
@@ -3079,7 +3265,7 @@ UIKI.drive = (function() {
     const top = enriched.slice(0, 60);
     const sourceLabel = { name: '📁', exif: '📷', created: '☁️', modified: '🔄' };
     const sourceTitle = { name: 'ファイル名から', exif: 'EXIF撮影時刻', created: 'アップロード時刻', modified: '更新時刻' };
-    wrap.innerHTML = top.map(f => {
+    wrap.innerHTML = top.map((f, idx) => {
       const thumb = f.thumbnailLink
         ? f.thumbnailLink.replace(/=s\d+/, '=s400')
         : 'https://drive.google.com/thumbnail?id=' + f.id + '&sz=w400';
@@ -3088,7 +3274,8 @@ UIKI.drive = (function() {
       const baseName = (f.name || '').replace(/\.[a-z0-9]+$/i, '');
       const srcIcon = sourceLabel[f._source] || '?';
       const srcTitle = sourceTitle[f._source] || '日付不明';
-      return '<a class="body-scan-card" href="' + escapeHtml(view) + '" target="_blank" rel="noopener" title="' + escapeHtml(f.name + ' / ' + dateStr + ' [' + srcTitle + ']') + '">' +
+      const newBadge = idx === 0 ? ' bs-new' : '';
+      return '<a class="body-scan-card' + newBadge + '" href="' + escapeHtml(view) + '" target="_blank" rel="noopener" title="' + escapeHtml(f.name + ' / ' + dateStr + ' [' + srcTitle + ']') + '">' +
         '<img src="' + escapeHtml(thumb) + '" alt="' + escapeHtml(f.name) + '" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display=\'none\'; this.parentNode.classList.add(\'bs-broken\');">' +
         '<div class="bs-meta">' +
           '<div class="bs-date"><span title="' + escapeHtml(srcTitle) + '">' + srcIcon + '</span> ' + escapeHtml(dateStr) + '</div>' +
@@ -3600,7 +3787,7 @@ UIKI.yomu = (function() {
     setInterval(fetchYomu, POLL_MS);
   }
 
-  return { init, fetch: fetchYomu, addEntry, ingestFromQuery, state: () => state };
+  return { init, fetch: fetchYomu, addEntry, addEntriesBatch, ingestFromQuery, state: () => state };
 })();
 
 // ─────────────────────────────────────────────────────────
@@ -5046,11 +5233,13 @@ UIKI.config = (() => {
     const dfm = document.getElementById('cfg-drive-folder-meal');
     const dfs = document.getElementById('cfg-drive-folder-scale');
     const doEl2 = document.getElementById('cfg-drive-oauth');
+    const blEl2 = document.getElementById('cfg-booklog-username');
     if (dk) dk.value = cfg.driveKey || '';
     if (df) df.value = cfg.driveFolderId || '1qCu88aJG93g5BMzUd6sVhXUpxy94Ehgk';
     if (dfm) dfm.value = cfg.driveFolderIdMeal || '129gwV0ySQjJBBTOb-tc2QnDt7xMPRM3v';
     if (dfs) dfs.value = cfg.driveFolderIdScale || '1J387p557UDXODfVu-4bksPkd1lGBXcOV';
     if (doEl2) doEl2.value = cfg.driveOauthClientId || '';
+    if (blEl2) blEl2.value = cfg.booklogUsername || 'mucchimuchimo';
     document.getElementById('config-modal').hidden = false;
   }
   function close() {
@@ -5065,11 +5254,13 @@ UIKI.config = (() => {
     const dfmEl = document.getElementById('cfg-drive-folder-meal');
     const dfsEl = document.getElementById('cfg-drive-folder-scale');
     const doEl = document.getElementById('cfg-drive-oauth');
+    const blEl = document.getElementById('cfg-booklog-username');
     const driveKey = dkEl ? dkEl.value.trim() : '';
     const driveFolderId = dfEl ? dfEl.value.trim() : '';
     const driveFolderIdMeal = dfmEl ? dfmEl.value.trim() : '';
     const driveFolderIdScale = dfsEl ? dfsEl.value.trim() : '';
     const driveOauthClientId = doEl ? doEl.value.trim() : '';
+    const booklogUsername = blEl ? blEl.value.trim() : '';
 
     // v2.8 緩和：PAT または Drive キーのどちらかがあれば保存可
     if (!pat && !driveKey) {
@@ -5087,6 +5278,7 @@ UIKI.config = (() => {
     UIKI.store.set('config', {
       pat, gistId, notifEnabled,
       driveKey, driveFolderId, driveFolderIdMeal, driveFolderIdScale, driveOauthClientId,
+      booklogUsername,
       savedAt: new Date().toISOString()
     });
     showToast(pat ? '設定を保存した' : 'Drive 連携のみで保存した（PAT 未登録）');
@@ -5241,6 +5433,41 @@ function bootstrap() {
   bindUploadButton('drive-upload-btn', 'drive-upload-input', 'drive-upload-status', 'body');
   bindUploadButton('drive-upload-meal-btn', 'drive-upload-meal-input', 'drive-upload-meal-status', 'meal');
   bindUploadButton('drive-upload-scale-btn', 'drive-upload-scale-input', 'drive-upload-scale-status', 'scale');
+
+  // ブクログ プロフィールリンク（v2.17）
+  const booklogLink = document.getElementById('booklog-profile-link');
+  if (booklogLink && UIKI.booklog) {
+    booklogLink.href = UIKI.booklog.getProfileUrl();
+  }
+  // ブクログ CSV 取込ボタン
+  const booklogBtn = document.getElementById('booklog-csv-btn');
+  const booklogInput = document.getElementById('booklog-csv-input');
+  const booklogStatus = document.getElementById('booklog-csv-status');
+  if (booklogBtn && booklogInput) {
+    booklogBtn.addEventListener('click', () => booklogInput.click());
+    booklogInput.addEventListener('change', async () => {
+      const file = booklogInput.files && booklogInput.files[0];
+      if (!file) return;
+      booklogBtn.disabled = true;
+      booklogBtn.textContent = '📥 取込中…';
+      if (booklogStatus) booklogStatus.textContent = '解析中…';
+      try {
+        const result = await UIKI.booklog.importCSVFile(file);
+        showToast('📚 ブクログ取込：新規 ' + result.fresh + ' / 重複 ' + result.dup + ' / 全 ' + result.total);
+        if (booklogStatus) booklogStatus.textContent = '✓ 新規 ' + result.fresh + ' 件 / 重複 ' + result.dup + ' 件';
+        setTimeout(() => UIKI.yomu.fetch(), 1500);
+      } catch (e) {
+        showToast('取込失敗：' + (e.message || String(e)).slice(0, 80));
+        if (booklogStatus) booklogStatus.textContent = '✗ ' + (e.message || '失敗').slice(0, 60);
+        console.warn('booklog import failed', e);
+      } finally {
+        booklogBtn.disabled = false;
+        booklogBtn.textContent = '📥 CSV を取込';
+        booklogInput.value = '';
+        setTimeout(() => { if (booklogStatus) booklogStatus.textContent = ''; }, 8000);
+      }
+    });
+  }
 
   // 体組成計 再読込ボタン
   const driveRefreshScale = document.getElementById('drive-refresh-scale-btn');
