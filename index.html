@@ -4083,13 +4083,16 @@ UIKI.vision = (function() {
   }
 
   // ───── 結果を 読雨 Gist に投入 ─────
-  async function writeToYomu(kind, parsed, imageUrl) {
+  // v2.48: imageDate（画像の撮影日 Date オブジェクト・任意）を受け取り、それを date として使う
+  // 同 metric 同 date のエントリは upsert（旧を削除して新を追加）して日付ごとの一意性を保つ
+  async function writeToYomu(kind, parsed, imageUrl, imageDate) {
     if (!UIKI.yomu || !UIKI.yomu.addEntriesBatch) {
       throw new Error('UIKI.yomu モジュール未ロード');
     }
-    const today = new Date();
-    const ymd = today.getFullYear() + ('0' + (today.getMonth() + 1)).slice(-2) + ('0' + today.getDate()).slice(-2);
-    const hm = ('0' + today.getHours()).slice(-2) + ':' + ('0' + today.getMinutes()).slice(-2);
+    // 画像日付があればそれを使う、無ければ現在時刻
+    const eff = imageDate instanceof Date ? imageDate : new Date();
+    const ymd = eff.getFullYear() + ('0' + (eff.getMonth() + 1)).slice(-2) + ('0' + eff.getDate()).slice(-2);
+    const hm = ('0' + eff.getHours()).slice(-2) + ':' + ('0' + eff.getMinutes()).slice(-2);
 
     const entries = [];
 
@@ -4163,17 +4166,32 @@ UIKI.vision = (function() {
     if (!entries.length) {
       throw new Error('投入可能なデータが空');
     }
+    // v2.48: 同 metric 同 date のエントリを upsert（旧を削除してから新を追加）
+    if (UIKI.yomu.deleteEntry && UIKI.yomu.state) {
+      try {
+        const existing = UIKI.yomu.state().entries || [];
+        const toDelete = existing.filter(e => {
+          if (kind === 'body' && e.type === 'body_scan' && e.date === ymd) return true;
+          if ((kind === 'scale' || kind === 'meal') && e.type === 'health' && e.date === ymd) {
+            return entries.some(n => n.metric === e.metric);
+          }
+          return false;
+        });
+        for (const old of toDelete) {
+          try { await UIKI.yomu.deleteEntry(old.id); } catch(e) { console.warn('upsert del failed', e); }
+        }
+      } catch (e) { console.warn('upsert preparation failed', e); }
+    }
     await UIKI.yomu.addEntriesBatch(entries);
     return entries.length;
   }
 
   // ───── 公開：fullAnalyze（分析 + 投入を一気通貫） ─────
-  async function fullAnalyze(imageUrl, kind, onProgress, fileId) {
-    // 進捗を progress percent + status text の 2 引数で呼ぶ
+  async function fullAnalyze(imageUrl, kind, onProgress, fileId, imageDate) {
     onProgress && onProgress('📥 画像を取得中…', 25);
     const result = await analyzeImage(imageUrl, kind, fileId);
     onProgress && onProgress('🤖 AI 応答を解析中…', 70);
-    const written = await writeToYomu(kind, result.parsed, imageUrl);
+    const written = await writeToYomu(kind, result.parsed, imageUrl, imageDate);
     onProgress && onProgress('☔ 読雨に ' + written + ' 件投入完了（' + result.provider + '）', 100);
     return { ...result, written };
   }
@@ -4425,7 +4443,7 @@ UIKI.drive = (function() {
     let imgUrl = latest.thumbnailLink || ('https://drive.google.com/thumbnail?id=' + latest.id + '&sz=w2000');
     imgUrl = imgUrl.replace(/=s\d+(-c)?$/, '=s2000');
     try {
-      const result = await UIKI.vision.fullAnalyze(imgUrl, kind, () => {}, latest.id);
+      const result = await UIKI.vision.fullAnalyze(imgUrl, kind, () => {}, latest.id, latest._date);
       UIKI.store.set(lastKey, { fileId: latest.id, ts: new Date().toISOString(), failCount: 0 });
       // 読雨セクションを再描画
       setTimeout(() => { try { UIKI.yomu.fetch(); } catch(e){} }, 1500);
@@ -7492,7 +7510,7 @@ function bootstrap() {
         const result = await UIKI.vision.fullAnalyze(imgUrl, kind, (msg, pct) => {
           if (status) status.textContent = msg;
           if (progress && pct != null) progress.querySelector('.vp-fill').style.width = pct + '%';
-        }, latest.id);
+        }, latest.id, latest._date);
         // v2.29 成功率追跡
         const history = UIKI.store.get('vision_history', []);
         history.unshift({ ok: true, kind, ts: new Date().toISOString() });
