@@ -39,6 +39,53 @@
   --tab-accent-rgb: 36, 86, 184;
 }
 
+/* 自己申告チップ（v2.32 / 2026-05-17） */
+.self-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.35rem 0;
+  flex-wrap: wrap;
+}
+.self-label {
+  flex: 0 0 4em;
+  font-size: 0.82rem;
+  color: var(--dim);
+  font-family: var(--sans);
+}
+.self-chips {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+.self-chips button {
+  background: transparent;
+  border: 1px solid var(--faint);
+  border-radius: 999px;
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 0.74rem;
+  padding: 0.22rem 0.6rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.self-chips button:hover { border-color: var(--tab-accent); color: var(--tab-accent); }
+.self-chips button.active {
+  background: var(--tab-accent);
+  border-color: var(--tab-accent);
+  color: #fff;
+  font-weight: 600;
+}
+.tab-page[data-tab="uwiki"] .self-chips button {
+  border-color: rgba(0,0,0,0.18);
+  color: rgba(0,0,0,0.75);
+}
+.tab-page[data-tab="uwiki"] .self-chips button.active {
+  background: var(--tab-accent);
+  border-color: var(--tab-accent);
+  color: #fff;
+}
+
 /* モバイル下部クイック FAB（v2.31 / 2026-05-17） */
 .quick-fab {
   position: fixed;
@@ -3022,6 +3069,31 @@ main { padding-bottom: 5.2rem; }
         </div>
       </div>
       <div id="ts-ai-comment-out" style="margin-bottom: 0.8rem; padding: 0.6rem 0.9rem; background: rgba(var(--tab-accent-rgb), 0.08); border-left: 3px solid var(--tab-accent); border-radius: 0.3rem; font-size: 0.86rem; line-height: 1.6; color: rgba(var(--tab-accent-rgb), 0.95); display: none;"></div>
+      <!-- v2.32 自己申告チップ：気分・疲労・空腹 -->
+      <div class="self-report" style="margin-bottom: 1rem; padding: 0.6rem 0.9rem; border: 1px dashed rgba(var(--tab-accent-rgb), 0.4); border-radius: 0.4rem;">
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.4rem; margin-bottom:0.4rem;">
+          <span style="font-size:0.82rem; color:var(--dim);">今の自己申告（タップで記録）</span>
+          <span style="font-size:0.72rem; color:var(--dim);" id="ts-self-last">未記録</span>
+        </div>
+        <div class="self-row">
+          <span class="self-label">😊 気分</span>
+          <div class="self-chips" data-metric="mood">
+            <button data-v="1">😞 1</button><button data-v="2">😐 2</button><button data-v="3">🙂 3</button><button data-v="4">😄 4</button><button data-v="5">🤩 5</button>
+          </div>
+        </div>
+        <div class="self-row">
+          <span class="self-label">⚡ 疲労</span>
+          <div class="self-chips" data-metric="fatigue">
+            <button data-v="1">完全 1</button><button data-v="2">回復 2</button><button data-v="3">普通 3</button><button data-v="4">疲労 4</button><button data-v="5">限界 5</button>
+          </div>
+        </div>
+        <div class="self-row">
+          <span class="self-label">🍽 空腹</span>
+          <div class="self-chips" data-metric="hunger">
+            <button data-v="1">満腹 1</button><button data-v="2">普通 2</button><button data-v="3">小腹 3</button><button data-v="4">空腹 4</button><button data-v="5">激空 5</button>
+          </div>
+        </div>
+      </div>
       <div class="ts-grid">
         <div class="ts-card ts-rank">
           <div class="ts-label">🤳 今日のランク</div>
@@ -4542,6 +4614,34 @@ UIKI.yomu = (function() {
     // カロリーの月内推移（日付順）
     const calDays = Object.keys(calByDay).sort();
     drawSparkline('m-cal-spark', calDays.map(d => calByDay[d]));
+
+    // v2.32 AI コメント履歴を月次振り返りに追加表示
+    const aiComments = UIKI.store.get('ai_comments', []);
+    const monthComments = aiComments.filter(c => {
+      const d = (c.date || '').replace(/-/g, '');
+      if (d.length < 6) return false;
+      return +d.slice(0, 4) === y && +d.slice(4, 6) - 1 === m;
+    });
+    let aiSection = document.getElementById('m-ai-comments');
+    const monthlyWrap = document.getElementById('monthly-review');
+    if (!aiSection && monthlyWrap) {
+      aiSection = document.createElement('div');
+      aiSection.id = 'm-ai-comments';
+      aiSection.style.marginTop = '1rem';
+      monthlyWrap.appendChild(aiSection);
+    }
+    if (aiSection) {
+      if (monthComments.length) {
+        aiSection.innerHTML = '<div style="font-size:0.82rem; color:var(--dim); margin-bottom:0.4rem;">💬 AI 日次コメント（' + monthComments.length + ' 日分）</div>' +
+          monthComments.slice(0, 14).map(c =>
+            '<div style="padding: 0.4rem 0.7rem; margin: 0.3rem 0; background: rgba(var(--tab-accent-rgb), 0.06); border-left: 2px solid var(--tab-accent); border-radius: 0.2rem; font-size: 0.8rem; line-height: 1.5;">' +
+              '<span style="color:var(--dim); font-family:var(--mono); font-size:0.7rem;">' + c.date + '</span> ' + escapeHtml(c.text) +
+            '</div>'
+          ).join('');
+      } else {
+        aiSection.innerHTML = '';
+      }
+    }
   }
 
   // 重力タブの今日のサマリー（v2.24）
@@ -4666,6 +4766,44 @@ UIKI.yomu = (function() {
     const linePath = 'M' + points.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' L');
     const fillPath = linePath + ' L' + w + ',' + h + ' L0,' + h + ' Z';
     svg.innerHTML = '<path class="ts-spark-fill" d="' + fillPath + '"/><path d="' + linePath + '"/>';
+
+    // v2.32 自己申告チップの状態復元 + クリック配線（renderTodaySummary の度に再配線して状態 sync）
+    document.querySelectorAll('.self-chips').forEach(grp => {
+      const metric = grp.dataset.metric;
+      const todayY = today.getFullYear() + '-' + ('0' + (today.getMonth() + 1)).slice(-2) + '-' + ('0' + today.getDate()).slice(-2);
+      const latestSelf = entries.filter(e => e.type === 'self' && e.metric === metric && (e.date === todayY || e.date === todayYmd)).sort((a,b)=>(b.created_at||'').localeCompare(a.created_at||''))[0];
+      grp.querySelectorAll('button').forEach(b => {
+        b.classList.toggle('active', !!latestSelf && String(latestSelf.value) === b.dataset.v);
+        b.onclick = async () => {
+          const cfg = UIKI.store.get('config', {});
+          if (!cfg.pat) { showToast('PAT 必要 ── 設定モーダルを開きます'); setTimeout(()=>UIKI.config.open(),1200); return; }
+          grp.querySelectorAll('button').forEach(x => x.classList.remove('active'));
+          b.classList.add('active');
+          try {
+            await UIKI.yomu.addEntry({
+              type: 'self', metric, value: Number(b.dataset.v), date: todayY, time: ('0'+today.getHours()).slice(-2)+':'+('0'+today.getMinutes()).slice(-2),
+              source: 'self_report', created_at: new Date().toISOString()
+            });
+            showToast('✓ ' + metric + ' = ' + b.dataset.v + ' 記録');
+            const lastEl = document.getElementById('ts-self-last');
+            if (lastEl) lastEl.textContent = '最終: ' + new Date().toLocaleTimeString('ja-JP', {hour:'2-digit',minute:'2-digit'});
+          } catch(e) {
+            showToast('✗ ' + (e.message || '失敗'));
+          }
+        };
+      });
+    });
+    // 最終記録時刻を表示
+    const lastSelfEl = document.getElementById('ts-self-last');
+    if (lastSelfEl) {
+      const selfs = entries.filter(e => e.type === 'self').sort((a,b)=>(b.created_at||'').localeCompare(a.created_at||''));
+      if (selfs[0]) {
+        const ts = (selfs[0].created_at || '').slice(11, 16);
+        const d = (selfs[0].created_at || '').slice(0, 10);
+        const todayDs = today.getFullYear() + '-' + ('0' + (today.getMonth() + 1)).slice(-2) + '-' + ('0' + today.getDate()).slice(-2);
+        lastSelfEl.textContent = (d === todayDs ? '最終: ' + ts : '今日はまだ');
+      }
+    }
 
     // 4) 自動分析チップ + Vision 成功率
     const cfg = UIKI.store.get('config', {});
@@ -6719,6 +6857,12 @@ function bootstrap() {
         const text = resp?.candidates?.[0]?.content?.parts?.[0]?.text || '応答なし';
         out.style.display = 'block';
         out.textContent = '💬 ' + text.trim();
+        // v2.32 AI コメントを localStorage に保存（日次・最大 90 日）
+        const history = UIKI.store.get('ai_comments', []);
+        const todayY = new Date().getFullYear() + '-' + ('0' + (new Date().getMonth() + 1)).slice(-2) + '-' + ('0' + new Date().getDate()).slice(-2);
+        const filtered = history.filter(h => h.date !== todayY);
+        filtered.unshift({ date: todayY, text: text.trim(), ts: new Date().toISOString() });
+        UIKI.store.set('ai_comments', filtered.slice(0, 90));
       } catch(e) {
         showToast('✗ ' + (e.message || '失敗'));
       } finally {
