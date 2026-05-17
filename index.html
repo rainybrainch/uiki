@@ -2883,6 +2883,15 @@ main { padding-bottom: 5.2rem; }
     </div>
   </section>
 
+  <!-- v2.41 メモ一覧（type=memo） -->
+  <section class="yomu-section reveal">
+    <h3>📝 読雨から ── 最近のメモ <span class="yomu-from">type=memo</span></h3>
+    <p class="yomu-desc">砂のログから「📝 メモとして保存」で投入した自由テキスト。最新 5 件。</p>
+    <div class="yomu-quote-list" id="yomu-memos">
+      <div class="yomu-loading yomu-empty">読み込み中…</div>
+    </div>
+  </section>
+
   <!-- 読雨統合：読書 + ブクログ連携（v2.17 / 本棚差分 v2.37） -->
   <section class="yomu-section reveal">
     <h3>📖 読雨から ── 最近の読書 <span class="yomu-from">type=book</span> <span class="yomu-from" id="yomu-book-stats" style="margin-left:0.4rem;">— 件</span></h3>
@@ -4686,9 +4695,28 @@ UIKI.yomu = (function() {
     renderBodyScans();
     renderQuotes();
     renderBooks();
+    renderMemos();
     renderTodaySummary();
     renderHomeTodaySummary();
     renderMonthlyReview();
+  }
+
+  // v2.41 メモ一覧（type=memo）
+  function renderMemos() {
+    const wrap = document.getElementById('yomu-memos');
+    if (!wrap) return;
+    const memos = byType('memo').sort((a, b) => (b.created_at || '').localeCompare(a.created_at || '')).slice(0, 5);
+    if (!memos.length) {
+      wrap.innerHTML = '<div class="yomu-empty">まだメモがない。砂のログに書いて「📝 メモとして保存」を押すと、ここに表示されます。</div>';
+      return;
+    }
+    wrap.innerHTML = memos.map(m => {
+      const date = (m.created_at || m.date || '').slice(0, 10);
+      return '<blockquote class="yomu-quote-item" data-yomu-id="' + escapeHtml(m.id || '') + '">' +
+        '<p>' + escapeHtml(m.text || '') + '</p>' +
+        '<footer>' + escapeHtml(date) + (m.weight ? ' ｜ 重力 ' + m.weight : '') + '</footer>' +
+        '</blockquote>';
+    }).join('');
   }
 
   // v2.27 月次振り返り：雨域 AI への材料
