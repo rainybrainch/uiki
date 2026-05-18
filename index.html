@@ -3679,6 +3679,11 @@ main { padding-bottom: 5.2rem; }
           <svg class="ts-spark" id="m-cal-spark" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true"></svg>
         </div>
         <div class="ts-card">
+          <div class="ts-label">🥗 PFC 月平均</div>
+          <div class="ts-value" id="m-pfc-summary" style="font-size: 0.9rem;">—</div>
+          <div class="ts-sub" id="m-pfc-ratio">P : F : C</div>
+        </div>
+        <div class="ts-card">
           <div class="ts-label">☑ 完了タスク</div>
           <div class="ts-value" id="m-tasks-done">—</div>
           <div class="ts-sub" id="m-tasks-rate">日 — 件平均</div>
@@ -5762,6 +5767,42 @@ UIKI.yomu = (function() {
     // カロリーの月内推移（日付順）
     const calDays = Object.keys(calByDay).sort();
     drawSparkline('m-cal-spark', calDays.map(d => calByDay[d]));
+
+    // v2.74 PFC 月平均
+    const pfcSum = { p: 0, f: 0, c: 0 };
+    let pfcDayCount = 0;
+    const pfcByDay = {};
+    entries.filter(e => e.type === 'health' && ['meal_protein','meal_fat','meal_carb'].includes(e.metric) && isThisMonth(e)).forEach(e => {
+      const d = (e.date || '').replace(/-/g, '').slice(0, 8);
+      if (!d) return;
+      if (!pfcByDay[d]) { pfcByDay[d] = { p: 0, f: 0, c: 0 }; }
+      const key = e.metric === 'meal_protein' ? 'p' : e.metric === 'meal_fat' ? 'f' : 'c';
+      pfcByDay[d][key] += Number(e.value || 0);
+    });
+    Object.values(pfcByDay).forEach(day => {
+      pfcSum.p += day.p; pfcSum.f += day.f; pfcSum.c += day.c;
+      pfcDayCount++;
+    });
+    const pfcSumEl = document.getElementById('m-pfc-summary');
+    const pfcRatioEl = document.getElementById('m-pfc-ratio');
+    if (pfcSumEl) {
+      if (pfcDayCount > 0) {
+        const ap = (pfcSum.p / pfcDayCount).toFixed(0);
+        const af = (pfcSum.f / pfcDayCount).toFixed(0);
+        const ac = (pfcSum.c / pfcDayCount).toFixed(0);
+        pfcSumEl.innerHTML = '<span style="color:#e74c3c;">' + ap + 'g</span> ／ <span style="color:#d4915c;">' + af + 'g</span> ／ <span style="color:#6db96d;">' + ac + 'g</span>';
+        const total = pfcSum.p + pfcSum.f + pfcSum.c;
+        if (total > 0) {
+          const rp = Math.round(pfcSum.p / total * 100);
+          const rf = Math.round(pfcSum.f / total * 100);
+          const rc = 100 - rp - rf;
+          if (pfcRatioEl) pfcRatioEl.textContent = 'P:' + rp + '% F:' + rf + '% C:' + rc + '%';
+        }
+      } else {
+        pfcSumEl.textContent = '—';
+        if (pfcRatioEl) pfcRatioEl.textContent = '記録なし';
+      }
+    }
 
     // v2.32 AI コメント履歴を月次振り返りに追加表示
     const aiComments = UIKI.store.get('ai_comments', []);
