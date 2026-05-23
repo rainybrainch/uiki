@@ -226,45 +226,53 @@ body.delete-mode [data-yomu-id]:hover::after { background: rgba(220, 50, 30, 1);
 }
 @media (max-width: 600px) { .self-spark { flex: 0 0 60px; } }
 
-/* モバイル下部 FAB ── v2.45 シングル UwikiAI ボタン */
+/* モバイル下部 FAB ── v2.80 降雨端末 水滴型 */
+@keyframes fab-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(58,111,201,0.5), 0 6px 20px rgba(0,0,0,0.45); }
+  50%       { box-shadow: 0 0 0 10px rgba(58,111,201,0), 0 8px 28px rgba(58,111,201,0.3); }
+}
 .quick-fab-single {
   position: fixed;
   bottom: 80px;
   right: 16px;
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  border: 2px solid rgba(255,255,255,0.25);
-  background: linear-gradient(135deg, #b87a3a 0%, #3a6fc9 100%);
+  width: 58px;
+  height: 58px;
+  border-radius: 50% 50% 50% 20% / 50% 50% 40% 60%;
+  border: 1px solid rgba(58,111,201,0.5);
+  background: radial-gradient(ellipse at 35% 35%, #1e3a7a 0%, #0a1530 70%);
   color: #fff;
-  font-size: 1.8rem;
+  font-size: 1.5rem;
   cursor: pointer;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.4);
   z-index: 60;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), border-color 0.2s;
   display: grid;
   place-items: center;
+  animation: fab-pulse 3s ease-in-out infinite;
 }
 .quick-fab-single:hover {
-  transform: scale(1.08);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  transform: scale(1.12) rotate(-6deg);
+  border-color: var(--rain-blue);
+  animation: none;
+  box-shadow: 0 0 24px rgba(58,111,201,0.5), 0 8px 28px rgba(0,0,0,0.5);
 }
 .quick-fab-single::after {
-  content: 'UwikiAI';
+  content: '降雨端末';
   position: absolute;
-  right: 70px;
+  right: 68px;
   top: 50%;
   transform: translateY(-50%);
-  background: rgba(7,9,15,0.92);
-  color: #fff;
-  font-size: 0.74rem;
-  padding: 0.3rem 0.7rem;
+  background: rgba(10,21,48,0.96);
+  color: var(--gold);
+  font-size: 0.72rem;
+  font-family: var(--serif);
+  padding: 0.3rem 0.8rem;
   border-radius: 999px;
-  font-family: var(--sans);
+  border: 1px solid rgba(201,168,76,0.3);
   white-space: nowrap;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.2s;
+  letter-spacing: 0.05em;
 }
 .quick-fab-single:hover::after { opacity: 1; }
 body.public-mode .quick-fab-single { display: none !important; }
@@ -335,50 +343,256 @@ body.tab-uwiki .qf-item {
 }
 body.public-mode .quick-fab { display: none !important; }
 
-/* UwikiAI チャット（v2.45 / 2026-05-17） */
+/* UwikiAI チャット（v2.80 降雨端末） */
+@keyframes rain-drop-in {
+  from { opacity: 0; transform: translateY(-8px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
 .uw-msg {
-  margin-bottom: 0.8rem;
-  padding: 0.6rem 0.9rem;
-  border-radius: 0.5rem;
-  font-size: 0.92rem;
-  line-height: 1.55;
-  max-width: 90%;
+  margin-bottom: 0.9rem;
+  padding: 0.65rem 1rem;
+  font-size: 0.91rem;
+  line-height: 1.6;
+  max-width: 88%;
+  animation: rain-drop-in 0.22s ease-out;
+  position: relative;
 }
 .uw-msg p { margin: 0 0 0.3rem; }
 .uw-msg p:last-child { margin-bottom: 0; }
+
+/* AI発言 ── 雨粒（左から降る） */
 .uw-msg-ai {
-  background: rgba(58, 111, 201, 0.1);
-  border-left: 3px solid var(--rain-blue);
-  color: var(--ink);
+  background: linear-gradient(135deg, rgba(20,42,90,0.85) 0%, rgba(36,86,184,0.12) 100%);
+  border: 1px solid rgba(58,111,201,0.3);
+  border-radius: 4px 18px 18px 18px;
+  box-shadow: 0 0 12px rgba(58,111,201,0.12), inset 0 1px 0 rgba(58,111,201,0.15);
+  color: rgba(200,220,255,0.9);
   margin-right: auto;
 }
+.uw-msg-ai::before {
+  content: '☔';
+  position: absolute;
+  top: -10px;
+  left: 0;
+  font-size: 0.7rem;
+  opacity: 0.5;
+}
+
+/* ユーザー発言 ── 砂金（右から沈む） */
 .uw-msg-user {
-  background: rgba(212, 145, 92, 0.15);
-  border-right: 3px solid #d4915c;
+  background: linear-gradient(135deg, rgba(90,55,10,0.7) 0%, rgba(201,168,76,0.12) 100%);
+  border: 1px solid rgba(201,168,76,0.3);
+  border-radius: 18px 4px 18px 18px;
+  box-shadow: 0 0 12px rgba(201,168,76,0.1), inset 0 1px 0 rgba(201,168,76,0.12);
+  color: rgba(255,230,160,0.9);
   margin-left: auto;
   text-align: right;
 }
+
 .uw-msg a {
-  color: var(--rain-blue);
-  text-decoration: underline;
+  color: #7ab4ff;
+  text-decoration: none;
   word-break: break-all;
   display: inline-block;
-  padding: 0.2rem 0.4rem;
-  background: rgba(58, 111, 201, 0.08);
+  padding: 0.18rem 0.5rem;
+  background: rgba(58,111,201,0.15);
   border-radius: 0.3rem;
+  border: 1px solid rgba(58,111,201,0.25);
   margin: 0.2rem 0;
+  transition: background 0.15s;
 }
-.uw-msg a:hover { background: rgba(58, 111, 201, 0.18); }
+.uw-msg a:hover { background: rgba(58,111,201,0.28); }
+
+@keyframes rain-shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
 .uw-msg-loading {
-  background: rgba(255, 255, 255, 0.04);
+  background: linear-gradient(90deg, rgba(36,86,184,0.06) 25%, rgba(58,111,201,0.14) 50%, rgba(36,86,184,0.06) 75%);
+  background-size: 200% auto;
+  animation: rain-shimmer 1.8s linear infinite;
+  border: 1px solid rgba(58,111,201,0.15);
+  border-radius: 4px 18px 18px 18px;
   font-style: italic;
   color: var(--dim);
+  font-family: var(--serif);
+  letter-spacing: 0.04em;
 }
 .uw-msg-error {
-  background: rgba(231, 76, 60, 0.12);
-  border-left: 3px solid #e74c3c;
-  color: #e74c3c;
+  background: rgba(231,76,60,0.1);
+  border: 1px solid rgba(231,76,60,0.3);
+  border-radius: 4px 18px 18px 18px;
+  color: #ff8080;
 }
+
+/* UwikiAI チャットモーダル構造クラス（v2.80 / インラインstyle廃止） */
+.uw-modal-wrap {
+  max-width: 720px;
+  width: 100%;
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  border: 1px solid rgba(58,111,201,0.25);
+  background: #07090f;
+  overflow: hidden;
+}
+.uw-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.9rem 1.2rem;
+  border-bottom: 1px solid rgba(58,111,201,0.2);
+  position: relative;
+  overflow: hidden;
+}
+.uw-modal-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(58,111,201,0.18) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 30%, rgba(201,168,76,0.08) 0%, transparent 50%),
+    radial-gradient(circle at 15% 20%, rgba(255,255,255,0.9) 0%, transparent 0.6px),
+    radial-gradient(circle at 42% 70%, rgba(255,255,255,0.7) 0%, transparent 0.5px),
+    radial-gradient(circle at 68% 15%, rgba(255,255,255,0.8) 0%, transparent 0.5px),
+    radial-gradient(circle at 85% 60%, rgba(255,255,255,0.6) 0%, transparent 0.4px),
+    radial-gradient(circle at 55% 45%, rgba(255,255,255,0.5) 0%, transparent 0.4px),
+    #07090f;
+  pointer-events: none;
+}
+.uw-header-left,
+.uw-header-right { position: relative; z-index: 1; }
+.uw-header-right { display: flex; gap: 0.4rem; align-items: center; }
+.uw-modal-title {
+  font-family: var(--serif);
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--gold);
+  letter-spacing: 0.06em;
+}
+.uw-modal-subtitle {
+  font-size: 0.72rem;
+  color: var(--dim);
+  margin-left: 0.6rem;
+  font-family: var(--mono);
+}
+.uw-btn-clear {
+  background: transparent;
+  border: 1px solid rgba(58,111,201,0.3);
+  color: var(--dim);
+  font-size: 0.72rem;
+  cursor: pointer;
+  padding: 0.22rem 0.6rem;
+  border-radius: 999px;
+  font-family: var(--mono);
+  transition: border-color 0.15s, color 0.15s;
+  letter-spacing: 0.03em;
+}
+.uw-btn-clear:hover { border-color: var(--rain-blue); color: #7ab4ff; }
+.uw-btn-close {
+  background: transparent;
+  border: none;
+  color: var(--dim);
+  font-size: 1.3rem;
+  cursor: pointer;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  transition: color 0.15s, background 0.15s;
+  font-family: var(--mono);
+}
+.uw-btn-close:hover { color: #fff; background: rgba(255,255,255,0.08); }
+.uw-messages-area {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 1.1rem 1.3rem;
+  min-height: 320px;
+  max-height: 60vh;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(58,111,201,0.3) transparent;
+}
+.uw-quick-row {
+  padding: 0.45rem 1.2rem 0;
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+  border-top: 1px solid rgba(58,111,201,0.12);
+  align-items: center;
+}
+.uw-quick-edit-btn {
+  background: transparent;
+  border: 1px dashed rgba(58,111,201,0.25);
+  color: var(--dim);
+  padding: 0.22rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  cursor: pointer;
+  margin-left: auto;
+  font-family: var(--mono);
+  transition: border-color 0.15s;
+}
+.uw-quick-edit-btn:hover { border-color: var(--rain-blue); }
+.uw-input-row {
+  padding: 0.5rem 1.2rem 0.85rem;
+  display: flex;
+  gap: 0.5rem;
+}
+.uw-textarea {
+  flex: 1;
+  resize: none;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid rgba(58,111,201,0.25);
+  border-radius: 0.4rem;
+  background: rgba(10,21,48,0.8);
+  color: rgba(200,220,255,0.9);
+  font-family: var(--sans);
+  font-size: 0.91rem;
+  line-height: 1.5;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline: none;
+}
+.uw-textarea:focus {
+  border-color: var(--rain-blue);
+  box-shadow: 0 0 0 2px rgba(58,111,201,0.15);
+}
+.uw-textarea::placeholder { color: rgba(255,255,255,0.22); }
+.uw-send-btn {
+  background: linear-gradient(160deg, #1a3a7a 0%, #3a6fc9 100%);
+  color: rgba(200,230,255,0.95);
+  border: 1px solid rgba(58,111,201,0.4);
+  padding: 0.6rem 1.1rem;
+  border-radius: 0.4rem;
+  cursor: pointer;
+  font-weight: 600;
+  font-family: var(--serif);
+  font-size: 0.88rem;
+  letter-spacing: 0.06em;
+  transition: background 0.2s, box-shadow 0.2s;
+  white-space: nowrap;
+}
+.uw-send-btn:hover {
+  background: linear-gradient(160deg, #223d80 0%, #4a7fd9 100%);
+  box-shadow: 0 0 14px rgba(58,111,201,0.35);
+}
+
+/* 設定モーダル select 統一（v2.80） */
+.cfg-select {
+  width: 100%;
+  padding: 0.6rem;
+  background: rgba(10,21,48,0.8);
+  border: 1px solid rgba(58,111,201,0.25);
+  border-radius: 0.4rem;
+  color: rgba(200,220,255,0.85);
+  font-family: var(--sans);
+  font-size: 0.9rem;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.cfg-select:focus { border-color: var(--rain-blue); }
 
 /* Vision 進捗バー（v2.28 / 2026-05-17） */
 .vision-progress {
@@ -4029,7 +4243,7 @@ main { padding-bottom: 5.2rem; }
       <small>有料。プロバイダ「Claude 優先」にすると優先される。</small>
     </label>
     <label>優先プロバイダ
-      <select id="cfg-vision-provider" style="width: 100%; padding: 0.6rem; background: var(--bg-elev); border: 1px solid var(--faint); border-radius: 0.4rem; color: var(--ink);">
+      <select id="cfg-vision-provider" class="cfg-select">
         <option value="gemini">Gemini 優先（無料）</option>
         <option value="claude">Claude 優先（有料・高精度）</option>
         <option value="auto">自動（キーがある方）</option>
@@ -4104,39 +4318,39 @@ main { padding-bottom: 5.2rem; }
   </div>
 </div>
 
-<!-- v2.45 UwikiAI チャットモーダル（雨域内・他ページに飛ばない） -->
+<!-- v2.80 UwikiAI チャットモーダル「降雨端末」 -->
 <div class="modal-overlay" id="uwikiai-modal" hidden>
-  <div class="modal" style="max-width: 720px; width: 100%; max-height: 92vh; display: flex; flex-direction: column; padding: 0;">
-    <div style="display:flex; align-items:center; justify-content:space-between; padding: 0.9rem 1.2rem; border-bottom: 1px solid var(--faint); background: linear-gradient(135deg, rgba(212,145,92,0.18) 0%, rgba(58,111,201,0.18) 100%);">
-      <div>
-        <span style="font-family: var(--serif); font-size: 1.1rem; font-weight: 600;">🤖 UwikiAI</span>
-        <span style="font-size: 0.74rem; color: var(--dim); margin-left: 0.6rem;">雨域の AI 管理人 <span id="uwikiai-count" style="margin-left:0.4rem;"></span></span>
+  <div class="modal uw-modal-wrap">
+    <div class="uw-modal-header">
+      <div class="uw-header-left">
+        <span class="uw-modal-title">☔ UwikiAI</span>
+        <span class="uw-modal-subtitle">降雨端末 / 雨域番人 <span id="uwikiai-count"></span></span>
       </div>
-      <div style="display:flex; gap:0.4rem; align-items:center;">
-        <button id="uwikiai-clear" aria-label="UwikiAI 履歴をクリア" title="履歴をクリア" style="background: transparent; border: 1px solid var(--faint); color: var(--dim); font-size: 0.74rem; cursor: pointer; padding: 0.25rem 0.6rem; border-radius: 999px;">🗑 履歴</button>
-        <button id="uwikiai-close" aria-label="UwikiAI チャットを閉じる" style="background: transparent; border: none; color: var(--ink); font-size: 1.4rem; cursor: pointer; width: 32px; height: 32px; border-radius: 50%;">×</button>
+      <div class="uw-header-right">
+        <button id="uwikiai-clear" class="uw-btn-clear" aria-label="UwikiAI 履歴をクリア" title="履歴をクリア">🗑 履歴</button>
+        <button id="uwikiai-close" class="uw-btn-close" aria-label="UwikiAI チャットを閉じる">×</button>
       </div>
     </div>
-    <div id="uwikiai-messages" style="flex: 1 1 auto; overflow-y: auto; padding: 1rem 1.2rem; min-height: 320px; max-height: 60vh;">
+    <div id="uwikiai-messages" class="uw-messages-area">
       <div class="uw-msg uw-msg-ai">
-        <p>こんにちは、服牢。雨域の AI 管理人 <strong>UwikiAI</strong> です。</p>
-        <p>話しかけてくれれば、雨域に投入できる URL に自動変換して返します：</p>
-        <ul style="margin: 0.5rem 0 0.5rem 1.2rem; font-size: 0.85rem; color: var(--dim);">
-          <li>「明日 マネぼう完成させる」→ タスク追加</li>
+        <p>降雨端末、起動。服牢、聞こえるか。</p>
+        <p>自然言語を雨域 URL に変換して返す。話しかけてくれ：</p>
+        <ul style="margin: 0.5rem 0 0.5rem 1.2rem; font-size: 0.84rem; color: rgba(180,210,255,0.6);">
+          <li>「明日マネぼう完成させる」→ タスク追加</li>
           <li>「このすば30話読んだ ★5」→ 読書記録</li>
           <li>「体重 68.5kg」→ 健康データ</li>
           <li>「刻んで：創造性は重力に逆らう知性」→ 名言</li>
         </ul>
-        <p style="font-size: 0.85rem;">他ページに飛ばなくても、ここで完結します。</p>
+        <p style="font-size: 0.83rem; color: rgba(180,210,255,0.5);">降った雨は、還らない。</p>
       </div>
     </div>
-    <div id="uwikiai-quick-row" style="padding: 0.5rem 1.2rem 0; display: flex; gap: 0.3rem; flex-wrap: wrap; border-top: 1px solid var(--faint); align-items: center;">
+    <div id="uwikiai-quick-row" class="uw-quick-row">
       <!-- v2.76 クイック候補は JS で動的描画 -->
-      <button id="uwikiai-quick-edit" aria-label="クイック候補を編集" title="クイック候補を編集" style="background: transparent; border: 1px dashed var(--faint); color: var(--dim); padding: 0.25rem 0.5rem; border-radius: 999px; font-size: 0.7rem; cursor: pointer; margin-left: auto;">+ 編集</button>
+      <button id="uwikiai-quick-edit" class="uw-quick-edit-btn" aria-label="クイック候補を編集" title="クイック候補を編集">+ 編集</button>
     </div>
-    <div style="padding: 0.5rem 1.2rem 0.8rem; display: flex; gap: 0.5rem;">
-      <textarea id="uwikiai-input" placeholder="雨域に投入したいことを呟く..." rows="2" style="flex: 1; resize: none; padding: 0.6rem; border: 1px solid var(--faint); border-radius: 0.4rem; background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 0.92rem;"></textarea>
-      <button id="uwikiai-send" aria-label="UwikiAI に送信" style="background: linear-gradient(135deg, #b87a3a, #3a6fc9); color: #fff; border: none; padding: 0.6rem 1.2rem; border-radius: 0.4rem; cursor: pointer; font-weight: 600;">送信</button>
+    <div class="uw-input-row">
+      <textarea id="uwikiai-input" class="uw-textarea" placeholder="降らせたいことを呟く..." rows="2"></textarea>
+      <button id="uwikiai-send" class="uw-send-btn" aria-label="UwikiAI に送信">降らせる</button>
     </div>
   </div>
 </div>
