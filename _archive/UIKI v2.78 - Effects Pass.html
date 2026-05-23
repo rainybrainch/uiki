@@ -3132,6 +3132,283 @@ main { padding-bottom: 5.2rem; }
   padding-bottom: 0.6rem;
 }
 </style>
+
+<!-- ═════════════════════════════════════════════════════════════
+     v2.78 ── Effects Pass: 既存構造を一切壊さない CSS オーバーレイ
+     ・全エフェクトは keyframes + 既存セレクタへの animation 付与
+     ・色・配置・サイズは触らない（非破壊原則）
+     ═════════════════════════════════════════════════════════════ -->
+<style id="uiki-effects-v278">
+
+/* ── Keyframes ─────────────────────────────────────── */
+@keyframes uikifx-breathe {
+  0%, 100% { transform: scale(1);    opacity: 0.92; }
+  50%      { transform: scale(1.04); opacity: 1; }
+}
+@keyframes uikifx-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-3px); }
+}
+@keyframes uikifx-glow {
+  0%, 100% { box-shadow: 0 0 6px currentColor; }
+  50%      { box-shadow: 0 0 16px currentColor, 0 0 24px currentColor; }
+}
+@keyframes uikifx-conic-spin {
+  0%   { transform: rotate(0deg);   }
+  100% { transform: rotate(360deg); }
+}
+@keyframes uikifx-pulse-ring {
+  0%   { transform: scale(0.85); opacity: 0.6; }
+  100% { transform: scale(1.8);  opacity: 0;   }
+}
+@keyframes uikifx-shimmer {
+  0%   { background-position: -150% 0; }
+  100% { background-position:  250% 0; }
+}
+@keyframes uikifx-shine {
+  0%   { transform: translateX(-110%) skewX(-14deg); }
+  60%  { transform: translateX(310%)  skewX(-14deg); }
+  100% { transform: translateX(310%)  skewX(-14deg); }
+}
+@keyframes uikifx-drop-in {
+  0%   { transform: translateY(8px)  scale(0.97); opacity: 0.6; }
+  70%  { transform: translateY(-1px) scale(1.01); opacity: 1;   }
+  100% { transform: translateY(0)    scale(1);    opacity: 1;   }
+}
+@keyframes uikifx-stream-dots {
+  0%, 100% { opacity: 0.25; }
+  50%      { opacity: 1;    }
+}
+@keyframes uikifx-wave-rise {
+  0%   { transform: translateY(6px) scale(0.78); opacity: 0.55; }
+  100% { transform: translateY(0)   scale(1);    opacity: 1;    }
+}
+@keyframes uikifx-blink {
+  0%, 60%  { opacity: 1;    }
+  80%, 100%{ opacity: 0.18; }
+}
+
+/* ── FAB: rotating conic halo + breathing + pulse ring ── */
+.quick-fab-single {
+  position: fixed;
+  isolation: isolate;
+  animation: uikifx-breathe 3.6s ease-in-out infinite;
+}
+.quick-fab-single::before {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, #b87a3a, #3a6fc9, #d4915c, #5d8ad1, #b87a3a);
+  filter: blur(7px);
+  opacity: 0.55;
+  z-index: -1;
+  animation: uikifx-conic-spin 6.5s linear infinite;
+}
+.quick-fab-single::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.28);
+  animation: uikifx-pulse-ring 2.6s ease-out infinite;
+  pointer-events: none;
+}
+
+/* ── Tab bar: active icon float + indicator glow ── */
+.tab-bar button.active .tab-icon {
+  animation: uikifx-float 3s ease-in-out infinite;
+}
+.tab-bar button.active {
+  color: var(--tab-accent);
+}
+.tab-bar button.active::after {
+  content: "";
+  position: absolute;
+  top: 4px; left: 50%;
+  width: 24px; height: 2px;
+  transform: translateX(-50%);
+  background: var(--tab-accent);
+  border-radius: 1px;
+  box-shadow: 0 0 10px var(--tab-accent);
+  animation: uikifx-glow 2.6s ease-in-out infinite;
+  color: var(--tab-accent);
+}
+
+/* ── Calendar today cell: breathing + soft ring ── */
+.cal-cell.cal-today {
+  box-shadow: 0 0 0 3px rgba(var(--tab-accent-rgb), 0.16);
+  animation: uikifx-breathe 3.2s ease-in-out infinite;
+}
+
+/* ── Big cards: floating icon + idle shine sweep ── */
+.uwiki-bigcard .bigcard-icon {
+  display: inline-block;
+  animation: uikifx-float 4.2s ease-in-out infinite;
+}
+.uwiki-bigcard {
+  position: relative;
+  overflow: hidden;
+}
+.uwiki-bigcard > .uikifx-shine,
+.uwiki-bigcard::after {
+  content: "";
+  position: absolute;
+  top: 0; bottom: 0; width: 40%;
+  background: linear-gradient(100deg, transparent 0%, rgba(255,255,255,0.10) 50%, transparent 100%);
+  animation: uikifx-shine 7s ease-in-out infinite;
+  pointer-events: none;
+}
+.uwiki-bigcard.gravity-bigcard::after  { animation-delay: 0s; }
+.uwiki-bigcard.attraction-bigcard::after { animation-delay: 3.2s; }
+
+/* ── Sand log items: drop-in stagger ── */
+.sand-item {
+  animation: uikifx-drop-in 0.55s ease-out both;
+}
+.sand-item:nth-child(1) { animation-delay: 0.05s; }
+.sand-item:nth-child(2) { animation-delay: 0.18s; }
+.sand-item:nth-child(3) { animation-delay: 0.31s; }
+.sand-item:nth-child(4) { animation-delay: 0.44s; }
+.sand-item:nth-child(5) { animation-delay: 0.57s; }
+.sand-item:nth-child(n+6) { animation-delay: 0.70s; }
+
+/* heavy sand items get a slow gravity pulse */
+.sand-item.weight-5 {
+  animation: uikifx-drop-in 0.6s ease-out both, uikifx-breathe 5s ease-in-out 0.8s infinite;
+}
+
+/* ── Yomu quote items: drop-in stagger ── */
+.yomu-quote-item {
+  animation: uikifx-drop-in 0.55s ease-out both;
+}
+.yomu-quote-item:nth-of-type(1) { animation-delay: 0.05s; }
+.yomu-quote-item:nth-of-type(2) { animation-delay: 0.16s; }
+.yomu-quote-item:nth-of-type(3) { animation-delay: 0.27s; }
+.yomu-quote-item:nth-of-type(4) { animation-delay: 0.38s; }
+.yomu-quote-item:nth-of-type(5) { animation-delay: 0.49s; }
+.yomu-quote-item:nth-of-type(n+6) { animation-delay: 0.60s; }
+
+/* ── Today summary number values: subtle breathing ── */
+.ts-card .ts-value {
+  display: inline-block;
+  animation: uikifx-breathe 4.2s ease-in-out infinite;
+}
+
+/* ── Submit button + invoke toggle: shine sweep ── */
+.submit-btn, .invoke-toggle {
+  position: relative;
+  overflow: hidden;
+}
+.submit-btn::after, .invoke-toggle::after {
+  content: "";
+  position: absolute;
+  top: 0; bottom: 0; width: 40%;
+  background: linear-gradient(100deg, transparent 0%, rgba(255,255,255,0.30) 50%, transparent 100%);
+  animation: uikifx-shine 4.5s ease-in-out infinite;
+  pointer-events: none;
+}
+.invoke-toggle::after {
+  background: linear-gradient(100deg, transparent 0%, rgba(201,168,76,0.22) 50%, transparent 100%);
+  animation: uikifx-shine 6s ease-in-out infinite;
+}
+
+/* ── UwikiAI loading: pulsing stream ── */
+.uw-msg-loading {
+  position: relative;
+  animation: uikifx-stream-dots 1.4s ease-in-out infinite;
+}
+
+/* ── Lock unlock button: outer pulse ring ── */
+#uwiki-unlock-btn {
+  isolation: isolate;
+}
+#uwiki-unlock-btn::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 999px;
+  border: 1.5px solid var(--rain-blue);
+  animation: uikifx-pulse-ring 2.4s ease-out infinite;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* ── Self-report active chip: subtle glow ── */
+.self-chips button.active {
+  color: #fff;
+  animation: uikifx-glow 3s ease-in-out infinite;
+}
+
+/* ── Section headers: gentle text float ── */
+.section-label,
+.yomu-section h3 {
+  position: relative;
+}
+.section-label::before,
+.yomu-section h3::before {
+  content: "";
+  position: absolute;
+  left: -10px; top: 50%;
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: var(--tab-accent);
+  transform: translateY(-50%);
+  box-shadow: 0 0 6px var(--tab-accent);
+  animation: uikifx-glow 2.8s ease-in-out infinite;
+  color: var(--tab-accent);
+  opacity: 0.6;
+}
+
+/* ── Visited stamp: gentle pulse on the today badge ── */
+.visited-stamp {
+  animation: uikifx-breathe 3.4s ease-in-out infinite;
+}
+
+/* ── Filter chip active: glow ── */
+.filter-chip.active {
+  box-shadow: 0 0 0 1px rgba(var(--tab-accent-rgb), 0.35);
+  animation: uikifx-glow 3.4s ease-in-out infinite;
+  color: var(--tab-accent);
+}
+
+/* ── Sand "depth" weight-5 strong items: orbital halo ── */
+.sand-item.weight-5::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 0.4rem;
+  background: linear-gradient(120deg, transparent 0%, rgba(184,122,58,0.10) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: uikifx-shimmer 4.5s linear infinite;
+  pointer-events: none;
+}
+
+/* ── Reduce motion: kill animations for users who opted out ── */
+@media (prefers-reduced-motion: reduce) {
+  .quick-fab-single,
+  .quick-fab-single::before,
+  .quick-fab-single::after,
+  .tab-bar button.active .tab-icon,
+  .tab-bar button.active::after,
+  .cal-cell.cal-today,
+  .uwiki-bigcard .bigcard-icon,
+  .uwiki-bigcard::after,
+  .sand-item, .sand-item.weight-5, .sand-item.weight-5::after,
+  .yomu-quote-item,
+  .ts-card .ts-value,
+  .submit-btn::after, .invoke-toggle::after,
+  .uw-msg-loading,
+  #uwiki-unlock-btn::after,
+  .self-chips button.active,
+  .section-label::before, .yomu-section h3::before,
+  .visited-stamp,
+  .filter-chip.active {
+    animation: none !important;
+  }
+}
+
+</style>
 </head>
 <body>
 
@@ -4221,6 +4498,18 @@ main { padding-bottom: 5.2rem; }
 
 <script>
 'use strict';
+
+// v2.78 Effects Pass: 既存 UIKI に元からあるスコープバグ対策。
+// `getFilter` は UIKI.render IIFE 内に隔離されており、bootstrap() の
+// initFilterBars() から参照できない。トップレベル fallback を提供。
+function getFilter() {
+  return (window.UIKI && window.UIKI.store)
+    ? window.UIKI.store.get('filter', { search:'', device:'all', genre:'all', project:'all' })
+    : { search:'', device:'all', genre:'all', project:'all' };
+}
+function saveFilter(f) {
+  if (window.UIKI && window.UIKI.store) window.UIKI.store.set('filter', f);
+}
 
 const UIKI = {};
 
