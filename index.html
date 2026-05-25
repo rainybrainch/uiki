@@ -3539,14 +3539,17 @@ main { padding-bottom: 5.2rem; }
 
   <!-- v2.54 読雨アーカイブ統合：名言 / メモ / 読書を 1 つのセクションに -->
   <section class="yomu-section reveal yomu-archive-section">
-    <h3>💎 読雨アーカイブ <span class="yomu-from">quote / memo / book</span></h3>
-    <p class="yomu-desc">砂のログから読雨に投入したもの。タブで切替。</p>
+    <h3>💎 読雨アーカイブ <span class="yomu-from">quote / memo / book / create / diary / money</span></h3>
+    <p class="yomu-desc">UwikiAI に話しかけるだけで積もる。意味の雨の水源。</p>
 
     <!-- 内部タブ -->
     <div style="display:flex; gap:0.4rem; margin-bottom: 0.6rem; flex-wrap:wrap;">
       <button class="archive-tab attraction-add-btn active" data-arc="quote" style="margin: 0; padding: 0.35rem 0.9rem; font-size: 0.78rem;">💬 名言</button>
       <button class="archive-tab attraction-add-btn" data-arc="memo" style="margin: 0; padding: 0.35rem 0.9rem; font-size: 0.78rem;">📝 メモ</button>
       <button class="archive-tab attraction-add-btn" data-arc="book" style="margin: 0; padding: 0.35rem 0.9rem; font-size: 0.78rem;">📖 読書 <span id="yomu-book-stats" style="font-size:0.68rem; color:var(--dim); margin-left:0.2rem;">— 件</span></button>
+      <button class="archive-tab attraction-add-btn" data-arc="create" style="margin: 0; padding: 0.35rem 0.9rem; font-size: 0.78rem;">⚡ 創作</button>
+      <button class="archive-tab attraction-add-btn" data-arc="diary" style="margin: 0; padding: 0.35rem 0.9rem; font-size: 0.78rem;">🌙 日記</button>
+      <button class="archive-tab attraction-add-btn" data-arc="money" style="margin: 0; padding: 0.35rem 0.9rem; font-size: 0.78rem;">💰 収支</button>
     </div>
 
     <!-- 名言 -->
@@ -3595,6 +3598,28 @@ main { padding-bottom: 5.2rem; }
         <div class="yomu-loading yomu-empty">読み込み中…</div>
       </div>
     </div><!-- /archive-pane book -->
+
+    <!-- 創作ログ -->
+    <div class="archive-pane" data-arc-pane="create" hidden>
+      <div class="yomu-book-list" id="yomu-create">
+        <div class="yomu-loading yomu-empty">読み込み中…</div>
+      </div>
+    </div>
+
+    <!-- 日記 -->
+    <div class="archive-pane" data-arc-pane="diary" hidden>
+      <div class="yomu-quote-list" id="yomu-diary">
+        <div class="yomu-loading yomu-empty">読み込み中…</div>
+      </div>
+    </div>
+
+    <!-- 収支メモ -->
+    <div class="archive-pane" data-arc-pane="money" hidden>
+      <div class="yomu-book-list" id="yomu-money">
+        <div class="yomu-loading yomu-empty">読み込み中…</div>
+      </div>
+    </div>
+
   </section><!-- /yomu-archive-section -->
 
   <!-- 今日のタスク（ホーム） -->
@@ -5704,6 +5729,9 @@ UIKI.yomu = (function() {
     renderQuotes();
     renderBooks();
     renderMemos();
+    renderCreate();
+    renderDiary();
+    renderMoney();
     renderTodaySummary();
     renderHomeTodaySummary();
     renderMonthlyReview();
@@ -6064,6 +6092,94 @@ UIKI.yomu = (function() {
       btn.style.cssText = 'margin: 0.6rem 0 0; padding: 0.35rem 0.9rem; font-size: 0.78rem;';
       btn.textContent = 'もっと見る（残り ' + (allMemos.length - 5) + ' 件）';
       btn.onclick = () => { wrap.dataset.showAll = '1'; renderMemos(); };
+      wrap.appendChild(btn);
+    }
+  }
+
+  // v2.82 創作ログ・日記・収支メモ render
+  function renderCreate() {
+    const wrap = document.getElementById('yomu-create');
+    if (!wrap) return;
+    const all = byType('create').sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    if (!all.length) {
+      wrap.innerHTML = '<div class="yomu-empty">まだ創作記録がない。UwikiAI に「RAINA 3話書いた」等と話しかけると積もる。</div>';
+      return;
+    }
+    const showAll = wrap.dataset.showAll === '1';
+    const items = showAll ? all : all.slice(0, 5);
+    wrap.innerHTML = items.map(e => {
+      const date = (e.date || '').replace(/(\d{4})(\d{2})(\d{2})/, '$1/$2/$3').slice(0,10);
+      const proj = e.project ? '<span style="color:var(--gold);font-size:0.78rem;margin-right:0.4rem;">' + escapeHtml(e.project) + '</span>' : '';
+      const prog = e.progress ? '<span style="color:var(--dim);font-size:0.75rem;margin-left:0.4rem;">' + escapeHtml(e.progress) + '</span>' : '';
+      return '<div class="yomu-book-item" data-yomu-id="' + escapeHtml(e.id||'') + '">' +
+        proj + '<strong>' + escapeHtml(e.text || '') + '</strong>' + prog +
+        '<div class="yb-meta">' + escapeHtml(date) + '</div>' +
+      '</div>';
+    }).join('');
+    if (!showAll && all.length > 5) {
+      const btn = document.createElement('button');
+      btn.className = 'attraction-add-btn';
+      btn.style.cssText = 'margin: 0.6rem 0 0; padding: 0.35rem 0.9rem; font-size: 0.78rem;';
+      btn.textContent = 'もっと見る（残り ' + (all.length - 5) + ' 件）';
+      btn.onclick = () => { wrap.dataset.showAll = '1'; renderCreate(); };
+      wrap.appendChild(btn);
+    }
+  }
+
+  function renderDiary() {
+    const wrap = document.getElementById('yomu-diary');
+    if (!wrap) return;
+    const all = byType('diary').sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    if (!all.length) {
+      wrap.innerHTML = '<div class="yomu-empty">まだ日記がない。UwikiAI に「今日は砂の日だった」と話しかけると積もる。</div>';
+      return;
+    }
+    const showAll = wrap.dataset.showAll === '1';
+    const items = showAll ? all : all.slice(0, 5);
+    const moodIcon = { good: '☀️', normal: '🌥', bad: '🌧', creative: '⚡' };
+    wrap.innerHTML = items.map(e => {
+      const date = (e.date || '').replace(/(\d{4})(\d{2})(\d{2})/, '$1/$2/$3').slice(0,10);
+      const mood = moodIcon[e.mood] || '';
+      return '<blockquote class="yomu-quote-item" data-yomu-id="' + escapeHtml(e.id||'') + '" style="position:relative;">' +
+        '<p>' + (mood ? mood + ' ' : '') + escapeHtml(e.text || '') + '</p>' +
+        '<footer>' + escapeHtml(date) + '</footer>' +
+      '</blockquote>';
+    }).join('');
+    if (!showAll && all.length > 5) {
+      const btn = document.createElement('button');
+      btn.className = 'attraction-add-btn';
+      btn.style.cssText = 'margin: 0.6rem 0 0; padding: 0.35rem 0.9rem; font-size: 0.78rem;';
+      btn.textContent = 'もっと見る（残り ' + (all.length - 5) + ' 件）';
+      btn.onclick = () => { wrap.dataset.showAll = '1'; renderDiary(); };
+      wrap.appendChild(btn);
+    }
+  }
+
+  function renderMoney() {
+    const wrap = document.getElementById('yomu-money');
+    if (!wrap) return;
+    const all = byType('money').sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    if (!all.length) {
+      wrap.innerHTML = '<div class="yomu-empty">まだ収支メモがない。UwikiAI に「マネぼう売上3万」等と話しかけると積もる。</div>';
+      return;
+    }
+    const showAll = wrap.dataset.showAll === '1';
+    const items = showAll ? all : all.slice(0, 5);
+    wrap.innerHTML = items.map(e => {
+      const date = (e.date || '').replace(/(\d{4})(\d{2})(\d{2})/, '$1/$2/$3').slice(0,10);
+      const amt = e.amount != null ? '<span style="color:var(--gold);font-weight:600;margin-left:0.5rem;">¥' + Number(e.amount).toLocaleString() + '</span>' : '';
+      const cat = e.category ? '<span style="color:var(--dim);font-size:0.75rem;margin-right:0.4rem;">[' + escapeHtml(e.category) + ']</span>' : '';
+      return '<div class="yomu-book-item" data-yomu-id="' + escapeHtml(e.id||'') + '">' +
+        cat + '<strong>' + escapeHtml(e.text || '') + '</strong>' + amt +
+        '<div class="yb-meta">' + escapeHtml(date) + '</div>' +
+      '</div>';
+    }).join('');
+    if (!showAll && all.length > 5) {
+      const btn = document.createElement('button');
+      btn.className = 'attraction-add-btn';
+      btn.style.cssText = 'margin: 0.6rem 0 0; padding: 0.35rem 0.9rem; font-size: 0.78rem;';
+      btn.textContent = 'もっと見る（残り ' + (all.length - 5) + ' 件）';
+      btn.onclick = () => { wrap.dataset.showAll = '1'; renderMoney(); };
       wrap.appendChild(btn);
     }
   }
@@ -6667,11 +6783,11 @@ UIKI.yomu = (function() {
     blood_pressure_low: 'mmHg'
   };
 
-  // URL クエリ ?type=book/health/quote/health_full を受信して読雨にエントリ投入
+  // URL クエリ を受信して読雨にエントリ投入（v2.82: create/diary/money 追加）
   function ingestFromQuery(urlParams) {
     if (!urlParams.has('type')) return Promise.resolve(null);
     const type = urlParams.get('type');
-    if (!['book', 'health', 'quote', 'health_full'].includes(type)) return Promise.resolve(null);
+    if (!['book', 'health', 'quote', 'health_full', 'create', 'diary', 'money'].includes(type)) return Promise.resolve(null);
 
     const entry = { type };
     const num = (k) => {
@@ -6762,6 +6878,32 @@ UIKI.yomu = (function() {
       const tg = csv('tags'); if (tg) bs.tags = tg;
       if (!bs.image_url) return Promise.reject(new Error('body_scan には image_url が必須'));
       return addEntry(bs);
+    } else if (type === 'create') {
+      // 創作進捗（v2.82）
+      ['project', 'text', 'progress'].forEach(k => {
+        if (urlParams.has(k)) entry[k] = urlParams.get(k);
+      });
+      if (!entry.date) entry.date = new Date().toISOString().slice(0,10).replace(/-/g, '');
+      entry.is_draft = true;
+      if (!entry.text && !entry.project) return Promise.reject(new Error('create には text か project が必須'));
+      return addEntry(entry);
+    } else if (type === 'diary') {
+      // 日記・感情ログ（v2.82）
+      if (urlParams.has('text')) entry.text = urlParams.get('text');
+      if (urlParams.has('mood')) entry.mood = urlParams.get('mood');
+      if (!entry.date) entry.date = new Date().toISOString().slice(0,10).replace(/-/g, '');
+      entry.is_draft = true;
+      if (!entry.text) return Promise.reject(new Error('diary には text が必須'));
+      return addEntry(entry);
+    } else if (type === 'money') {
+      // 収支メモ（v2.82）
+      if (urlParams.has('text')) entry.text = urlParams.get('text');
+      if (urlParams.has('category')) entry.category = urlParams.get('category');
+      const amt = parseFloat(urlParams.get('amount')); if (!isNaN(amt)) entry.amount = amt;
+      if (!entry.date) entry.date = new Date().toISOString().slice(0,10).replace(/-/g, '');
+      entry.is_draft = true;
+      if (!entry.text) return Promise.reject(new Error('money には text が必須'));
+      return addEntry(entry);
     }
     return Promise.reject(new Error('未対応のtype: ' + type));
   }
@@ -8443,46 +8585,59 @@ UIKI.notify = (() => {
 // ─────────────────────────────────────────────────────────
 UIKI.uwikiai = (function() {
   const SYSTEM_PROMPT = `あなたは雨域 UIKI のモバイル AI 管理人「UwikiAI」です。
-ユーザー（服牢）が呟いたら、即座に雨域へ記録する JSON を返してください。
-タップ不要・URL 不要。話した瞬間に記録が降る設計です。
+服牢（ユーザー）が呟いたら、即座に雨域へ記録する JSON を返してください。
+タップ不要。話した瞬間に記録が降る。
 
-# 出力形式（必ずこの JSON のみ返す）
+雨域は「行動の記録（UIKI タスク）」と「意味の記録（読雨）」の二重構造です。
+あなたが内容を判定し、適切な方へ振り分けます。
+
+# 出力形式（必ずこの JSON ブロックのみ返す）
 \`\`\`json
 {
   "actions": [ ...アクション配列... ],
-  "reply": "☔ 〇〇、降らせた。（1行の詩的な確認）"
+  "reply": "☔ 〇〇、降らせた。"
 }
 \`\`\`
 
-# アクションスキーマ
+# 振り分け判定
 
-## 読書感想（本を読んだ・感想・★）
-{ "type": "book", "title": "タイトル", "raw": "感想テキスト", "series": "シリーズ名orNull", "chapter": 巻or話の数字orNull, "stars": 1-5, "tags": ["タグ"] }
-※ title か raw のどちらかは必須
+## → UIKI タスク（行動・やること・締切）
+キーワード：やる・する・作る・明日・今週・TODO・〜したい・〜しなきゃ
+{ "type": "task", "text": "内容", "projectId": "p_xxx", "device": "mobile/pc/any", "deadline": "YYYY-MM-DD or null" }
 
-## タスク追加（やる・する・明日・TODO）
-{ "type": "task", "text": "タスク内容", "projectId": "p_xxx", "device": "mobile/pc/any", "deadline": "YYYY-MM-DD or null" }
+## → 読雨：読書感想（本・漫画・読んだ・★）
+{ "type": "book", "title": "タイトル", "raw": "感想", "series": "シリーズ or null", "chapter": 数値 or null, "stars": 1-5, "tags": [] }
 
-## 名言（刻んで・名言）
-{ "type": "quote", "quote": "名言テキスト", "core": 1-5, "source": "出典orNull", "tags": ["タグ"] }
+## → 読雨：名言（刻んで・名言・座右の銘）
+{ "type": "quote", "quote": "名言", "core": 1-5, "source": "出典 or null", "tags": [] }
 
-## 健康データ（体重・睡眠・歩数など）
-{ "type": "health", "metric": "weight/sleep/steps/...", "value": 数値, "unit": "kg/h/歩/...", "memo": "orNull" }
+## → 読雨：健康（体重・睡眠・運動・懸垂・走った）
+{ "type": "health", "metric": "weight/sleep/steps/pullup/run/exercise/...", "value": 数値, "unit": "kg/h/歩/回/km/min/...", "memo": null }
 
-## メモ（それ以外の走り書き）
+## → 読雨：創作進捗（書いた・実装した・描いた・完成した）
+{ "type": "create", "project": "RAINA/ぽもじかん/etc", "text": "内容", "progress": "進捗メモ or null" }
+
+## → 読雨：日記・感情（感じた・今日は・気づき・砂・泥・生命）
+{ "type": "diary", "text": "内容", "mood": "good/normal/bad/creative or null" }
+
+## → 読雨：収支メモ（売上・収入・支出・円・万円）
+{ "type": "money", "text": "内容", "amount": 数値 or null, "category": "収入/支出/投資 or null" }
+
+## → 読雨：メモ（分類できないもの）
 { "type": "memo", "text": "テキスト" }
 
-# プロジェクト ID
-p_rbai_inc / p_shonigan / p_shinmane / p_manebou / p_manebou_todo
-p_raina / p_amesekai / p_fukurouzo / p_story / p_atelier
-p_askup / p_sasuke / p_omasasu / p_uiki / p_zaitoku / p_yomu / p_fukurou365
+# プロジェクト ID（タスク振り分け用）
+p_rbai_inc（RBAI全般）/ p_shonigan（小児がん）/ p_shinmane（新マネぼう）
+p_manebou / p_manebou_todo / p_raina / p_amesekai / p_fukurouzo
+p_story / p_atelier / p_askup / p_sasuke / p_omasasu
+p_uiki / p_zaitoku / p_yomu / p_fukurou365
 
 # ルール
-1. 走り書きのまま。清書禁止
-2. 必須フィールドだけ埋める。不明は null
+1. 走り書きのまま投入。清書・補完禁止
+2. 不明フィールドは null
 3. 複数同時なら actions を複数返す
-4. device: mobile（連絡・短作業）/ pc（コード・設定）/ any（思考・判断）
-5. reply は必ず「☔」で始まる詩的な1行（例：「☔ このすば30話、降らせた。★5」）
+4. device: mobile（移動・連絡）/ pc（コード・設定）/ any（思考・判断）
+5. reply は「☔」始まりの詩的1行
 6. JSON ブロック以外のテキストは出力しない`;
 
   // v2.81 AI アクションを直接実行（タップ不要）
