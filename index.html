@@ -578,6 +578,33 @@ body.public-mode .quick-fab { display: none !important; }
   box-shadow: 0 0 14px rgba(58,111,201,0.35);
 }
 
+/* v2.81 雨粒トースト（即記録フィードバック） */
+@keyframes rain-toast-in {
+  0%   { opacity: 0; transform: translateY(-16px) scale(0.92); }
+  15%  { opacity: 1; transform: translateY(0) scale(1); }
+  80%  { opacity: 1; }
+  100% { opacity: 0; transform: translateY(8px); }
+}
+.rain-toast {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, rgba(10,21,48,0.97) 0%, rgba(20,42,90,0.97) 100%);
+  border: 1px solid rgba(58,111,201,0.5);
+  border-radius: 999px;
+  color: rgba(200,230,255,0.95);
+  font-family: var(--serif);
+  font-size: 0.88rem;
+  padding: 0.5rem 1.4rem;
+  letter-spacing: 0.04em;
+  box-shadow: 0 4px 24px rgba(58,111,201,0.25);
+  z-index: 9999;
+  pointer-events: none;
+  white-space: nowrap;
+  animation: rain-toast-in 3.2s ease-out forwards;
+}
+
 /* 設定モーダル select 統一（v2.80） */
 .cfg-select {
   width: 100%;
@@ -8416,59 +8443,99 @@ UIKI.notify = (() => {
 // ─────────────────────────────────────────────────────────
 UIKI.uwikiai = (function() {
   const SYSTEM_PROMPT = `あなたは雨域 UIKI のモバイル AI 管理人「UwikiAI」です。
-ユーザー（服牢／円舵）が何か呟いたら、雨域が受信できる URL に自動変換して返してください。
+ユーザー（服牢）が呟いたら、即座に雨域へ記録する JSON を返してください。
+タップ不要・URL 不要。話した瞬間に記録が降る設計です。
 
-雨域のベース URL: https://rainybrainch.github.io/uiki/
+# 出力形式（必ずこの JSON のみ返す）
+\`\`\`json
+{
+  "actions": [ ...アクション配列... ],
+  "reply": "☔ 〇〇、降らせた。（1行の詩的な確認）"
+}
+\`\`\`
 
-# 7 つの入力パターン
+# アクションスキーマ
 
-## ① タスク追加
-キーワード：「やる」「する」「明日 △△」「TODO」
-URL: ?add=<task>&project=<projectId>&device=<mobile/pc/any>&deadline=<YYYY-MM-DD>
+## 読書感想（本を読んだ・感想・★）
+{ "type": "book", "title": "タイトル", "raw": "感想テキスト", "series": "シリーズ名orNull", "chapter": 巻or話の数字orNull, "stars": 1-5, "tags": ["タグ"] }
+※ title か raw のどちらかは必須
 
-## ② 読書感想
-キーワード：「読んだ」「読書」「面白い」「★」「推し」
-URL: ?type=book&title=<>&raw=<>&series=<>&chapter=<>&stars=<>&url=<>&tags=<>
+## タスク追加（やる・する・明日・TODO）
+{ "type": "task", "text": "タスク内容", "projectId": "p_xxx", "device": "mobile/pc/any", "deadline": "YYYY-MM-DD or null" }
 
-## ③ 健康データ単発
-URL: ?type=health&metric=<>&value=<>&unit=<>&date=<>&memo=<>
+## 名言（刻んで・名言）
+{ "type": "quote", "quote": "名言テキスト", "core": 1-5, "source": "出典orNull", "tags": ["タグ"] }
 
-## ④ 体組成計一括
-URL: ?type=health_full&date=<>&time=<>&weight=<>&body_fat=<>&muscle=<>&water=<>&visceral_fat=<>&bone_mass=<>&basal_metabolism=<>&bmi=<>
+## 健康データ（体重・睡眠・歩数など）
+{ "type": "health", "metric": "weight/sleep/steps/...", "value": 数値, "unit": "kg/h/歩/...", "memo": "orNull" }
 
-## ⑤ 自撮り URL
-URL: ?type=body_scan&image_url=<>&memo=<>&date=<>&time=<>&rank=<>&skin=<>&edema=<>&fatigue=<>&energy=<>
+## メモ（それ以外の走り書き）
+{ "type": "memo", "text": "テキスト" }
 
-## ⑥ 名言
-キーワード：「刻んで」「名言」
-URL: ?type=quote&quote=<>&core=<1-5>&source=<>&tags=<>
-※ 必ず is_draft: true
-
-## ⑦ メモ
-URL: ?type=memo&text=<>&date=<>
-
-# プロジェクト ID 一覧
+# プロジェクト ID
 p_rbai_inc / p_shonigan / p_shinmane / p_manebou / p_manebou_todo
 p_raina / p_amesekai / p_fukurouzo / p_story / p_atelier
-p_askup / p_sasuke / p_omasasu / p_uiki / p_zaitoku
+p_askup / p_sasuke / p_omasasu / p_uiki / p_zaitoku / p_yomu / p_fukurou365
 
-# 変換ルール
-1. 走り書きのまま投げる（清書禁止）
-2. 日本語は URL エンコード
-3. 必須フィールドだけ埋める
-4. クリック可能な完全 URL を返す（HTML aタグでなく、生 URL でよい・改行で区切る）
-5. 複数同時なら URL を複数返す
-6. device 判定：mobile（連絡）/pc（コード）/any（思考）
-7. date 省略時は雨域側で今日を自動補完
+# ルール
+1. 走り書きのまま。清書禁止
+2. 必須フィールドだけ埋める。不明は null
+3. 複数同時なら actions を複数返す
+4. device: mobile（連絡・短作業）/ pc（コード・設定）/ any（思考・判断）
+5. reply は必ず「☔」で始まる詩的な1行（例：「☔ このすば30話、降らせた。★5」）
+6. JSON ブロック以外のテキストは出力しない`;
 
-# 出力フォーマット
+  // v2.81 AI アクションを直接実行（タップ不要）
+  async function executeAIActions(actions) {
+    if (!actions || !actions.length) return 0;
+    let count = 0;
+    for (const action of actions) {
+      try {
+        if (action.type === 'book' || action.type === 'health' || action.type === 'quote') {
+          const p = new URLSearchParams();
+          p.set('type', action.type);
+          Object.entries(action).forEach(([k, v]) => {
+            if (k === 'type' || v == null) return;
+            if (Array.isArray(v)) p.set(k, v.join(','));
+            else p.set(k, String(v));
+          });
+          if (action.type === 'quote') p.set('is_draft', 'true');
+          await UIKI.yomu.ingestFromQuery(p);
+          count++;
+        } else if (action.type === 'task') {
+          const now = new Date().toISOString();
+          const tasks = UIKI.store.get('tasks', []);
+          const projects = UIKI.store.get('projects', []);
+          let pid = action.projectId || 'p_rbai_inc';
+          if (!projects.find(p => p.id === pid)) pid = projects[0]?.id || 'p_rbai_inc';
+          const device = ['mobile','pc','any'].includes(action.device) ? action.device : 'any';
+          const deadline = (action.deadline && /^\d{4}-\d{2}-\d{2}$/.test(action.deadline)) ? action.deadline : null;
+          tasks.push({ id: UIKI.store.newId('t'), projectId: pid, text: action.text, date: now.slice(0,10), createdAt: now, updatedAt: now, stain: false, completed: false, completedAt: null, device, deadline });
+          UIKI.store.set('tasks', tasks);
+          UIKI.store.recomputeRainfall();
+          if (UIKI.sync) { UIKI.sync.markDirty(); UIKI.sync.pushGist(); }
+          count++;
+        } else if (action.type === 'memo') {
+          const p = new URLSearchParams();
+          p.set('type', 'quote');
+          p.set('quote', action.text || '');
+          p.set('core', '1');
+          p.set('is_draft', 'true');
+          await UIKI.yomu.ingestFromQuery(p);
+          count++;
+        }
+      } catch(e) { console.warn('executeAIAction failed', action, e); }
+    }
+    return count;
+  }
 
-1-2 行の確認 + URL（複数なら箇条書き）。
-例：
-☔ 雨域に投げました：
-https://rainybrainch.github.io/uiki/?add=...
-
-タップで投入されます。`;
+  function rainToast(text) {
+    const el = document.createElement('div');
+    el.className = 'rain-toast';
+    el.textContent = text;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 3200);
+  }
 
   // v2.62 UwikiAI 履歴を localStorage に永続化
   let messages = UIKI.store.get('uwikiai_history', []);
@@ -8510,33 +8577,33 @@ https://rainybrainch.github.io/uiki/?add=...
     addMessage('user', userText);
     messages.push({ role: 'user', content: userText });
     saveHistory();
-    const loadingDiv = addMessage('loading', '🌧 UwikiAI が考えています…', {cls: 'uw-msg-loading'});
+    const loadingDiv = addMessage('loading', '降雨処理中…', {cls: 'uw-msg-loading'});
     try {
       let replyText;
-      // Gemini 優先（無料）→ Claude フォールバック
       if (cfg.geminiKey) {
         replyText = await callGemini(userText);
       } else {
         replyText = await callClaude(userText);
       }
       if (loadingDiv) loadingDiv.remove();
-      addMessage('ai', replyText);
-      messages.push({ role: 'assistant', content: replyText });
-      saveHistory();
-      // v2.73 自動 URL 取込（オプション）
-      const cfgAuto = UIKI.store.get('config', {});
-      if (cfgAuto.uwikiaiAutoUrl) {
-        const matches = replyText.match(/https:\/\/rainybrainch\.github\.io\/uiki\/\?[^\s<]+/g) || [];
-        matches.forEach(m => {
-          try {
-            const u = new URL(m);
-            history.replaceState(null, '', u.pathname + u.search);
-            if (UIKI.yomu && UIKI.yomu.ingestFromQuery) UIKI.yomu.ingestFromQuery();
-            setTimeout(() => history.replaceState(null, '', location.pathname), 1000);
-          } catch(e) {}
-        });
-        if (matches.length) showToast('☔ ' + matches.length + ' 件を自動取込');
+
+      // v2.81 JSON アクション自動実行（タップ不要）
+      let displayText = replyText;
+      const jsonMatch = replyText.match(/```json\s*([\s\S]*?)\s*```/);
+      if (jsonMatch) {
+        try {
+          const parsed = JSON.parse(jsonMatch[1]);
+          if (parsed.actions && Array.isArray(parsed.actions)) {
+            const n = await executeAIActions(parsed.actions);
+            displayText = parsed.reply || '☔ 降らせた。';
+            if (n > 0) rainToast(displayText);
+          }
+        } catch(e) { /* JSON パース失敗時はテキストそのまま表示 */ }
       }
+
+      addMessage('ai', displayText);
+      messages.push({ role: 'assistant', content: displayText });
+      saveHistory();
     } catch (e) {
       if (loadingDiv) loadingDiv.remove();
       addMessage('error', '✗ ' + (e.message || '失敗'), {cls: 'uw-msg-error'});
