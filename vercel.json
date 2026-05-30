@@ -1,6 +1,6 @@
 {
-  "buildCommand": "npm install && cd packages/database && npx prisma generate && cd ../../apps/uwiki && npm run build",
-  "outputDirectory": "apps/uwiki/.next",
   "installCommand": "npm install",
+  "buildCommand": "cd packages/database && npx prisma generate && cd ../../apps/uwiki && npx next build",
+  "outputDirectory": "apps/uwiki/.next",
   "framework": "nextjs"
 }
