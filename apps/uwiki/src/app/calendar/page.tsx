@@ -1,0 +1,86 @@
+import { prisma } from "@/lib/db"
+import { CalendarView } from "@/components/calendar/CalendarView"
+import { CalendarDays } from "lucide-react"
+import { format, startOfMonth, endOfMonth, addMonths, subMonths, parseISO } from "date-fns"
+
+export const dynamic = "force-dynamic"
+
+export default async function CalendarPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ month?: string }>
+}) {
+  const params = await searchParams
+  const monthStr = params.month ?? format(new Date(), "yyyy-MM")
+  const monthDate = parseISO(monthStr + "-01")
+
+  const [monthStart, monthEnd] = [
+    format(startOfMonth(monthDate), "yyyy-MM-dd"),
+    format(endOfMonth(monthDate), "yyyy-MM-dd"),
+  ]
+
+  const [tasks, diaryEntries, habitLogs, habits] = await Promise.all([
+    prisma.task.findMany({
+      where: {
+        dueDate: {
+          gte: new Date(monthStart),
+          lte: new Date(monthEnd + "T23:59:59"),
+        },
+      },
+      orderBy: { dueDate: "asc" },
+    }),
+    prisma.diaryEntry.findMany({
+      where: { date: { gte: monthStart, lte: monthEnd } },
+      select: { date: true, title: true, id: true },
+    }),
+    prisma.habitLog.findMany({
+      where: { date: { gte: monthStart, lte: monthEnd } },
+      select: { date: true, habitId: true },
+    }),
+    prisma.habit.findMany({ select: { id: true, color: true } }),
+  ])
+
+  // 日付 → データのマップを構築
+  const tasksByDate: Record<string, typeof tasks> = {}
+  for (const task of tasks) {
+    if (!task.dueDate) continue
+    const d = format(new Date(task.dueDate), "yyyy-MM-dd")
+    if (!tasksByDate[d]) tasksByDate[d] = []
+    tasksByDate[d].push(task)
+  }
+
+  const diaryByDate: Record<string, { id: string; title: string }> = {}
+  for (const entry of diaryEntries) {
+    diaryByDate[entry.date] = { id: entry.id, title: entry.title }
+  }
+
+  // 日ごとの習慣達成率
+  const habitCountByDate: Record<string, number> = {}
+  for (const log of habitLogs) {
+    habitCountByDate[log.date] = (habitCountByDate[log.date] ?? 0) + 1
+  }
+
+  const prevMonth = format(subMonths(monthDate, 1), "yyyy-MM")
+  const nextMonth = format(addMonths(monthDate, 1), "yyyy-MM")
+
+  return (
+    <div className="h-full flex flex-col">
+      <div className="flex items-center gap-3 px-8 py-8 shrink-0">
+        <CalendarDays size={20} strokeWidth={1.5} style={{ color: "var(--accent)" }} />
+        <h1 className="text-2xl font-serif font-light tracking-wide">カレンダー</h1>
+      </div>
+
+      <div className="flex-1 overflow-auto px-8 pb-8">
+        <CalendarView
+          monthStr={monthStr}
+          prevMonth={prevMonth}
+          nextMonth={nextMonth}
+          tasksByDate={tasksByDate}
+          diaryByDate={diaryByDate}
+          habitCountByDate={habitCountByDate}
+          totalHabits={habits.length}
+        />
+      </div>
+    </div>
+  )
+}

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <rect width="512" height="512" rx="96" fill="#0a1530"/>
+  <!-- 雨粒 3本 -->
+  <line x1="180" y1="160" x2="172" y2="220" stroke="#3a6fc9" stroke-width="14" stroke-linecap="round" opacity="0.9"/>
+  <line x1="256" y1="130" x2="248" y2="200" stroke="#3a6fc9" stroke-width="14" stroke-linecap="round" opacity="0.7"/>
+  <line x1="332" y1="155" x2="324" y2="225" stroke="#3a6fc9" stroke-width="14" stroke-linecap="round" opacity="0.85"/>
+  <!-- 雨域 の「雨」象形 -->
+  <rect x="152" y="248" width="208" height="120" rx="8" stroke="#3a6fc9" stroke-width="10" fill="none" opacity="0.6"/>
+  <line x1="152" y1="288" x2="360" y2="288" stroke="#3a6fc9" stroke-width="8" opacity="0.5"/>
+  <!-- 内側の雨粒ドット -->
+  <circle cx="200" cy="318" r="8" fill="#3a6fc9" opacity="0.8"/>
+  <circle cx="256" cy="318" r="8" fill="#3a6fc9" opacity="0.8"/>
+  <circle cx="312" cy="318" r="8" fill="#3a6fc9" opacity="0.8"/>
+  <!-- 下線（域） -->
+  <line x1="152" y1="400" x2="360" y2="400" stroke="#2456b8" stroke-width="8" stroke-linecap="round" opacity="0.5"/>
+</svg>

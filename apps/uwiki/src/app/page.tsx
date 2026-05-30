@@ -1,0 +1,202 @@
+import { prisma } from "@/lib/db"
+import { today, calcStreak, formatDisplay } from "@/lib/date"
+import { format } from "date-fns"
+import { ja } from "date-fns/locale"
+import { CheckSquare, Repeat2, BookOpen, ArrowRight } from "lucide-react"
+import Link from "next/link"
+import { TaskCheckbox } from "@/components/tasks/TaskCheckbox"
+import { HabitCheckButton } from "@/components/habits/HabitCheckButton"
+
+export const dynamic = "force-dynamic"
+
+export default async function DashboardPage() {
+  const todayStr = today()
+
+  const [tasks, habits, recentDiaries] = await Promise.all([
+    prisma.task.findMany({
+      where: { completed: false },
+      orderBy: [{ priority: "asc" }, { createdAt: "asc" }],
+      take: 6,
+    }),
+    prisma.habit.findMany({
+      include: { logs: { orderBy: { date: "desc" }, take: 30 } },
+      orderBy: { createdAt: "asc" },
+    }),
+    prisma.diaryEntry.findMany({
+      orderBy: { date: "desc" },
+      take: 3,
+    }),
+  ])
+
+  const doneHabitsToday = habits.filter((h) => h.logs.some((l) => l.date === todayStr)).length
+  const doneTasks = await prisma.task.count({ where: { completed: true } })
+
+  const priorityColor: Record<string, string> = {
+    HIGH: "var(--red)", MEDIUM: "var(--accent)", LOW: "var(--dim)",
+  }
+
+  return (
+    <div className="min-h-screen">
+      {/* ─── Hero ──────────────────────────────────────── */}
+      <section className="px-10 pt-14 pb-10 animate-fade-in">
+        <p className="text-xs font-mono tracking-widest mb-3 text-dim">
+          {format(new Date(), "yyyy / MM / dd  E", { locale: ja })}
+        </p>
+        <h1 className="font-serif text-4xl font-light tracking-wider leading-none mb-1" style={{ color: "var(--text)" }}>
+          おかえり
+        </h1>
+        <p className="text-sm text-dim mt-2">
+          今日も雨が降っている。
+        </p>
+
+        {/* ステータスピル */}
+        <div className="flex items-center gap-3 mt-6 flex-wrap">
+          <StatPill value={tasks.length} label="未完了タスク" color="var(--accent)" />
+          <StatPill value={`${doneHabitsToday} / ${habits.length}`} label="今日の習慣" color="var(--green)" />
+          <StatPill value={doneTasks} label="完了済み" color="var(--dim)" />
+        </div>
+      </section>
+
+      <div className="px-10 pb-14 grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        {/* ─── 今日のタスク ─────────────────────────────── */}
+        <DashCard
+          icon={<CheckSquare size={14} strokeWidth={1.5} />}
+          title="タスク"
+          href="/tasks"
+          delay="delay-100"
+        >
+          {tasks.length === 0 ? (
+            <EmptySlate text="今日のタスクはありません" />
+          ) : (
+            <ul className="space-y-px">
+              {tasks.map((task) => (
+                <li key={task.id} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[var(--faint)] group transition-colors">
+                  <TaskCheckbox taskId={task.id} completed={task.completed} />
+                  <span className="flex-1 text-sm leading-snug">{task.title}</span>
+                  <span
+                    className="w-1.5 h-1.5 rounded-full shrink-0"
+                    style={{ background: priorityColor[task.priority] }}
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
+        </DashCard>
+
+        {/* ─── 今日の習慣 ─────────────────────────────── */}
+        <DashCard
+          icon={<Repeat2 size={14} strokeWidth={1.5} />}
+          title="習慣"
+          href="/habits"
+          delay="delay-150"
+        >
+          {habits.length === 0 ? (
+            <EmptySlate text="習慣を追加しましょう" />
+          ) : (
+            <ul className="space-y-px">
+              {habits.map((habit) => {
+                const doneToday = habit.logs.some((l) => l.date === todayStr)
+                const streak = calcStreak(habit.logs.map((l) => l.date))
+                return (
+                  <li key={habit.id} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[var(--faint)] transition-colors">
+                    <HabitCheckButton habitId={habit.id} doneToday={doneToday} color={habit.color} />
+                    <span className="flex-1 text-sm">{habit.name}</span>
+                    {streak > 0 && (
+                      <span className="text-xs font-mono" style={{ color: habit.color }}>
+                        {streak}日
+                      </span>
+                    )}
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+        </DashCard>
+
+        {/* ─── 最近の日記 ─────────────────────────────── */}
+        <div className="lg:col-span-2 animate-fade-in delay-200">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2 text-accent">
+              <BookOpen size={14} strokeWidth={1.5} />
+              <span className="text-xs font-medium tracking-wide">日記</span>
+            </div>
+            <Link href="/diary" className="flex items-center gap-1 text-xs text-dim hover:text-accent transition-colors">
+              すべて <ArrowRight size={11} />
+            </Link>
+          </div>
+
+          {recentDiaries.length === 0 ? (
+            <div className="surface rounded-xl py-12 text-center">
+              <p className="text-sm text-faint">まだ日記がありません</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {recentDiaries.map((entry, i) => (
+                <Link
+                  key={entry.id}
+                  href={`/diary?date=${entry.date}`}
+                  className="surface-hover block p-4 rounded-xl"
+                  style={{ animationDelay: `${0.2 + i * 0.05}s` }}
+                >
+                  <p className="text-[10px] font-mono mb-2 text-dim">{formatDisplay(entry.date)}</p>
+                  <p className="text-sm font-medium leading-snug line-clamp-1 mb-1">{entry.title}</p>
+                  <p className="text-xs text-dim line-clamp-2 leading-relaxed">{entry.content}</p>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+
+      </div>
+    </div>
+  )
+}
+
+/* ─── サブコンポーネント ──────────────────────────────── */
+
+function StatPill({ value, label, color }: { value: string | number; label: string; color: string }) {
+  return (
+    <div
+      className="flex items-center gap-2 px-4 py-2 rounded-full text-xs"
+      style={{
+        background: "rgba(255,255,255,0.04)",
+        border: "1px solid var(--border)",
+      }}
+    >
+      <span className="font-mono font-medium text-sm" style={{ color }}>{value}</span>
+      <span style={{ color: "var(--dim)" }}>{label}</span>
+    </div>
+  )
+}
+
+function DashCard({
+  icon, title, href, children, delay = "",
+}: {
+  icon: React.ReactNode
+  title: string
+  href: string
+  children: React.ReactNode
+  delay?: string
+}) {
+  return (
+    <div className={`surface rounded-xl overflow-hidden animate-fade-in ${delay}`}>
+      <div
+        className="flex items-center justify-between px-4 py-3"
+        style={{ borderBottom: "1px solid var(--border)" }}
+      >
+        <div className="flex items-center gap-2 text-accent">{icon}<span className="text-xs font-medium tracking-wide">{title}</span></div>
+        <Link href={href} className="flex items-center gap-1 text-xs text-dim hover:text-accent transition-colors">
+          すべて <ArrowRight size={11} />
+        </Link>
+      </div>
+      <div className="p-2">{children}</div>
+    </div>
+  )
+}
+
+function EmptySlate({ text }: { text: string }) {
+  return (
+    <p className="text-center py-10 text-sm text-faint">{text}</p>
+  )
+}

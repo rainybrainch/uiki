@@ -1,0 +1,20 @@
+{
+  "name": "雨域 Uwiki",
+  "short_name": "雨域",
+  "description": "静かな自己管理OS",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#060c1a",
+  "theme_color": "#0a1530",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["productivity", "lifestyle"],
+  "lang": "ja"
+}
