@@ -28,9 +28,15 @@ export const viewport: Viewport = {
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const settings = await prisma.settings.findUnique({ where: { id: "singleton" } })
-  const weather = settings ? await getWeatherFromSettings(settings) : null
-  const rainIntensity = weather?.rainIntensity ?? 0.35
+  let weather = null
+  let rainIntensity = 0.35
+  try {
+    const settings = await prisma.settings.findUnique({ where: { id: "singleton" } })
+    weather = settings ? await getWeatherFromSettings(settings) : null
+    rainIntensity = weather?.rainIntensity ?? 0.35
+  } catch {
+    // DB未接続時（初回デプロイ等）はデフォルト値で続行
+  }
 
   return (
     <html lang="ja">

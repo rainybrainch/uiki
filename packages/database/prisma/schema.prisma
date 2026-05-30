@@ -1,12 +1,13 @@
 generator client {
-  provider        = "prisma-client-js"
-  output          = "../src/generated/client"
-  previewFeatures = ["driverAdapters"]
+  provider = "prisma-client-js"
+  output   = "../src/generated/client"
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  // ローカル: sqlite / 本番: postgresql (Neon)
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // ─── プロジェクト ──────────────────────────────────────────
