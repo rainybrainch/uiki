@@ -1,6 +1,0 @@
-{
-  "framework": "nextjs",
-  "buildCommand": "cd ../.. && npx prisma generate --schema=packages/database/prisma/schema.prisma && cd apps/uwiki && npm run build",
-  "installCommand": "npm install",
-  "outputDirectory": ".next"
-}
