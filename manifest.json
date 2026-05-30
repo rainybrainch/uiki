@@ -1,0 +1,26 @@
+{
+  "name": "雨域図 UIKI",
+  "short_name": "UIKI",
+  "description": "降った雨は、還らない。雨域図 ── 全プロジェクト横断の記録。",
+  "lang": "ja",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#07090f",
+  "background_color": "#07090f",
+  "icons": [
+    {
+      "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='192' height='192' viewBox='0 0 128 128'><rect width='128' height='128' rx='24' fill='%2307090f'/><path d='M24 62 C24 50, 34 42, 46 44 C48 36, 56 30, 66 30 C76 30, 84 36, 86 44 C94 42, 104 48, 104 58 C104 70, 96 76, 84 76 L44 76 C32 76 24 70 24 62 Z' fill='%23c9a84c' opacity='0.85'/><line x1='44' y1='82' x2='40' y2='96' stroke='%233a6fc9' stroke-width='2.5' stroke-linecap='round'/><line x1='64' y1='82' x2='60' y2='100' stroke='%233a6fc9' stroke-width='2.5' stroke-linecap='round'/><line x1='84' y1='82' x2='80' y2='96' stroke='%233a6fc9' stroke-width='2.5' stroke-linecap='round'/><path d='M16 110 C30 104, 42 112, 56 106 C70 100, 82 110, 96 104 L112 110 L112 128 L16 128 Z' fill='%23b87a2a' opacity='0.6'/></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='512' height='512' viewBox='0 0 128 128'><rect width='128' height='128' rx='24' fill='%2307090f'/><path d='M24 62 C24 50, 34 42, 46 44 C48 36, 56 30, 66 30 C76 30, 84 36, 86 44 C94 42, 104 48, 104 58 C104 70, 96 76, 84 76 L44 76 C32 76 24 70 24 62 Z' fill='%23c9a84c' opacity='0.85'/><line x1='44' y1='82' x2='40' y2='96' stroke='%233a6fc9' stroke-width='2.5' stroke-linecap='round'/><line x1='64' y1='82' x2='60' y2='100' stroke='%233a6fc9' stroke-width='2.5' stroke-linecap='round'/><line x1='84' y1='82' x2='80' y2='96' stroke='%233a6fc9' stroke-width='2.5' stroke-linecap='round'/><path d='M16 110 C30 104, 42 112, 56 106 C70 100, 82 110, 96 104 L112 110 L112 128 L16 128 Z' fill='%23b87a2a' opacity='0.6'/></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

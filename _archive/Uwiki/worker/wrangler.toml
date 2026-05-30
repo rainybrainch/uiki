@@ -1,0 +1,12 @@
+name = "uwiki-notion"
+main = "index.js"
+compatibility_date = "2024-11-01"
+
+# Replace with your frontend origin once deployed:
+#   "https://uwiki.app"
+# Use "*" for development.
+[vars]
+ALLOWED_ORIGIN = "https://uwiki.app"
+
+# Secrets are set via the CLI (NOT in this file):
+#   wrangler secret put NOTION_TOKEN
