@@ -1,13 +1,10 @@
 "use client"
 
-import { format, subDays, eachDayOfInterval, startOfWeek, differenceInCalendarDays, parseISO } from "date-fns"
+import { format, subDays, eachDayOfInterval, startOfWeek } from "date-fns"
 import { ja } from "date-fns/locale"
+import { calcStreak } from "@/lib/date"
 
-type Props = {
-  logDates: string[]
-  color: string
-  name: string
-}
+type Props = { logDates: string[]; color: string; name: string }
 
 const WEEKS = 15
 
@@ -28,7 +25,7 @@ export function HabitHeatmap({ logDates, color, name }: Props) {
 
   const totalDays = days.length
   const doneDays = days.filter((d) => dateSet.has(format(d, "yyyy-MM-dd"))).length
-  const streak = calcCurrentStreak(logDates, today)
+  const streak = calcStreak(logDates)  // lib/date.ts の統一実装を使用
 
   return (
     <div className="mt-4">
@@ -61,7 +58,7 @@ export function HabitHeatmap({ logDates, color, name }: Props) {
         ))}
       </div>
 
-      {/* 月ラベル — parseInt で数値比較（文字列比較バグ修正）*/}
+      {/* 月ラベル */}
       <div className="flex gap-0.5 mt-1 overflow-x-auto">
         {weeks.map((w, wi) => {
           const first = w[0]
@@ -79,24 +76,4 @@ export function HabitHeatmap({ logDates, color, name }: Props) {
       </div>
     </div>
   )
-}
-
-function calcCurrentStreak(dates: string[], today: Date): number {
-  if (!dates.length) return 0
-  const sorted = [...dates].sort().reverse()
-  const todayStr = format(today, "yyyy-MM-dd")
-
-  if (sorted[0] !== todayStr) {
-    // differenceInCalendarDays で夏時間・タイムゾーン安全に計算
-    const diff = differenceInCalendarDays(today, parseISO(sorted[0]))
-    if (diff > 1) return 0
-  }
-
-  let streak = 1
-  for (let i = 0; i < sorted.length - 1; i++) {
-    const diff = differenceInCalendarDays(parseISO(sorted[i]), parseISO(sorted[i + 1]))
-    if (diff === 1) streak++
-    else break
-  }
-  return streak
 }

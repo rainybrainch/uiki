@@ -81,17 +81,14 @@ function HabitRow({ habit, last7 }: { habit: HabitWithStats; last7: DayLabel[] }
               key={d.date}
               disabled={pending}
               onClick={() => startTransition(() => toggleHabitLog(habit.id, d.date))}
-              className="w-9 h-8 rounded-lg border transition-all duration-150"
+              className={clsx(
+                "w-9 h-8 rounded-lg border transition-all duration-150",
+                !done && "hover:opacity-60"
+              )}
               style={{
                 background: done ? habit.color : "transparent",
                 borderColor: done ? habit.color : "var(--border)",
                 opacity: done ? 1 : 0.35,
-              }}
-              onMouseEnter={(e) => {
-                if (!done) (e.currentTarget as HTMLElement).style.opacity = "0.6"
-              }}
-              onMouseLeave={(e) => {
-                if (!done) (e.currentTarget as HTMLElement).style.opacity = "0.35"
               }}
             />
           )

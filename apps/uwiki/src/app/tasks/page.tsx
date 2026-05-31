@@ -63,7 +63,6 @@ export default async function TasksPage({
   const todayTasks    = active.filter((t) => t.dueDate && isToday(startOfDay(new Date(t.dueDate))))
   const overdueTasks  = active.filter((t) => t.dueDate && isPast(startOfDay(new Date(t.dueDate))) && !isToday(startOfDay(new Date(t.dueDate))))
   const upcomingTasks = active.filter((t) => t.dueDate && !isToday(startOfDay(new Date(t.dueDate))) && !isPast(startOfDay(new Date(t.dueDate))))
-  const noDateTasks   = active.filter((t) => !t.dueDate)
 
   const smartViews = [
     { id: "all",      label: "すべて",   icon: Layers,       count: active.length },

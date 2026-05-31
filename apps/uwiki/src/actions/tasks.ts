@@ -66,6 +66,7 @@ export async function completeRecurringTask(id: string) {
       tags: task.tags,
       recurrence: task.recurrence,
       recNextDate: nextRecurrence(nextDate, task.recurrence as Recurrence),
+      projectId: task.projectId,  // プロジェクトを引き継ぐ
       completed: false,
     },
   })

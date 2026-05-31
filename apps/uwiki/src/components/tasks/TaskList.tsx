@@ -48,14 +48,22 @@ function TaskItem({ task, dimmed }: { task: Task; dimmed?: boolean }) {
   const [editing, setEditing] = useState(false)
   const [expanded, setExpanded] = useState(false)
   const [editTitle, setEditTitle] = useState(task.title)
+  const [cancelling, setCancelling] = useState(false)
   const [pending, startTransition] = useTransition()
 
   const saveEdit = () => {
+    if (cancelling) { setCancelling(false); return }
     if (!editTitle.trim()) return
     startTransition(async () => {
       await updateTask(task.id, { title: editTitle.trim() })
       setEditing(false)
     })
+  }
+
+  const cancelEdit = () => {
+    setCancelling(true)
+    setEditTitle(task.title)
+    setEditing(false)
   }
 
   const tags = task.tags ? task.tags.split(",").map((t) => t.trim()).filter(Boolean) : []
@@ -82,7 +90,7 @@ function TaskItem({ task, dimmed }: { task: Task; dimmed?: boolean }) {
               className="input-field text-sm py-0.5"
               value={editTitle}
               onChange={(e) => setEditTitle(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") saveEdit(); if (e.key === "Escape") setEditing(false) }}
+              onKeyDown={(e) => { if (e.key === "Enter") saveEdit(); if (e.key === "Escape") cancelEdit() }}
               onBlur={saveEdit}
             />
           ) : (
