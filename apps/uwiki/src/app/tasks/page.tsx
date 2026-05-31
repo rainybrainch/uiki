@@ -59,10 +59,10 @@ export default async function TasksPage({
   const active = allTasks.filter((t) => !t.completed)
   const done   = allTasks.filter((t) => t.completed)
 
-  // スマートリスト
-  const todayTasks    = active.filter((t) => t.dueDate && isToday(new Date(t.dueDate)))
-  const overdueTasks  = active.filter((t) => t.dueDate && isPast(new Date(t.dueDate)) && !isToday(new Date(t.dueDate)))
-  const upcomingTasks = active.filter((t) => t.dueDate && !isToday(new Date(t.dueDate)) && !isPast(new Date(t.dueDate)))
+  // スマートリスト（startOfDay でタイムゾーン境界を正規化）
+  const todayTasks    = active.filter((t) => t.dueDate && isToday(startOfDay(new Date(t.dueDate))))
+  const overdueTasks  = active.filter((t) => t.dueDate && isPast(startOfDay(new Date(t.dueDate))) && !isToday(startOfDay(new Date(t.dueDate))))
+  const upcomingTasks = active.filter((t) => t.dueDate && !isToday(startOfDay(new Date(t.dueDate))) && !isPast(startOfDay(new Date(t.dueDate))))
   const noDateTasks   = active.filter((t) => !t.dueDate)
 
   const smartViews = [

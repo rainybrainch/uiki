@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
+import { format } from "date-fns"
 import { useRouter } from "next/navigation"
 import { updateTask, deleteTask, toggleTask, createSubTask, toggleSubTask, deleteSubTask } from "@/actions/tasks"
 import { assignTaskToProject } from "@/actions/projects"
@@ -36,7 +37,7 @@ export function TaskDetailClient({ task, projects }: { task: Task; projects: Pro
   const [title, setTitle]       = useState(task.title)
   const [memo, setMemo]         = useState(task.memo ?? "")
   const [priority, setPriority] = useState(task.priority)
-  const [dueDate, setDueDate]   = useState(task.dueDate ? task.dueDate.toISOString().split("T")[0] : "")
+  const [dueDate, setDueDate]   = useState(task.dueDate ? format(new Date(task.dueDate), "yyyy-MM-dd") : "")
   const [tags, setTags]         = useState(task.tags ?? "")
   const [recurrence, setRecurrence] = useState(task.recurrence ?? "")
   const [projectId, setProjectId]   = useState(task.projectId ?? "")

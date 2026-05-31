@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation"
 import {
   format,
+  parseISO,
   startOfMonth,
   endOfMonth,
   eachDayOfInterval,
@@ -26,7 +27,7 @@ export function DiaryCalendar({
   entryDates: string[]
 }) {
   const router = useRouter()
-  const monthDate = new Date(monthStr + "-01")
+  const monthDate = parseISO(monthStr + "-01")
 
   const days = eachDayOfInterval({
     start: startOfWeek(startOfMonth(monthDate), { locale: ja }),

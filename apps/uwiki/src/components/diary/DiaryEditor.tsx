@@ -1,16 +1,11 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState, useEffect, useTransition } from "react"
 import { saveDiaryEntry, deleteDiaryEntry } from "@/actions/diary"
 import { formatDisplay } from "@/lib/date"
 import { Save, Trash2 } from "lucide-react"
 
-type Entry = {
-  id: string
-  date: string
-  title: string
-  content: string
-} | null
+type Entry = { id: string; date: string; title: string; content: string } | null
 
 export function DiaryEditor({ date, entry }: { date: string; entry: Entry }) {
   const [title, setTitle] = useState(entry?.title ?? "")
@@ -18,14 +13,12 @@ export function DiaryEditor({ date, entry }: { date: string; entry: Entry }) {
   const [saved, setSaved] = useState(false)
   const [pending, startTransition] = useTransition()
 
-  // 日付が変わったら状態をリセット
-  const [currentDate, setCurrentDate] = useState(date)
-  if (date !== currentDate) {
-    setCurrentDate(date)
+  // 日付・エントリが変わったら状態をリセット（useEffect で安全に）
+  useEffect(() => {
     setTitle(entry?.title ?? "")
     setContent(entry?.content ?? "")
     setSaved(false)
-  }
+  }, [date, entry?.id])
 
   const save = () => {
     if (!title.trim() && !content.trim()) return
@@ -45,18 +38,11 @@ export function DiaryEditor({ date, entry }: { date: string; entry: Entry }) {
 
   return (
     <div className="surface rounded-xl flex flex-col" style={{ minHeight: "480px" }}>
-      {/* ヘッダー */}
       <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: "var(--border)" }}>
-        <span className="text-sm font-mono" style={{ color: "var(--dim)" }}>
-          {formatDisplay(date)}
-        </span>
+        <span className="text-sm font-mono text-dim">{formatDisplay(date)}</span>
         <div className="flex items-center gap-2">
           {entry && (
-            <button
-              onClick={remove}
-              className="p-1.5 rounded hover:bg-[var(--faint)] transition-colors"
-              style={{ color: "var(--dim)" }}
-            >
+            <button onClick={remove} className="p-1.5 rounded hover:bg-[var(--faint)] transition-colors text-dim">
               <Trash2 size={14} />
             </button>
           )}
@@ -71,7 +57,6 @@ export function DiaryEditor({ date, entry }: { date: string; entry: Entry }) {
         </div>
       </div>
 
-      {/* タイトル */}
       <input
         className="px-5 py-4 bg-transparent outline-none text-lg font-serif font-light placeholder:text-[var(--faint)]"
         placeholder="タイトル"
@@ -79,7 +64,6 @@ export function DiaryEditor({ date, entry }: { date: string; entry: Entry }) {
         onChange={(e) => setTitle(e.target.value)}
       />
 
-      {/* 本文 */}
       <textarea
         className="flex-1 px-5 pb-6 bg-transparent outline-none text-sm leading-relaxed resize-none placeholder:text-[var(--faint)]"
         placeholder="今日のことを書く..."

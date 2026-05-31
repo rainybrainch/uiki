@@ -1,4 +1,4 @@
-import { format, parseISO, isToday, differenceInCalendarDays } from "date-fns"
+import { format, parseISO, differenceInCalendarDays, startOfDay } from "date-fns"
 import { ja } from "date-fns/locale"
 
 export const today = () => format(new Date(), "yyyy-MM-dd")
@@ -15,7 +15,8 @@ export function calcStreak(dates: string[]): number {
   const todayStr = today()
 
   if (sorted[0] !== todayStr) {
-    const diff = differenceInCalendarDays(new Date(), parseISO(sorted[0]))
+    // startOfDay で日付境界をローカルタイムゾーンに正規化
+    const diff = differenceInCalendarDays(startOfDay(new Date()), parseISO(sorted[0]))
     if (diff > 1) return 0
   }
 
