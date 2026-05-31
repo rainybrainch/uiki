@@ -21,18 +21,24 @@ export default async function DiaryPage({
     endOfMonth(new Date(monthStr + "-01")),
   ]
 
-  const [currentEntry, monthEntries] = await Promise.all([
-    prisma.diaryEntry.findUnique({ where: { date: selectedDate } }),
-    prisma.diaryEntry.findMany({
-      where: {
-        date: {
-          gte: format(monthStart, "yyyy-MM-dd"),
-          lte: format(monthEnd, "yyyy-MM-dd"),
+  let currentEntry: any = null
+  let monthEntries: any[] = []
+  try {
+    ;[currentEntry, monthEntries] = await Promise.all([
+      prisma.diaryEntry.findUnique({ where: { date: selectedDate } }),
+      prisma.diaryEntry.findMany({
+        where: {
+          date: {
+            gte: format(monthStart, "yyyy-MM-dd"),
+            lte: format(monthEnd, "yyyy-MM-dd"),
+          },
         },
-      },
-      select: { date: true },
-    }),
-  ])
+        select: { date: true },
+      }),
+    ])
+  } catch {
+    // DB未接続時はデフォルト値
+  }
 
   const entryDates = monthEntries.map((e) => e.date)
 

@@ -29,23 +29,29 @@ export default async function TasksPage({
   const view = (params.view ?? "all") as View
   const projectFilter = params.project ?? "all"
 
-  const [allTasks, projects] = await Promise.all([
-    prisma.task.findMany({
-      include: {
-        subtasks: { orderBy: { order: "asc" } },
-        project: { select: { id: true, name: true, color: true } },
-      },
-      where: {
-        ...(projectFilter !== "all" ? { projectId: projectFilter } : {}),
-      },
-      orderBy: [{ order: "asc" }, { createdAt: "desc" }],
-    }),
-    prisma.project.findMany({
-      where: { archived: false },
-      orderBy: { order: "asc" },
-      include: { _count: { select: { tasks: { where: { completed: false } } } } },
-    }),
-  ])
+  let allTasks: any[] = []
+  let projects: any[] = []
+  try {
+    ;[allTasks, projects] = await Promise.all([
+      prisma.task.findMany({
+        include: {
+          subtasks: { orderBy: { order: "asc" } },
+          project: { select: { id: true, name: true, color: true } },
+        },
+        where: {
+          ...(projectFilter !== "all" ? { projectId: projectFilter } : {}),
+        },
+        orderBy: [{ order: "asc" }, { createdAt: "desc" }],
+      }),
+      prisma.project.findMany({
+        where: { archived: false },
+        orderBy: { order: "asc" },
+        include: { _count: { select: { tasks: { where: { completed: false } } } } },
+      }),
+    ])
+  } catch {
+    // DB未接続時はデフォルト値
+  }
 
   const now = new Date()
   const todayStart = startOfDay(now)

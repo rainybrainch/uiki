@@ -15,22 +15,29 @@ export default async function ReportPage() {
 
   const fmt = (d: Date) => format(d, "yyyy-MM-dd")
 
-  const [
-    tasksThisWeek, tasksDone, tasksPrev,
-    habits, habitLogsThisWeek,
-    diaryThisWeek, diaryPrev,
-  ] = await Promise.all([
-    prisma.task.count({ where: { createdAt: { gte: weekStart, lte: weekEnd } } }),
-    prisma.task.count({ where: { completed: true, updatedAt: { gte: weekStart, lte: weekEnd } } }),
-    prisma.task.count({ where: { completed: true, updatedAt: { gte: prevWeekStart, lte: prevWeekEnd } } }),
-    prisma.habit.findMany({ include: { logs: { where: { date: { gte: fmt(weekStart), lte: fmt(weekEnd) } } } } }),
-    prisma.habitLog.count({ where: { date: { gte: fmt(weekStart), lte: fmt(weekEnd) } } }),
-    prisma.diaryEntry.findMany({
-      where: { date: { gte: fmt(weekStart), lte: fmt(weekEnd) } },
-      orderBy: { date: "asc" },
-    }),
-    prisma.diaryEntry.count({ where: { date: { gte: fmt(prevWeekStart), lte: fmt(prevWeekEnd) } } }),
-  ])
+  let tasksThisWeek = 0, tasksDone = 0, tasksPrev = 0
+  let habits: any[] = [], habitLogsThisWeek = 0
+  let diaryThisWeek: any[] = [], diaryPrev = 0
+  try {
+    ;[
+      tasksThisWeek, tasksDone, tasksPrev,
+      habits, habitLogsThisWeek,
+      diaryThisWeek, diaryPrev,
+    ] = await Promise.all([
+      prisma.task.count({ where: { createdAt: { gte: weekStart, lte: weekEnd } } }),
+      prisma.task.count({ where: { completed: true, updatedAt: { gte: weekStart, lte: weekEnd } } }),
+      prisma.task.count({ where: { completed: true, updatedAt: { gte: prevWeekStart, lte: prevWeekEnd } } }),
+      prisma.habit.findMany({ include: { logs: { where: { date: { gte: fmt(weekStart), lte: fmt(weekEnd) } } } } }),
+      prisma.habitLog.count({ where: { date: { gte: fmt(weekStart), lte: fmt(weekEnd) } } }),
+      prisma.diaryEntry.findMany({
+        where: { date: { gte: fmt(weekStart), lte: fmt(weekEnd) } },
+        orderBy: { date: "asc" },
+      }),
+      prisma.diaryEntry.count({ where: { date: { gte: fmt(prevWeekStart), lte: fmt(prevWeekEnd) } } }),
+    ])
+  } catch {
+    // DB未接続時はデフォルト値
+  }
 
   const weekDays = 7
   const maxHabits = habits.length * weekDays
@@ -39,17 +46,22 @@ export default async function ReportPage() {
   const weekLabel = `${format(weekStart, "M/d", { locale: ja })} 〜 ${format(weekEnd, "M/d", { locale: ja })}`
 
   // 過去4週の習慣達成率グラフ用データ
-  const past4Weeks = await Promise.all(
-    Array.from({ length: 4 }, async (_, i) => {
-      const s = startOfWeek(subWeeks(now, 3 - i), { locale: ja })
-      const e = endOfWeek(subWeeks(now, 3 - i), { locale: ja })
-      const count = await prisma.habitLog.count({ where: { date: { gte: fmt(s), lte: fmt(e) } } })
-      return {
-        label: format(s, "M/d"),
-        rate: maxHabits > 0 ? count / (habits.length * 7) : 0,
-      }
-    })
-  )
+  let past4Weeks: { label: string; rate: number }[] = []
+  try {
+    past4Weeks = await Promise.all(
+      Array.from({ length: 4 }, async (_, i) => {
+        const s = startOfWeek(subWeeks(now, 3 - i), { locale: ja })
+        const e = endOfWeek(subWeeks(now, 3 - i), { locale: ja })
+        const count = await prisma.habitLog.count({ where: { date: { gte: fmt(s), lte: fmt(e) } } })
+        return {
+          label: format(s, "M/d"),
+          rate: maxHabits > 0 ? count / (habits.length * 7) : 0,
+        }
+      })
+    )
+  } catch {
+    // DB未接続時はデフォルト値
+  }
 
   return (
     <div className="page-container max-w-2xl">

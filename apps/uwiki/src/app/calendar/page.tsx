@@ -19,26 +19,34 @@ export default async function CalendarPage({
     format(endOfMonth(monthDate), "yyyy-MM-dd"),
   ]
 
-  const [tasks, diaryEntries, habitLogs, habits] = await Promise.all([
-    prisma.task.findMany({
-      where: {
-        dueDate: {
-          gte: new Date(monthStart),
-          lte: new Date(monthEnd + "T23:59:59"),
+  let tasks: any[] = []
+  let diaryEntries: any[] = []
+  let habitLogs: any[] = []
+  let habits: any[] = []
+  try {
+    ;[tasks, diaryEntries, habitLogs, habits] = await Promise.all([
+      prisma.task.findMany({
+        where: {
+          dueDate: {
+            gte: new Date(monthStart),
+            lte: new Date(monthEnd + "T23:59:59"),
+          },
         },
-      },
-      orderBy: { dueDate: "asc" },
-    }),
-    prisma.diaryEntry.findMany({
-      where: { date: { gte: monthStart, lte: monthEnd } },
-      select: { date: true, title: true, id: true },
-    }),
-    prisma.habitLog.findMany({
-      where: { date: { gte: monthStart, lte: monthEnd } },
-      select: { date: true, habitId: true },
-    }),
-    prisma.habit.findMany({ select: { id: true, color: true } }),
-  ])
+        orderBy: { dueDate: "asc" },
+      }),
+      prisma.diaryEntry.findMany({
+        where: { date: { gte: monthStart, lte: monthEnd } },
+        select: { date: true, title: true, id: true },
+      }),
+      prisma.habitLog.findMany({
+        where: { date: { gte: monthStart, lte: monthEnd } },
+        select: { date: true, habitId: true },
+      }),
+      prisma.habit.findMany({ select: { id: true, color: true } }),
+    ])
+  } catch {
+    // DB未接続時はデフォルト値
+  }
 
   // 日付 → データのマップを構築
   const tasksByDate: Record<string, typeof tasks> = {}

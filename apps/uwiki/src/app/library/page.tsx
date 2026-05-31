@@ -27,16 +27,22 @@ export default async function LibraryPage({
   const typeFilter = params.type as ItemType | undefined
   const statusFilter = params.status as ItemStatus | undefined
 
-  const items = await prisma.libraryItem.findMany({
-    where: {
-      ...(typeFilter ? { type: typeFilter } : {}),
-      ...(statusFilter ? { status: statusFilter } : {}),
-    },
-    orderBy: { createdAt: "desc" },
-  })
-
-  // 件数サマリー
-  const all = await prisma.libraryItem.findMany({ select: { type: true, status: true } })
+  let items: any[] = []
+  let all: any[] = []
+  try {
+    ;[items, all] = await Promise.all([
+      prisma.libraryItem.findMany({
+        where: {
+          ...(typeFilter ? { type: typeFilter } : {}),
+          ...(statusFilter ? { status: statusFilter } : {}),
+        },
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.libraryItem.findMany({ select: { type: true, status: true } }),
+    ])
+  } catch {
+    // DB未接続時はデフォルト値
+  }
   const typeCounts = Object.fromEntries(
     Object.keys(TYPE_LABELS).map((t) => [t, all.filter((i) => i.type === t).length])
   )

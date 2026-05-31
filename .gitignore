@@ -11,3 +11,5 @@ packages/database/*.dll.node
 
 # Python scripts
 uiki-tmp*
+
+.vercel

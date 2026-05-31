@@ -8,7 +8,12 @@ import { Settings2, CloudRain, Thermometer, MapPin, Timer, Key } from "lucide-re
 export const dynamic = "force-dynamic"
 
 export default async function SettingsPage() {
-  const settings = await getSettings()
+  let settings: any = null
+  try {
+    settings = await getSettings()
+  } catch {
+    // DB未接続時はデフォルト値
+  }
   const weather = settings ? await getWeatherFromSettings(settings) : null
 
   return (

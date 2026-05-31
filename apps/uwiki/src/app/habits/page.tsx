@@ -12,11 +12,16 @@ export const dynamic = "force-dynamic"
 export default async function HabitsPage() {
   const todayStr = today()
 
-  const habits = await prisma.habit.findMany({
-    // ヒートマップ用に15週(105日)分取得
-    include: { logs: { orderBy: { date: "desc" }, take: 110 } },
-    orderBy: { createdAt: "asc" },
-  })
+  let habits: any[] = []
+  try {
+    habits = await prisma.habit.findMany({
+      // ヒートマップ用に15週(105日)分取得
+      include: { logs: { orderBy: { date: "desc" }, take: 110 } },
+      orderBy: { createdAt: "asc" },
+    })
+  } catch {
+    // DB未接続時はデフォルト値
+  }
 
   const last7 = Array.from({ length: 7 }, (_, i) => {
     const d = subDays(new Date(), 6 - i)
@@ -27,11 +32,11 @@ export default async function HabitsPage() {
     }
   })
 
-  const habitsWithStats = habits.map((h) => ({
+  const habitsWithStats = habits.map((h: any) => ({
     ...h,
-    streak: calcStreak(h.logs.map((l) => l.date)),
-    doneToday: h.logs.some((l) => l.date === todayStr),
-    logDates: h.logs.map((l) => l.date),
+    streak: calcStreak(h.logs.map((l: any) => l.date)),
+    doneToday: h.logs.some((l: any) => l.date === todayStr),
+    logDates: h.logs.map((l: any) => l.date),
   }))
 
   const doneCount = habitsWithStats.filter((h) => h.doneToday).length
