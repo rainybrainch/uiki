@@ -4,7 +4,7 @@ import { TaskList } from "@/components/tasks/TaskList"
 import { KanbanBoard } from "@/components/tasks/KanbanBoard"
 import { ViewToggle } from "@/components/tasks/ViewToggle"
 import { ProjectSidebar } from "@/components/tasks/ProjectSidebar"
-import { CheckSquare, AlertCircle, Sun, Calendar, Layers } from "lucide-react"
+import { AlertCircle } from "lucide-react"
 import { format, isToday, isTomorrow, isThisWeek, isPast, startOfDay } from "date-fns"
 import { ja } from "date-fns/locale"
 import Link from "next/link"
@@ -18,7 +18,8 @@ const COLUMNS = [
 ]
 
 type View = "all" | "today" | "upcoming" | "overdue" | "board"
-type Filter = "all" | string  // "all" or projectId
+type Filter = "all" | string
+export type SmartViewDef = { id: string; label: string; count: number | null }
 
 export default async function TasksPage({
   searchParams,
@@ -64,12 +65,12 @@ export default async function TasksPage({
   const overdueTasks  = active.filter((t) => t.dueDate && isPast(startOfDay(new Date(t.dueDate))) && !isToday(startOfDay(new Date(t.dueDate))))
   const upcomingTasks = active.filter((t) => t.dueDate && !isToday(startOfDay(new Date(t.dueDate))) && !isPast(startOfDay(new Date(t.dueDate))))
 
-  const smartViews = [
-    { id: "all",      label: "すべて",   icon: Layers,       count: active.length },
-    { id: "today",    label: "今日",     icon: Sun,          count: todayTasks.length + overdueTasks.length },
-    { id: "upcoming", label: "今後",     icon: Calendar,     count: upcomingTasks.length },
-    { id: "overdue",  label: "期限切れ", icon: AlertCircle,  count: overdueTasks.length },
-    { id: "board",    label: "ボード",   icon: CheckSquare,  count: null },
+  const smartViews: SmartViewDef[] = [
+    { id: "all",      label: "すべて",   count: active.length },
+    { id: "today",    label: "今日",     count: todayTasks.length + overdueTasks.length },
+    { id: "upcoming", label: "今後",     count: upcomingTasks.length },
+    { id: "overdue",  label: "期限切れ", count: overdueTasks.length },
+    { id: "board",    label: "ボード",   count: null },
   ]
 
   // 表示するタスクを決定

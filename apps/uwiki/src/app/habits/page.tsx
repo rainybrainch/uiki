@@ -49,7 +49,14 @@ export default async function HabitsPage() {
           <h1 className="text-2xl font-serif font-light tracking-wide">習慣</h1>
         </div>
         <p className="text-sm text-dim ml-7">
-          今日 <span className="font-mono text-accent">{doneCount} / {habits.length}</span> 件完了
+          今日{" "}
+          <span className="font-mono" style={{ color: doneCount === habits.length && habits.length > 0 ? "var(--green)" : "var(--accent)" }}>
+            {doneCount} / {habits.length}
+          </span>{" "}
+          件完了
+          {doneCount === habits.length && habits.length > 0 && (
+            <span className="ml-2 text-xs" style={{ color: "var(--green)" }}>全済 ✓</span>
+          )}
         </p>
       </div>
 

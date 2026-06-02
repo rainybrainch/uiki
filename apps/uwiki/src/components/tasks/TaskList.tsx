@@ -5,7 +5,7 @@ import { toggleTask, deleteTask, updateTask } from "@/actions/tasks"
 import { TaskCheckbox } from "./TaskCheckbox"
 import { SubTaskList } from "./SubTaskList"
 import { formatDisplay } from "@/lib/date"
-import { format } from "date-fns"
+import { format, isToday, isPast, startOfDay } from "date-fns"
 import { Trash2, Pencil, ChevronDown, ChevronRight, RotateCcw } from "lucide-react"
 import Link from "next/link"
 import clsx from "clsx"
@@ -69,6 +69,11 @@ function TaskItem({ task, dimmed }: { task: Task; dimmed?: boolean }) {
   const tags = task.tags ? task.tags.split(",").map((t) => t.trim()).filter(Boolean) : []
   const hasSubtasks = task.subtasks.length > 0
 
+  const dueDateObj = task.dueDate ? startOfDay(new Date(task.dueDate)) : null
+  const isOverdue = dueDateObj && !task.completed && isPast(dueDateObj) && !isToday(dueDateObj)
+  const isDueToday = dueDateObj && !task.completed && isToday(dueDateObj)
+  const dueDateColor = isOverdue ? "var(--red)" : isDueToday ? "var(--amber)" : "var(--dim)"
+
   return (
     <li className={clsx("rounded-lg transition-colors", dimmed && "opacity-40")}>
       <div className="flex items-start gap-3 px-3 py-3 hover:bg-[var(--faint)] rounded-lg group">
@@ -102,8 +107,8 @@ function TaskItem({ task, dimmed }: { task: Task; dimmed?: boolean }) {
           {/* メタ情報行 */}
           <div className="flex items-center gap-2 mt-1 flex-wrap">
             {task.dueDate && (
-              <span className="text-[10px] font-mono text-dim">
-                {formatDisplay(format(new Date(task.dueDate), "yyyy-MM-dd"))}
+              <span className="text-[10px] font-mono" style={{ color: dueDateColor }}>
+                {isOverdue && "⚠ "}{formatDisplay(format(new Date(task.dueDate), "yyyy-MM-dd"))}
               </span>
             )}
             {task.recurrence && (

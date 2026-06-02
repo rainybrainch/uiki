@@ -87,25 +87,30 @@ export function Sidebar({ weather }: { weather: WeatherData | null }) {
 
       {/* 設定 */}
       <div className="px-2 pb-2">
-        <Link
-          href="/settings"
-          className={clsx(
-            "flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] transition-all",
-            isActive("/settings") ? "font-medium" : "text-dim hover:text-white"
-          )}
-          style={isActive("/settings") ? {
-            color: "white", background: "rgba(36,86,184,0.18)",
-            border: "1px solid rgba(58,111,201,0.28)",
-          } : { border: "1px solid transparent" }}
-        >
-          <Settings2 size={15} strokeWidth={isActive("/settings") ? 2 : 1.5}
-            style={{ color: isActive("/settings") ? "var(--accent)" : "inherit" }} />
-          設定
-        </Link>
+        {(() => {
+          const active = isActive("/settings")
+          return (
+            <Link
+              href="/settings"
+              className={clsx(
+                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] transition-all",
+                active ? "font-medium" : "text-dim hover:text-white"
+              )}
+              style={active ? {
+                color: "white", background: "rgba(36,86,184,0.18)",
+                border: "1px solid rgba(58,111,201,0.28)",
+              } : { border: "1px solid transparent" }}
+            >
+              <Settings2 size={15} strokeWidth={active ? 2 : 1.5}
+                style={{ color: active ? "var(--accent)" : "inherit" }} />
+              設定
+            </Link>
+          )
+        })()}
       </div>
 
       <div className="px-5 pb-3">
-        <p className="text-[9px] font-mono text-faint tracking-widest">v0.2.0</p>
+        <p className="text-[9px] font-mono text-faint tracking-widest">v0.3.0</p>
       </div>
     </aside>
   )

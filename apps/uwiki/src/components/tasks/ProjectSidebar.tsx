@@ -3,11 +3,20 @@
 import Link from "next/link"
 import { useTransition, useState } from "react"
 import { createProject, deleteProject } from "@/actions/projects"
-import { Plus, Trash2, LucideIcon } from "lucide-react"
+import { Plus, Trash2, Layers, Sun, Calendar, AlertCircle, Kanban } from "lucide-react"
 import clsx from "clsx"
+import type { SmartViewDef } from "@/app/tasks/page"
 
-type SmartView = { id: string; label: string; icon: LucideIcon; count: number | null }
+type SmartView = SmartViewDef
 type Project = { id: string; name: string; color: string; _count: { tasks: number } }
+
+const VIEW_ICONS: Record<string, React.ElementType> = {
+  all:      Layers,
+  today:    Sun,
+  upcoming: Calendar,
+  overdue:  AlertCircle,
+  board:    Kanban,
+}
 
 const PROJECT_COLORS = ["#3a6fc9","#2456b8","#6366f1","#8b5cf6","#ec4899","#10b981","#f59e0b","#ef4444"]
 
@@ -41,8 +50,9 @@ export function ProjectSidebar({
         {/* スマートリスト */}
         <p className="text-[9px] font-mono text-faint tracking-widest mb-2 px-2">ビュー</p>
         <nav className="space-y-0.5 mb-5">
-          {smartViews.map(({ id, label, icon: Icon, count }) => {
+          {smartViews.map(({ id, label, count }) => {
             const active = currentProject === "all" && currentView === id
+            const Icon = VIEW_ICONS[id] ?? Layers
             return (
               <Link
                 key={id}

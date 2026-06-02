@@ -31,7 +31,7 @@ export function DiaryEditor({ date, entry }: { date: string; entry: Entry }) {
 
   const remove = () => {
     if (!entry) return
-    startTransition(() => deleteDiaryEntry(entry.id))
+    startTransition(async () => { await deleteDiaryEntry(entry.id) })
     setTitle("")
     setContent("")
   }
@@ -62,6 +62,9 @@ export function DiaryEditor({ date, entry }: { date: string; entry: Entry }) {
         placeholder="タイトル"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
+        onKeyDown={(e) => {
+          if ((e.ctrlKey || e.metaKey) && e.key === "s") { e.preventDefault(); save() }
+        }}
       />
 
       <textarea

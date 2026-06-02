@@ -49,11 +49,11 @@ function LibraryCard({ item, typeLabels }: { item: Item; typeLabels: Record<stri
 
   const cycleStatus = () => {
     const next: Record<ItemStatus, ItemStatus> = { WANT: "DOING", DOING: "DONE", DONE: "WANT" }
-    startTransition(() => updateLibraryItem(item.id, { status: next[item.status] }))
+    startTransition(async () => { await updateLibraryItem(item.id, { status: next[item.status] }) })
   }
 
   const setRating = (r: number) => {
-    startTransition(() => updateLibraryItem(item.id, { rating: r === item.rating ? null : r }))
+    startTransition(async () => { await updateLibraryItem(item.id, { rating: r === item.rating ? null : r }) })
   }
 
   const statusInfo = STATUS_LABELS[item.status]
@@ -146,7 +146,7 @@ function LibraryCard({ item, typeLabels }: { item: Item; typeLabels: Record<stri
           {statusInfo.label}
         </button>
         <button
-          onClick={() => startTransition(() => deleteLibraryItem(item.id))}
+          onClick={() => startTransition(async () => { await deleteLibraryItem(item.id) })}
           className="p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity hover:bg-[var(--faint)]"
           style={{ color: "var(--dim)" }}
         >

@@ -3,7 +3,7 @@ import { today } from "@/lib/date"
 import { DiaryEditor } from "@/components/diary/DiaryEditor"
 import { DiaryCalendar } from "@/components/diary/DiaryCalendar"
 import { BookOpen } from "lucide-react"
-import { format, startOfMonth, endOfMonth } from "date-fns"
+import { format, parseISO, startOfMonth, endOfMonth } from "date-fns"
 
 export const dynamic = "force-dynamic"
 
@@ -17,8 +17,8 @@ export default async function DiaryPage({
   const monthStr = params.month ?? format(new Date(), "yyyy-MM")
 
   const [monthStart, monthEnd] = [
-    startOfMonth(new Date(monthStr + "-01")),
-    endOfMonth(new Date(monthStr + "-01")),
+    startOfMonth(parseISO(monthStr + "-01")),
+    endOfMonth(parseISO(monthStr + "-01")),
   ]
 
   let currentEntry: any = null

@@ -4,6 +4,7 @@ import { useState, useTransition } from "react"
 import { format } from "date-fns"
 import { useRouter } from "next/navigation"
 import { updateTask, deleteTask, toggleTask, createSubTask, toggleSubTask, deleteSubTask } from "@/actions/tasks"
+import type { Priority, Recurrence } from "@/actions/tasks"
 import { assignTaskToProject } from "@/actions/projects"
 import { SubTaskList } from "./SubTaskList"
 import { ArrowLeft, Trash2, RotateCcw, Calendar, Tag, FolderOpen, CheckCircle2, Circle } from "lucide-react"
@@ -25,7 +26,7 @@ const PRIORITY_OPTS = [
   { value: "MEDIUM", label: "中", color: "var(--accent)" },
   { value: "LOW",    label: "低", color: "var(--dim)" },
 ]
-const REC_OPTS = [
+const REC_OPTS: { value: Recurrence | ""; label: string }[] = [
   { value: "",        label: "なし" },
   { value: "daily",   label: "毎日" },
   { value: "weekly",  label: "毎週" },
@@ -36,10 +37,10 @@ export function TaskDetailClient({ task, projects }: { task: Task; projects: Pro
   const router = useRouter()
   const [title, setTitle]       = useState(task.title)
   const [memo, setMemo]         = useState(task.memo ?? "")
-  const [priority, setPriority] = useState(task.priority)
+  const [priority, setPriority] = useState<Priority>(task.priority as Priority)
   const [dueDate, setDueDate]   = useState(task.dueDate ? format(new Date(task.dueDate), "yyyy-MM-dd") : "")
   const [tags, setTags]         = useState(task.tags ?? "")
-  const [recurrence, setRecurrence] = useState(task.recurrence ?? "")
+  const [recurrence, setRecurrence] = useState<Recurrence | "">(task.recurrence as Recurrence ?? "")
   const [projectId, setProjectId]   = useState(task.projectId ?? "")
   const [completed, setCompleted]   = useState(task.completed)
   const [dirty, setDirty]           = useState(false)
@@ -54,10 +55,10 @@ export function TaskDetailClient({ task, projects }: { task: Task; projects: Pro
       await updateTask(task.id, {
         title: title.trim() || task.title,
         memo: memo || undefined,
-        priority: priority as any,
+        priority,
         dueDate: dueDate || null,
         tags: tags || undefined,
-        recurrence: (recurrence as any) || null,
+        recurrence: (recurrence as Recurrence) || null,
       })
       if (projectId !== (task.projectId ?? "")) {
         await assignTaskToProject(task.id, projectId || null)
@@ -136,7 +137,7 @@ export function TaskDetailClient({ task, projects }: { task: Task; projects: Pro
             {PRIORITY_OPTS.map((opt) => (
               <button
                 key={opt.value}
-                onClick={() => { setPriority(opt.value as any); markDirty() }}
+                onClick={() => { setPriority(opt.value as Priority); markDirty() }}
                 className={clsx(
                   "px-3 py-1 rounded-full text-xs border transition-all",
                   priority === opt.value

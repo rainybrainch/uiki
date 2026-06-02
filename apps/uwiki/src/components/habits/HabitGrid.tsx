@@ -1,6 +1,6 @@
 "use client"
 
-import { useTransition } from "react"
+import { useTransition, useState } from "react"
 import { deleteHabit, toggleHabitLog } from "@/actions/habits"
 import { Trash2 } from "lucide-react"
 import clsx from "clsx"
@@ -58,6 +58,7 @@ export function HabitGrid({ habits, last7, todayStr }: {
 
 function HabitRow({ habit, last7 }: { habit: HabitWithStats; last7: DayLabel[] }) {
   const [pending, startTransition] = useTransition()
+  const [hoverDate, setHoverDate] = useState<string | null>(null)
 
   return (
     <div className="group flex items-center px-4 py-3 hover:bg-[rgba(255,255,255,0.02)] transition-colors">
@@ -81,14 +82,13 @@ function HabitRow({ habit, last7 }: { habit: HabitWithStats; last7: DayLabel[] }
               key={d.date}
               disabled={pending}
               onClick={() => startTransition(() => toggleHabitLog(habit.id, d.date))}
-              className={clsx(
-                "w-9 h-8 rounded-lg border transition-all duration-150",
-                !done && "hover:opacity-60"
-              )}
+              onMouseEnter={() => setHoverDate(d.date)}
+              onMouseLeave={() => setHoverDate(null)}
+              className="w-9 h-8 rounded-lg border transition-all duration-150"
               style={{
-                background: done ? habit.color : "transparent",
-                borderColor: done ? habit.color : "var(--border)",
-                opacity: done ? 1 : 0.35,
+                background: done ? habit.color : hoverDate === d.date ? `${habit.color}30` : "transparent",
+                borderColor: done ? habit.color : hoverDate === d.date ? `${habit.color}80` : "var(--border)",
+                opacity: done ? 1 : 0.55,
               }}
             />
           )

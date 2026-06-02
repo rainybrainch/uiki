@@ -1,8 +1,8 @@
 import { prisma } from "@/lib/db"
 import { today, calcStreak, formatDisplay } from "@/lib/date"
-import { format } from "date-fns"
+import { format, startOfDay } from "date-fns"
 import { ja } from "date-fns/locale"
-import { CheckSquare, Repeat2, BookOpen, ArrowRight } from "lucide-react"
+import { CheckSquare, Repeat2, BookOpen, ArrowRight, AlertCircle } from "lucide-react"
 import Link from "next/link"
 import { TaskCheckbox } from "@/components/tasks/TaskCheckbox"
 import { HabitCheckButton } from "@/components/habits/HabitCheckButton"
@@ -16,12 +16,13 @@ export default async function DashboardPage() {
   let habits: any[] = []
   let recentDiaries: any[] = []
   let doneTasks = 0
+  let overdueCount = 0
 
   try {
-    ;[tasks, habits, recentDiaries, doneTasks] = await Promise.all([
+    ;[tasks, habits, recentDiaries, doneTasks, overdueCount] = await Promise.all([
       prisma.task.findMany({
         where: { completed: false },
-        orderBy: [{ priority: "asc" }, { createdAt: "asc" }],
+        orderBy: [{ dueDate: "asc" }, { priority: "asc" }, { createdAt: "asc" }],
         take: 6,
       }),
       prisma.habit.findMany({
@@ -30,6 +31,12 @@ export default async function DashboardPage() {
       }),
       prisma.diaryEntry.findMany({ orderBy: { date: "desc" }, take: 3 }),
       prisma.task.count({ where: { completed: true } }),
+      prisma.task.count({
+        where: {
+          completed: false,
+          dueDate: { lt: startOfDay(new Date()) },
+        },
+      }),
     ])
   } catch {
     // DB未接続時はダッシュボードを空で表示
@@ -56,6 +63,13 @@ export default async function DashboardPage() {
           <StatPill value={tasks.length} label="未完了タスク" color="var(--accent)" />
           <StatPill value={`${doneHabitsToday} / ${habits.length}`} label="今日の習慣" color="var(--green)" />
           <StatPill value={doneTasks} label="完了済み" color="var(--dim)" />
+          {overdueCount > 0 && (
+            <a href="/tasks?view=overdue" className="flex items-center gap-2 px-4 py-2 rounded-full text-xs transition-opacity hover:opacity-80" style={{ background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)" }}>
+              <AlertCircle size={12} style={{ color: "var(--red)" }} />
+              <span className="font-mono font-medium text-sm" style={{ color: "var(--red)" }}>{overdueCount}</span>
+              <span style={{ color: "rgba(248,113,113,0.8)" }}>期限切れ</span>
+            </a>
+          )}
         </div>
       </section>
 

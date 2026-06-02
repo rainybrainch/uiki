@@ -4,25 +4,37 @@
 
 export type WeatherData = {
   city: string
-  precipitation: number   // mm/h（降水量）
-  weatherCode: number     // WMO weather code
-  temperature: number     // °C
+  precipitation: number
+  weatherCode: number
+  temperature: number
   description: string
-  rainIntensity: number   // 0.0〜1.0（RainCanvas用）
+  rainIntensity: number
   isRaining: boolean
 }
 
-/** WMO weather code → 雨域 intensity マッピング */
+const TIMEOUT_MS = 5000
+
+/** fetch with AbortController タイムアウト */
+async function fetchWithTimeout(url: string, options: RequestInit = {}): Promise<Response> {
+  const controller = new AbortController()
+  const id = setTimeout(() => controller.abort(), TIMEOUT_MS)
+  try {
+    const res = await fetch(url, { ...options, signal: controller.signal })
+    return res
+  } finally {
+    clearTimeout(id)
+  }
+}
+
 function codeToIntensity(code: number, precip: number): number {
-  // 0=快晴, 1-3=曇り, 51-67=霧雨〜雨, 71-77=雪, 80-82=にわか雨, 95-99=雷雨
-  if (code === 0) return 0.05          // 快晴 → 霧のような最低限
-  if (code <= 3) return 0.10           // 曇り
-  if (code <= 48) return 0.12          // 霧
-  if (code <= 57) return 0.25 + precip * 0.05   // 霧雨
-  if (code <= 67) return 0.4 + precip * 0.04    // 雨
-  if (code <= 77) return 0.2           // 雪
-  if (code <= 82) return 0.5 + precip * 0.05    // にわか雨
-  return Math.min(0.9, 0.65 + precip * 0.03)    // 雷雨
+  if (code === 0) return 0.05
+  if (code <= 3) return 0.10
+  if (code <= 48) return 0.12
+  if (code <= 57) return 0.25 + precip * 0.05
+  if (code <= 67) return 0.4 + precip * 0.04
+  if (code <= 77) return 0.2
+  if (code <= 82) return 0.5 + precip * 0.05
+  return Math.min(0.9, 0.65 + precip * 0.03)
 }
 
 function codeToDescription(code: number): string {
@@ -39,18 +51,20 @@ function codeToDescription(code: number): string {
   return "—"
 }
 
-/** 都市名 → 緯度経度 (Open-Meteo Geocoding) */
 export async function geocodeCity(city: string): Promise<{ lat: number; lon: number; name: string } | null> {
   const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=ja&format=json`
-  const res = await fetch(url, { next: { revalidate: 86400 } })
-  if (!res.ok) return null
-  const data = await res.json()
-  const r = data.results?.[0]
-  if (!r) return null
-  return { lat: r.latitude, lon: r.longitude, name: r.name }
+  try {
+    const res = await fetchWithTimeout(url, { next: { revalidate: 86400 } } as RequestInit)
+    if (!res.ok) return null
+    const data = await res.json()
+    const r = data.results?.[0]
+    if (!r) return null
+    return { lat: r.latitude, lon: r.longitude, name: r.name }
+  } catch {
+    return null
+  }
 }
 
-/** 緯度経度 → 現在の天気 (Open-Meteo Weather) */
 export async function fetchWeather(lat: number, lon: number, city: string): Promise<WeatherData> {
   const url = [
     `https://api.open-meteo.com/v1/forecast`,
@@ -59,15 +73,14 @@ export async function fetchWeather(lat: number, lon: number, city: string): Prom
     `&timezone=auto`,
   ].join("")
 
-  const res = await fetch(url, { next: { revalidate: 1800 } }) // 30分キャッシュ
+  const res = await fetchWithTimeout(url, { next: { revalidate: 1800 } } as RequestInit)
   if (!res.ok) throw new Error("Weather API failed")
 
   const data = await res.json()
   const cur = data.current
-
-  const code  = cur.weather_code as number
+  const code = cur.weather_code as number
   const precip = cur.precipitation as number
-  const temp  = cur.temperature_2m as number
+  const temp = cur.temperature_2m as number
 
   return {
     city,
@@ -80,7 +93,6 @@ export async function fetchWeather(lat: number, lon: number, city: string): Prom
   }
 }
 
-/** 設定から天気を取得（キャッシュ済み lat/lon を使う） */
 export async function getWeatherFromSettings(settings: {
   city: string | null
   lat: number | null

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache"
 import { prisma } from "@/lib/db"
 import { Priority } from "@ameiki/database"
+export type { Priority }
 import { format, addDays, addWeeks, addMonths, parseISO } from "date-fns"
 import { today } from "@/lib/date"
 

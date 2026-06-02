@@ -15,6 +15,7 @@ export function TaskCheckbox({ taskId, completed }: { taskId: string; completed:
         borderColor: completed ? "var(--accent)" : "var(--border)",
         background: completed ? "var(--accent-2)" : "transparent",
         opacity: pending ? 0.5 : 1,
+        pointerEvents: pending ? "none" : "auto",
       }}
     >
       {completed && (

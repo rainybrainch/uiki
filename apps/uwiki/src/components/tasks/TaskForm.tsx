@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState, useTransition, useRef } from "react"
 import { createTask } from "@/actions/tasks"
 import { Plus, SlidersHorizontal } from "lucide-react"
 
@@ -26,6 +26,7 @@ export function TaskForm({
   const [recurrence, setRecurrence] = useState<Recurrence | "">("")
   const [projectId, setProjectId] = useState<string>(defaultProjectId ?? "")
   const [pending, startTransition] = useTransition()
+  const titleRef = useRef<HTMLInputElement>(null)
 
   const submit = () => {
     if (!title.trim()) return
@@ -42,6 +43,7 @@ export function TaskForm({
       setTitle(""); setMemo(""); setPriority("MEDIUM")
       setDueDate(""); setTags(""); setRecurrence("")
       setOpen(false)
+      setTimeout(() => titleRef.current?.focus(), 0)
     })
   }
 
@@ -50,6 +52,7 @@ export function TaskForm({
       <div className="flex items-center gap-3 px-4 py-3">
         <Plus size={15} strokeWidth={1.5} className="text-dim shrink-0" />
         <input
+          ref={titleRef}
           className="flex-1 bg-transparent outline-none text-sm placeholder:text-dim"
           placeholder="タスクを追加..."
           value={title}

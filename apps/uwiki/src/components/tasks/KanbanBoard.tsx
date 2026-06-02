@@ -4,6 +4,8 @@ import { useState, useTransition } from "react"
 import { moveTask, deleteTask } from "@/actions/tasks"
 import { Trash2 } from "lucide-react"
 import clsx from "clsx"
+import Link from "next/link"
+import { isToday, isPast, startOfDay } from "date-fns"
 import type { KanbanColumn } from "@/actions/tasks"
 
 type Task = {
@@ -83,6 +85,11 @@ function KanbanCard({ task }: { task: Task }) {
     e.dataTransfer.effectAllowed = "move"
   }
 
+  const dueDateObj = task.dueDate ? startOfDay(new Date(task.dueDate)) : null
+  const isOverdue = dueDateObj && !task.completed && isPast(dueDateObj) && !isToday(dueDateObj)
+  const isDueToday = dueDateObj && !task.completed && isToday(dueDateObj)
+  const dueDateColor = isOverdue ? "var(--red)" : isDueToday ? "var(--amber)" : "var(--dim)"
+
   return (
     <div
       draggable
@@ -99,15 +106,21 @@ function KanbanCard({ task }: { task: Task }) {
       }}
     >
       <div className="absolute left-0 top-3 bottom-3 w-[2px] rounded-full" style={{ background: priorityColor[task.priority] }} />
-      <p className={clsx("text-sm leading-snug pl-3", task.completed && "line-through")}>{task.title}</p>
+      <Link
+        href={`/tasks/${task.id}`}
+        className={clsx("block text-sm leading-snug pl-3 hover:text-accent transition-colors", task.completed && "line-through")}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {task.title}
+      </Link>
       {task.memo && <p className="text-xs mt-1.5 pl-3 line-clamp-2 text-dim">{task.memo}</p>}
       {task.dueDate && (
-        <p className="text-[10px] mt-2 pl-3 font-mono text-dim">
-          {new Date(task.dueDate).toLocaleDateString("ja-JP", { month: "short", day: "numeric" })}
+        <p className="text-[10px] mt-2 pl-3 font-mono" style={{ color: dueDateColor }}>
+          {isOverdue && "⚠ "}{new Date(task.dueDate).toLocaleDateString("ja-JP", { month: "short", day: "numeric" })}
         </p>
       )}
       <button
-        onClick={() => startTransition(() => deleteTask(task.id))}
+        onClick={(e) => { e.stopPropagation(); startTransition(() => deleteTask(task.id)) }}
         className="absolute top-2 right-2 p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity hover:bg-[var(--faint)] text-dim"
       >
         <Trash2 size={11} />

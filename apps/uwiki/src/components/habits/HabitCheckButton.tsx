@@ -23,6 +23,7 @@ export function HabitCheckButton({
         borderColor: doneToday ? color : "var(--border)",
         background: doneToday ? color : "transparent",
         opacity: pending ? 0.5 : 1,
+        pointerEvents: pending ? "none" : "auto",
       }}
     >
       {doneToday && (

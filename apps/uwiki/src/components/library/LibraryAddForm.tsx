@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState, useTransition, useRef } from "react"
 import { createLibraryItem } from "@/actions/library"
 import { Plus, ChevronDown, ChevronUp } from "lucide-react"
 import type { ItemType } from "@ameiki/database"
@@ -13,6 +13,7 @@ export function LibraryAddForm({ typeLabels }: { typeLabels: Record<string, stri
   const [url, setUrl] = useState("")
   const [note, setNote] = useState("")
   const [pending, startTransition] = useTransition()
+  const titleRef = useRef<HTMLInputElement>(null)
 
   const submit = () => {
     if (!title.trim()) return
@@ -29,6 +30,7 @@ export function LibraryAddForm({ typeLabels }: { typeLabels: Record<string, stri
       setUrl("")
       setNote("")
       setOpen(false)
+      setTimeout(() => titleRef.current?.focus(), 0)
     })
   }
 
@@ -37,6 +39,7 @@ export function LibraryAddForm({ typeLabels }: { typeLabels: Record<string, stri
       <div className="flex items-center gap-3 px-4 py-3">
         <Plus size={16} strokeWidth={1.5} style={{ color: "var(--dim)" }} />
         <input
+          ref={titleRef}
           className="flex-1 bg-transparent outline-none text-sm placeholder:text-[var(--dim)]"
           placeholder="タイトルを追加..."
           value={title}
