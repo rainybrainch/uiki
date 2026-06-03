@@ -4,7 +4,7 @@ import { useTransition } from "react"
 import { updateLibraryItem, deleteLibraryItem } from "@/actions/library"
 import { ExternalLink, Star, Trash2 } from "lucide-react"
 import clsx from "clsx"
-import type { ItemStatus } from "@ameiki/database"
+import type { ItemStatus } from "@uwiki/database"
 
 type Item = {
   id: string

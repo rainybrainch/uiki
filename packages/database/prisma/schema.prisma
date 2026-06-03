@@ -137,6 +137,43 @@ model WeeklySnapshot {
   @@unique([weekStart])
 }
 
+// ─── 重力雨域 ─────────────────────────────────────────────
+
+model GravityLog {
+  id        String   @id @default(cuid())
+  date      String   // YYYY-MM-DD
+  text      String   // 最大280字
+  intensity Int      @default(1) // 1=微熱 / 2=燃焼 / 3=臨界
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ─── 引力雨域 ─────────────────────────────────────────────
+
+model AttractionMetric {
+  id        String   @id @default(cuid())
+  name      String   // 項目名（例: 貯金・体重・読書量）
+  value     Float    @default(0) // 最新値（キャッシュ）
+  target    Float?   // 目標値（任意）
+  unit      String?  // 単位（円・kg・冊など）
+  color     String   @default("#3a6fc9")
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  logs      AttractionLog[]
+}
+
+model AttractionLog {
+  id         String           @id @default(cuid())
+  metricId   String
+  date       String           // YYYY-MM-DD
+  value      Float
+  createdAt  DateTime         @default(now())
+  metric     AttractionMetric @relation(fields: [metricId], references: [id], onDelete: Cascade)
+
+  @@unique([metricId, date])
+}
+
 // ─── Enum ────────────────────────────────────────────────
 
 enum Priority {

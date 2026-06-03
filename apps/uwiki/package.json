@@ -1,5 +1,5 @@
 {
-  "name": "@ameiki/uwiki",
+  "name": "@uwiki/uwiki",
   "version": "0.0.1",
   "private": true,
   "scripts": {
@@ -11,7 +11,7 @@
     "db:push": "cd ../../packages/database && npx prisma db push"
   },
   "dependencies": {
-    "@ameiki/database": "*",
+    "@uwiki/database": "*",
     "next": "^15.1.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

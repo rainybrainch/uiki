@@ -1,2 +1,2 @@
-import { prisma } from "@ameiki/database"
+import { prisma } from "@uwiki/database"
 export { prisma }

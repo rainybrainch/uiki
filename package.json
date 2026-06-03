@@ -1,5 +1,5 @@
 {
-  "name": "ameiki",
+  "name": "uwiki",
   "private": true,
   "workspaces": [
     "apps/*",

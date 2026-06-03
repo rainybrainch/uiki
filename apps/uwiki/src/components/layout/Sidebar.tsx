@@ -4,7 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
   LayoutDashboard, CheckSquare, Repeat2, BookOpen,
-  Library, Settings2, CalendarDays, BarChart2,
+  Library, Settings2, CalendarDays, BarChart2, Droplets,
 } from "lucide-react"
 import clsx from "clsx"
 import type { WeatherData } from "@/lib/weather"
@@ -17,6 +17,7 @@ const nav = [
   { href: "/diary",     label: "日記",           icon: BookOpen },
   { href: "/library",   label: "ライブラリ",     icon: Library },
   { href: "/report",    label: "レポート",       icon: BarChart2 },
+  { href: "/gravity",   label: "雨域",           icon: Droplets },
 ]
 
 export function Sidebar({ weather }: { weather: WeatherData | null }) {

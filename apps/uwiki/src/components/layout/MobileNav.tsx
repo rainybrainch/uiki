@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, CheckSquare, Repeat2, BookOpen, Library } from "lucide-react"
+import { LayoutDashboard, CheckSquare, Repeat2, BookOpen, Droplets } from "lucide-react"
 import clsx from "clsx"
 
 const nav = [
@@ -10,7 +10,7 @@ const nav = [
   { href: "/tasks",   label: "タスク", icon: CheckSquare },
   { href: "/habits",  label: "習慣",   icon: Repeat2 },
   { href: "/diary",   label: "日記",   icon: BookOpen },
-  { href: "/library", label: "本棚",   icon: Library },
+  { href: "/gravity", label: "雨域",   icon: Droplets },
 ]
 
 export function MobileNav() {
