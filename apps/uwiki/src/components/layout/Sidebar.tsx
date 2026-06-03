@@ -5,7 +5,7 @@ import { usePathname, useSearchParams } from "next/navigation"
 import {
   LayoutDashboard, CheckSquare, Repeat2, BookOpen,
   Library, Settings2, CalendarDays, BarChart2,
-  Flame, Droplets, BookMarked, Briefcase, Layers, ChevronLeft, ChevronRight,
+  Flame, Droplets, BookMarked, Briefcase, Layers, ChevronLeft, ChevronRight, Search,
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import type { WeatherData } from "@/lib/weather"
@@ -86,7 +86,7 @@ export function Sidebar({ weather }: { weather: WeatherData | null }) {
       }}
     >
       {/* ブランド */}
-      <div style={{ padding: collapsed ? "24px 0 16px" : "24px 16px 16px", overflow: "hidden", minHeight: 72 }}>
+      <div style={{ padding: collapsed ? "24px 0 12px" : "24px 16px 12px", overflow: "hidden", minHeight: 72 }}>
         <Link href="/" style={{ textDecoration: "none", display: "flex", justifyContent: collapsed ? "center" : "flex-start", alignItems: "baseline", gap: 8 }}>
           <span style={{ fontFamily: "'Noto Serif JP',serif", fontSize: collapsed ? "1.2rem" : "1.4rem", color: "var(--accent)", letterSpacing: "0.2em", whiteSpace: "nowrap" }}>
             {collapsed ? "雨" : "雨域"}
@@ -95,6 +95,41 @@ export function Sidebar({ weather }: { weather: WeatherData | null }) {
             <span style={{ fontSize: "0.65rem", letterSpacing: "0.2em", color: "var(--dim)", whiteSpace: "nowrap" }}>Uwiki</span>
           )}
         </Link>
+
+        {/* 検索ボタン */}
+        <button
+          onClick={() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true, bubbles: true }))}
+          title="検索 (⌘K)"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: collapsed ? 0 : 8,
+            justifyContent: collapsed ? "center" : "flex-start",
+            width: "100%",
+            marginTop: 10,
+            padding: collapsed ? "7px 0" : "7px 10px",
+            background: "rgba(255,255,255,0.04)",
+            border: "1px solid var(--border)",
+            borderRadius: 8,
+            cursor: "pointer",
+            color: "var(--dim)",
+            fontSize: "0.75rem",
+            transition: "background 0.12s, color 0.12s",
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.07)"; e.currentTarget.style.color = "rgba(255,255,255,0.7)" }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.color = "var(--dim)" }}
+        >
+          <Search size={13} style={{ flexShrink: 0 }} />
+          {!collapsed && (
+            <>
+              <span style={{ flex: 1, textAlign: "left" }}>検索</span>
+              <kbd style={{
+                fontSize: "0.6rem", padding: "1px 5px", borderRadius: 4,
+                background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)",
+              }}>⌘K</kbd>
+            </>
+          )}
+        </button>
       </div>
 
       {/* ナビゲーション */}
