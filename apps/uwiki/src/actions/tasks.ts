@@ -175,10 +175,10 @@ export async function deleteSubTask(id: string) {
 // ─── 検索 ────────────────────────────────────────────
 
 export async function searchAll(q: string) {
-  if (!q.trim()) return { tasks: [], diary: [], library: [] }
+  if (!q.trim()) return { tasks: [], diary: [], library: [], cases: [], dreams: [] }
   const kw = q.trim()
 
-  const [tasks, diary, library] = await Promise.all([
+  const [tasks, diary, library, cases, dreams] = await Promise.all([
     prisma.task.findMany({
       where: {
         OR: [
@@ -213,7 +213,30 @@ export async function searchAll(q: string) {
       take: 5,
       orderBy: { createdAt: "desc" },
     }),
+    prisma.case.findMany({
+      where: {
+        OR: [
+          { name: { contains: kw } },
+          { client: { contains: kw } },
+          { memo: { contains: kw } },
+        ],
+      },
+      take: 4,
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.dream.findMany({
+      where: {
+        OR: [
+          { title: { contains: kw } },
+          { vision: { contains: kw } },
+          { definition: { contains: kw } },
+        ],
+        achieved: false,
+      },
+      take: 4,
+      orderBy: { layer: "asc" },
+    }),
   ])
 
-  return { tasks, diary, library }
+  return { tasks, diary, library, cases, dreams }
 }

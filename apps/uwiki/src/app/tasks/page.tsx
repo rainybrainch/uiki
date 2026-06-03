@@ -100,9 +100,9 @@ export default async function TasksPage({
       {/* メインエリア */}
       <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
         {/* ヘッダー */}
-        <div className="flex items-center justify-between px-4 py-4 md:px-7 md:py-6 shrink-0">
+        <div className="flex items-center justify-between px-4 py-4 md:px-7 md:py-5 shrink-0">
           <div className="flex items-center gap-3">
-            <h1 className="text-xl font-serif font-light tracking-wide">
+            <h1 className="text-lg md:text-xl font-serif font-light tracking-wide">
               {view === "today"    ? "今日" :
                view === "upcoming" ? "今後7日" :
                view === "overdue"  ? "期限切れ" :
@@ -114,6 +114,24 @@ export default async function TasksPage({
             <span className="text-xs font-mono text-dim">{active.length} 件</span>
           </div>
           <ViewToggle current={view} projectFilter={projectFilter} />
+        </div>
+
+        {/* モバイル: スマートビュー切り替え（sm未満のみ表示） */}
+        <div className="flex gap-1.5 px-4 pb-2 overflow-x-auto sm:hidden shrink-0">
+          {smartViews.map(({ id, label, count }) => (
+            <a key={id} href={`/tasks?view=${id}`}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs shrink-0 transition-all"
+              style={{
+                background: view === id ? "rgba(58,111,201,0.18)" : "var(--faint)",
+                border: `1px solid ${view === id ? "rgba(58,111,201,0.35)" : "transparent"}`,
+                color: view === id ? "white" : "var(--dim)",
+              }}>
+              {label}
+              {count !== null && count > 0 && (
+                <span className="font-mono" style={{ color: view === id ? "var(--accent)" : "var(--faint)" }}>{count}</span>
+              )}
+            </a>
+          ))}
         </div>
 
         {/* タスク追加フォーム */}
