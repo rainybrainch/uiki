@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: "#0a1530",
+  themeColor: "#060c1a",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
@@ -36,43 +36,53 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     const settings = await prisma.settings.findUnique({ where: { id: "singleton" } })
     weather = settings ? await getWeatherFromSettings(settings) : null
     rainIntensity = weather?.rainIntensity ?? 0.35
-  } catch {
-    // DB未接続時（初回デプロイ等）はデフォルト値で続行
-  }
+  } catch {}
 
   return (
     <html lang="ja">
       <head>
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
       </head>
-      <body className="min-h-screen flex relative" style={{ background: "var(--bg)" }}>
+      <body style={{ background: "var(--bg)", minHeight: "100dvh", display: "flex", position: "relative" }}>
         <SessionProvider>
-        <SwRegister />
-        <RainCanvas intensity={rainIntensity} />
-        <QuickSearch />
+          <SwRegister />
+          <RainCanvas intensity={rainIntensity} />
+          <QuickSearch />
 
-        <div className="relative z-10 flex w-full min-h-screen">
-          {/* PCサイドバー（md以上のみ表示） */}
-          <div className="hidden md:block">
-            <Suspense fallback={null}>
-              <Sidebar weather={weather} />
-            </Suspense>
+          {/* 全体レイアウト */}
+          <div style={{ position: "relative", zIndex: 10, display: "flex", width: "100%", minHeight: "100dvh" }}>
+
+            {/* PCサイドバー */}
+            <div className="hidden md:block">
+              <Suspense fallback={<div style={{ width: 208, minHeight: "100vh", background: "rgba(4,8,18,0.96)", borderRight: "1px solid var(--border)" }} />}>
+                <Sidebar weather={weather} />
+              </Suspense>
+            </div>
+
+            {/* メインコンテンツ */}
+            <main style={{
+              flex: 1,
+              minWidth: 0,
+              overflowY: "auto",
+              overflowX: "hidden",
+              // スマホ: ボトムナビ分のパディング
+              paddingBottom: "calc(64px + env(safe-area-inset-bottom))",
+            }}>
+              <style>{`
+                @media (min-width: 768px) { main { padding-bottom: 0 !important; } }
+                /* コンテンツ幅の最大値（超広画面対応） */
+                @media (min-width: 1920px) {
+                  .page-wide { max-width: 1400px; margin-left: auto; margin-right: auto; }
+                }
+              `}</style>
+              {children}
+            </main>
           </div>
 
-          {/* メインコンテンツ（モバイルはボトムナビ分のパディング） */}
-          <main
-            className="flex-1 min-w-0 overflow-y-auto"
-            style={{ paddingBottom: "calc(60px + env(safe-area-inset-bottom))" }}
-          >
-            <style>{`@media (min-width: 768px) { main { padding-bottom: 0 !important; } }`}</style>
-            {children}
-          </main>
-        </div>
-
-        {/* モバイルボトムナビ */}
-        <Suspense fallback={null}>
-          <MobileNav />
-        </Suspense>
+          {/* モバイルボトムナビ */}
+          <Suspense fallback={null}>
+            <MobileNav />
+          </Suspense>
         </SessionProvider>
       </body>
     </html>

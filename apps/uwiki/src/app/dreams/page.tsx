@@ -7,11 +7,11 @@ export const dynamic = "force-dynamic"
 
 const CAT_LABELS: Record<string, string> = {
   OATH:     "十二の誓い",
-  PROJECT:  "プロジェクト",
+  CREATIVE: "創作（個人）",
+  BODY:     "身体・修行",
   HABIT:    "習慣・継続",
-  BODY:     "身体",
-  BUSINESS: "事業",
-  CREATIVE: "創作",
+  PROJECT:  "プロジェクト（RB）",
+  BUSINESS: "事業・収益",
   OTHER:    "その他",
 }
 

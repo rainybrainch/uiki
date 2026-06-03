@@ -2,15 +2,14 @@
 
 import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
-import { LayoutDashboard, CheckSquare, Repeat2, Flame, Droplets } from "lucide-react"
-import clsx from "clsx"
+import { LayoutDashboard, CheckSquare, Repeat2, Flame, Droplets, Briefcase } from "lucide-react"
 
 const nav = [
-  { href: "/",                     label: "ホーム",   icon: LayoutDashboard, color: null },
-  { href: "/tasks",                label: "タスク",   icon: CheckSquare,     color: null },
-  { href: "/habits",               label: "習慣",     icon: Repeat2,         color: null },
-  { href: "/gravity?tab=internal", label: "重力",     icon: Flame,           color: "#c9a84c" },
-  { href: "/gravity?tab=external", label: "引力",     icon: Droplets,        color: "#3a6fc9" },
+  { href: "/",                     label: "ホーム",  icon: LayoutDashboard, color: null },
+  { href: "/tasks",                label: "タスク",  icon: CheckSquare,     color: null },
+  { href: "/cases",                label: "案件",    icon: Briefcase,       color: "#c9a84c" },
+  { href: "/gravity?tab=internal", label: "重力",    icon: Flame,           color: "#c9a84c" },
+  { href: "/gravity?tab=external", label: "引力",    icon: Droplets,        color: "#3a6fc9" },
 ]
 
 export function MobileNav() {
@@ -30,11 +29,15 @@ export function MobileNav() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-30 flex md:hidden"
+      className="md:hidden"
       style={{
-        background: "rgba(4,8,18,0.95)",
+        position: "fixed",
+        bottom: 0, left: 0, right: 0,
+        zIndex: 30,
+        display: "flex",
+        background: "rgba(4,8,18,0.97)",
         borderTop: "1px solid var(--border)",
-        backdropFilter: "blur(20px)",
+        backdropFilter: "blur(24px)",
         paddingBottom: "env(safe-area-inset-bottom)",
       }}
     >
@@ -45,14 +48,31 @@ export function MobileNav() {
           <Link
             key={href}
             href={href}
-            className={clsx(
-              "flex-1 flex flex-col items-center gap-1 py-2.5 text-[10px] transition-all",
-              active ? "text-white" : "text-dim"
-            )}
+            style={{
+              flex: 1,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 3,
+              padding: "10px 0",
+              textDecoration: "none",
+              color: active ? "white" : "var(--dim)",
+              fontSize: "0.62rem",
+              letterSpacing: "0.02em",
+              transition: "color 0.15s",
+              minHeight: 52,
+            }}
           >
-            <Icon size={20} strokeWidth={active ? 2 : 1.5}
-              style={{ color: active ? activeColor : "inherit" }} />
-            {label}
+            <Icon
+              size={19}
+              strokeWidth={active ? 2.2 : 1.5}
+              style={{
+                color: active ? activeColor : "inherit",
+                transition: "color 0.15s",
+              }}
+            />
+            <span style={{ lineHeight: 1 }}>{label}</span>
           </Link>
         )
       })}
