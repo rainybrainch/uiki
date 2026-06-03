@@ -7,12 +7,13 @@ import { GravityExternal } from "./GravityExternal"
 
 type Tab = "main" | "internal" | "external"
 
-export function GravityPage({ gravityLogs, metrics, graphData }: {
+export function GravityPage({ gravityLogs, metrics, graphData, initialTab = "main" }: {
   gravityLogs: any[]
   metrics: any[]
   graphData: { date: string; gravityScore: number; attractionScore: number }[]
+  initialTab?: Tab
 }) {
-  const [tab, setTab] = useState<Tab>("main")
+  const [tab, setTab] = useState<Tab>(initialTab)
 
   return (
     <div style={{ minHeight: "100vh", paddingBottom: "4rem" }}>

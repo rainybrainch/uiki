@@ -4,7 +4,14 @@ import { format, subDays } from "date-fns"
 
 export const dynamic = "force-dynamic"
 
-export default async function Page() {
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string }>
+}) {
+  const { tab } = await searchParams
+  const initialTab = (tab === "internal" || tab === "external") ? tab : "main"
+
   let gravityLogs: any[] = []
   let metrics: any[] = []
 
@@ -36,5 +43,12 @@ export default async function Page() {
     return { date, gravityScore, attractionScore }
   })
 
-  return <GravityPage gravityLogs={gravityLogs} metrics={metrics} graphData={graphData} />
+  return (
+    <GravityPage
+      gravityLogs={gravityLogs}
+      metrics={metrics}
+      graphData={graphData}
+      initialTab={initialTab as "main" | "internal" | "external"}
+    />
+  )
 }

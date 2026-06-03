@@ -1,30 +1,40 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useSearchParams } from "next/navigation"
 import {
   LayoutDashboard, CheckSquare, Repeat2, BookOpen,
-  Library, Settings2, CalendarDays, BarChart2, Droplets,
+  Library, Settings2, CalendarDays, BarChart2, Flame, Droplets,
 } from "lucide-react"
 import clsx from "clsx"
 import type { WeatherData } from "@/lib/weather"
 
 const nav = [
-  { href: "/",          label: "ダッシュボード", icon: LayoutDashboard },
-  { href: "/tasks",     label: "タスク",         icon: CheckSquare },
-  { href: "/calendar",  label: "カレンダー",     icon: CalendarDays },
-  { href: "/habits",    label: "習慣",           icon: Repeat2 },
-  { href: "/diary",     label: "日記",           icon: BookOpen },
-  { href: "/library",   label: "ライブラリ",     icon: Library },
-  { href: "/report",    label: "レポート",       icon: BarChart2 },
-  { href: "/gravity",   label: "雨域",           icon: Droplets },
+  { href: "/",                      label: "ダッシュボード", icon: LayoutDashboard },
+  { href: "/tasks",                 label: "タスク",         icon: CheckSquare },
+  { href: "/calendar",              label: "カレンダー",     icon: CalendarDays },
+  { href: "/habits",                label: "習慣",           icon: Repeat2 },
+  { href: "/diary",                 label: "日記",           icon: BookOpen },
+  { href: "/library",               label: "ライブラリ",     icon: Library },
+  { href: "/report",                label: "レポート",       icon: BarChart2 },
+  { href: "/gravity?tab=internal",  label: "重力雨域",       icon: Flame,    color: "#c9a84c" },
+  { href: "/gravity?tab=external",  label: "引力雨域",       icon: Droplets, color: "#3a6fc9" },
 ]
 
 export function Sidebar({ weather }: { weather: WeatherData | null }) {
   const pathname = usePathname()
+  const searchParams = useSearchParams()
 
-  const isActive = (href: string) =>
-    href === "/" ? pathname === "/" : pathname.startsWith(href)
+  const isActive = (href: string) => {
+    if (href === "/") return pathname === "/"
+    const [path, query] = href.split("?")
+    if (!pathname.startsWith(path)) return false
+    if (query) {
+      const [key, val] = query.split("=")
+      return searchParams.get(key) === val
+    }
+    return true
+  }
 
   return (
     <aside
@@ -43,7 +53,6 @@ export function Sidebar({ weather }: { weather: WeatherData | null }) {
             <span className="text-xs tracking-widest text-dim">Uwiki</span>
           </div>
         </Link>
-        {/* ⌘K ヒント */}
         <button
           className="mt-3 w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs text-dim transition-colors hover:text-white hover:bg-[var(--faint)]"
           style={{ border: "1px solid var(--border)" }}
@@ -59,8 +68,9 @@ export function Sidebar({ weather }: { weather: WeatherData | null }) {
 
       {/* ナビゲーション */}
       <nav className="flex-1 px-2 space-y-0.5 overflow-y-auto">
-        {nav.map(({ href, label, icon: Icon }) => {
+        {nav.map(({ href, label, icon: Icon, color }) => {
           const active = isActive(href)
+          const accentColor = color ?? "var(--accent)"
           return (
             <Link
               key={href}
@@ -71,25 +81,23 @@ export function Sidebar({ weather }: { weather: WeatherData | null }) {
               )}
               style={active ? {
                 color: "white",
-                background: "rgba(36,86,184,0.18)",
-                border: "1px solid rgba(58,111,201,0.28)",
+                background: color ? `${color}22` : "rgba(36,86,184,0.18)",
+                border: `1px solid ${color ? `${color}44` : "rgba(58,111,201,0.28)"}`,
               } : { border: "1px solid transparent" }}
             >
               <Icon size={15} strokeWidth={active ? 2 : 1.5}
-                style={{ color: active ? "var(--accent)" : "inherit" }} />
+                style={{ color: active ? accentColor : "inherit" }} />
               {label}
             </Link>
           )
         })}
       </nav>
 
-      {/* 天気インジケーター */}
       <WeatherWidget weather={weather} />
 
-      {/* 設定 */}
       <div className="px-2 pb-2">
         {(() => {
-          const active = isActive("/settings")
+          const active = pathname === "/settings"
           return (
             <Link
               href="/settings"
@@ -111,7 +119,7 @@ export function Sidebar({ weather }: { weather: WeatherData | null }) {
       </div>
 
       <div className="px-5 pb-3">
-        <p className="text-[9px] font-mono text-faint tracking-widest">v0.3.0</p>
+        <p className="text-[9px] font-mono text-faint tracking-widest">v0.4.0</p>
       </div>
     </aside>
   )

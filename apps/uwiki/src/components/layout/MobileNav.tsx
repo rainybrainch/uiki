@@ -1,20 +1,32 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { LayoutDashboard, CheckSquare, Repeat2, BookOpen, Droplets } from "lucide-react"
+import { usePathname, useSearchParams } from "next/navigation"
+import { LayoutDashboard, CheckSquare, Repeat2, Flame, Droplets } from "lucide-react"
 import clsx from "clsx"
 
 const nav = [
-  { href: "/",        label: "ホーム", icon: LayoutDashboard },
-  { href: "/tasks",   label: "タスク", icon: CheckSquare },
-  { href: "/habits",  label: "習慣",   icon: Repeat2 },
-  { href: "/diary",   label: "日記",   icon: BookOpen },
-  { href: "/gravity", label: "雨域",   icon: Droplets },
+  { href: "/",                     label: "ホーム",   icon: LayoutDashboard, color: null },
+  { href: "/tasks",                label: "タスク",   icon: CheckSquare,     color: null },
+  { href: "/habits",               label: "習慣",     icon: Repeat2,         color: null },
+  { href: "/gravity?tab=internal", label: "重力",     icon: Flame,           color: "#c9a84c" },
+  { href: "/gravity?tab=external", label: "引力",     icon: Droplets,        color: "#3a6fc9" },
 ]
 
 export function MobileNav() {
   const pathname = usePathname()
+  const searchParams = useSearchParams()
+
+  const isActive = (href: string) => {
+    if (href === "/") return pathname === "/"
+    const [path, query] = href.split("?")
+    if (!pathname.startsWith(path)) return false
+    if (query) {
+      const [key, val] = query.split("=")
+      return searchParams.get(key) === val
+    }
+    return true
+  }
 
   return (
     <nav
@@ -26,8 +38,9 @@ export function MobileNav() {
         paddingBottom: "env(safe-area-inset-bottom)",
       }}
     >
-      {nav.map(({ href, label, icon: Icon }) => {
-        const active = href === "/" ? pathname === "/" : pathname.startsWith(href)
+      {nav.map(({ href, label, icon: Icon, color }) => {
+        const active = isActive(href)
+        const activeColor = color ?? "var(--accent)"
         return (
           <Link
             key={href}
@@ -37,7 +50,8 @@ export function MobileNav() {
               active ? "text-white" : "text-dim"
             )}
           >
-            <Icon size={20} strokeWidth={active ? 2 : 1.5} style={{ color: active ? "var(--accent)" : "inherit" }} />
+            <Icon size={20} strokeWidth={active ? 2 : 1.5}
+              style={{ color: active ? activeColor : "inherit" }} />
             {label}
           </Link>
         )

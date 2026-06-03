@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next"
 import "./globals.css"
+import { Suspense } from "react"
 import { Sidebar } from "@/components/layout/Sidebar"
 import { MobileNav } from "@/components/layout/MobileNav"
 import { RainCanvas } from "@/components/layout/RainCanvas"
@@ -51,7 +52,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <div className="relative z-10 flex w-full min-h-screen">
           {/* PCサイドバー（md以上のみ表示） */}
           <div className="hidden md:block">
-            <Sidebar weather={weather} />
+            <Suspense fallback={null}>
+              <Sidebar weather={weather} />
+            </Suspense>
           </div>
 
           {/* メインコンテンツ（モバイルはボトムナビ分のパディング） */}
@@ -65,7 +68,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         </div>
 
         {/* モバイルボトムナビ */}
-        <MobileNav />
+        <Suspense fallback={null}>
+          <MobileNav />
+        </Suspense>
       </body>
     </html>
   )
