@@ -13,6 +13,13 @@ type Task = {
   id: string; title: string; priority: string; completed: boolean
 }
 
+type GoogleEvent = {
+  id: string; summary: string
+  start: { dateTime?: string; date?: string }
+  end:   { dateTime?: string; date?: string }
+  htmlLink: string
+}
+
 type Props = {
   monthStr: string
   prevMonth: string
@@ -21,6 +28,7 @@ type Props = {
   diaryByDate: Record<string, { id: string; title: string }>
   habitCountByDate: Record<string, number>
   totalHabits: number
+  googleEvents?: GoogleEvent[]
 }
 
 const DOW = ["日", "月", "火", "水", "木", "金", "土"]
@@ -31,7 +39,17 @@ const priorityDot: Record<string, string> = {
 export function CalendarView({
   monthStr, prevMonth, nextMonth,
   tasksByDate, diaryByDate, habitCountByDate, totalHabits,
+  googleEvents = [],
 }: Props) {
+  // Google Calendar イベントを日付別に整理
+  const gEventsByDate: Record<string, GoogleEvent[]> = {}
+  for (const ev of googleEvents) {
+    const dateStr = (ev.start.dateTime
+      ? format(new Date(ev.start.dateTime), "yyyy-MM-dd")
+      : ev.start.date) ?? ""
+    if (!gEventsByDate[dateStr]) gEventsByDate[dateStr] = []
+    gEventsByDate[dateStr].push(ev)
+  }
   const monthDate = new Date(monthStr + "-01")
 
   const days = eachDayOfInterval({
@@ -84,6 +102,7 @@ export function CalendarView({
           const today = isToday(day)
           const tasks = tasksByDate[dateStr] ?? []
           const diary = diaryByDate[dateStr]
+          const gEvents = gEventsByDate[dateStr] ?? []
           const habitCount = habitCountByDate[dateStr] ?? 0
           const habitRate = totalHabits > 0 ? habitCount / totalHabits : 0
 
@@ -148,6 +167,20 @@ export function CalendarView({
               {tasks.length > 3 && (
                 <p className="text-[9px] text-faint px-1">+{tasks.length - 3}件</p>
               )}
+
+              {/* Google Calendar イベント */}
+              {gEvents.slice(0, 2).map((ev) => (
+                <a
+                  key={ev.id}
+                  href={ev.htmlLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] mb-0.5 truncate block hover:opacity-80 transition-opacity"
+                  style={{ background: "rgba(66,200,120,0.12)", borderLeft: "2px solid #4ade80", color: "var(--text)" }}
+                >
+                  {ev.summary}
+                </a>
+              ))}
 
               {/* 日記インジケーター */}
               {diary && (

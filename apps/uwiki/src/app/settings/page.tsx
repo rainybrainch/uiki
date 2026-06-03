@@ -2,8 +2,9 @@ import { getSettings } from "@/actions/settings"
 import { CityForm } from "@/components/settings/CityForm"
 import { PomojikanForm } from "@/components/settings/PomojikanForm"
 import { ApiKeySection } from "@/components/settings/ApiKeySection"
+import { GoogleAuthSection } from "@/components/settings/GoogleAuthSection"
 import { getWeatherFromSettings } from "@/lib/weather"
-import { Settings2, CloudRain, Thermometer, MapPin, Timer, Key } from "lucide-react"
+import { Settings2, CloudRain, Thermometer, MapPin, Timer, Key, Chrome } from "lucide-react"
 
 export const dynamic = "force-dynamic"
 
@@ -26,6 +27,17 @@ export default async function SettingsPage() {
       </div>
 
       <div className="space-y-8">
+
+        {/* Google 連携 */}
+        <section className="animate-fade-in delay-100">
+          <p className="section-label flex items-center gap-2"><Chrome size={11} /> Google 連携</p>
+          <p className="text-xs text-dim mb-4">
+            Google Calendar とカレンダーを同期。Gmail アドレス: fukuisho0603@gmail.com
+          </p>
+          <GoogleAuthSection />
+        </section>
+
+        <hr className="divider" />
 
         {/* 天気連動 */}
         <section className="animate-fade-in delay-100">

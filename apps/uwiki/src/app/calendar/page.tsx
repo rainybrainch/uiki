@@ -2,6 +2,8 @@ import { prisma } from "@/lib/db"
 import { CalendarView } from "@/components/calendar/CalendarView"
 import { CalendarDays } from "lucide-react"
 import { format, startOfMonth, endOfMonth, addMonths, subMonths, parseISO } from "date-fns"
+import { getServerSession } from "next-auth"
+import { authOptions, fetchCalendarEvents } from "@/lib/auth"
 
 export const dynamic = "force-dynamic"
 
@@ -18,6 +20,15 @@ export default async function CalendarPage({
     format(startOfMonth(monthDate), "yyyy-MM-dd"),
     format(endOfMonth(monthDate), "yyyy-MM-dd"),
   ]
+
+  // Google Calendar イベント取得
+  let googleEvents: any[] = []
+  try {
+    const session = await getServerSession(authOptions)
+    if (session?.accessToken) {
+      googleEvents = await fetchCalendarEvents(session.accessToken, 60)
+    }
+  } catch {}
 
   let tasks: any[] = []
   let diaryEntries: any[] = []
@@ -87,6 +98,7 @@ export default async function CalendarPage({
           diaryByDate={diaryByDate}
           habitCountByDate={habitCountByDate}
           totalHabits={habits.length}
+          googleEvents={googleEvents}
         />
       </div>
     </div>

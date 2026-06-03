@@ -34,6 +34,18 @@
 
   * { box-sizing: border-box; }
 
+  /* スマホ最適化 */
+  @media (max-width: 767px) {
+    html { font-size: 14px; }
+    /* タップ対象を最低44px確保 */
+    button, a, [role="button"] { min-height: 44px; }
+    /* スクロールを滑らかに */
+    * { -webkit-overflow-scrolling: touch; }
+  }
+
+  /* セーフエリア対応 */
+  .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+
   ::selection {
     background-color: rgba(58, 111, 201, 0.3);
   }

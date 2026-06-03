@@ -12,12 +12,13 @@
   },
   "dependencies": {
     "@uwiki/database": "*",
-    "next": "^15.1.3",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
-    "lucide-react": "^0.468.0"
+    "lucide-react": "^0.468.0",
+    "next": "^15.1.3",
+    "next-auth": "^4.24.14",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

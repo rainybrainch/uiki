@@ -3,6 +3,7 @@ import "./globals.css"
 import { Suspense } from "react"
 import { Sidebar } from "@/components/layout/Sidebar"
 import { MobileNav } from "@/components/layout/MobileNav"
+import { SessionProvider } from "@/components/layout/SessionProvider"
 import { RainCanvas } from "@/components/layout/RainCanvas"
 import { QuickSearch } from "@/components/search/QuickSearch"
 import { SwRegister } from "@/components/layout/SwRegister"
@@ -45,6 +46,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
       </head>
       <body className="min-h-screen flex relative" style={{ background: "var(--bg)" }}>
+        <SessionProvider>
         <SwRegister />
         <RainCanvas intensity={rainIntensity} />
         <QuickSearch />
@@ -71,6 +73,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <Suspense fallback={null}>
           <MobileNav />
         </Suspense>
+        </SessionProvider>
       </body>
     </html>
   )
