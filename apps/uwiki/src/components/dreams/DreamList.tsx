@@ -167,9 +167,19 @@ function DreamCard({ dream, color, achieved = false, dreamIdByTitle = {} }: {
               </div>
             </div>
 
-            {/* ビジョン（常時表示） */}
-            {dream.vision && !expanded && (
-              <p className="text-xs text-dim line-clamp-1 mb-2">{dream.vision}</p>
+            {/* 定義・ビジョン（常時表示） */}
+            {!expanded && (dream.definition || dream.vision) && (
+              <div className="mb-2 space-y-0.5">
+                {dream.definition && (
+                  <p className="text-xs leading-relaxed line-clamp-2" style={{ color: "rgba(255,255,255,0.75)" }}>{dream.definition}</p>
+                )}
+                {dream.vision && dream.definition && (
+                  <p className="text-[10px] text-faint line-clamp-1 italic">{dream.vision}</p>
+                )}
+                {dream.vision && !dream.definition && (
+                  <p className="text-xs text-dim line-clamp-1">{dream.vision}</p>
+                )}
+              </div>
             )}
 
             {/* プログレス */}
