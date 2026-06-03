@@ -177,7 +177,7 @@ export default async function DashboardPage() {
       <div className="px-4 pb-8 md:px-8 lg:px-10 lg:pb-14 grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
         <DashCard icon={<CheckSquare size={14} strokeWidth={1.5} />} title="タスク" href="/tasks" delay="delay-150">
           {tasks.length === 0 ? (
-            <EmptySlate text="今日のタスクはありません" />
+            <EmptySlate text="今日のタスクはありません" href="/tasks" cta="+ タスクを追加" />
           ) : (
             <ul className="space-y-px">
               {tasks.map((task: any) => (
@@ -193,7 +193,7 @@ export default async function DashboardPage() {
 
         <DashCard icon={<Repeat2 size={14} strokeWidth={1.5} />} title="習慣" href="/habits" delay="delay-150">
           {habits.length === 0 ? (
-            <EmptySlate text="習慣を追加しましょう" />
+            <EmptySlate text="習慣を追加しましょう" href="/habits" cta="+ 習慣を設定" />
           ) : (
             <ul className="space-y-px">
               {habits.map((habit: any) => {
@@ -265,6 +265,16 @@ function DashCard({ icon, title, href, children, delay = "" }: { icon: React.Rea
   )
 }
 
-function EmptySlate({ text }: { text: string }) {
-  return <p className="text-center py-10 text-sm text-faint">{text}</p>
+function EmptySlate({ text, href, cta }: { text: string; href?: string; cta?: string }) {
+  return (
+    <div className="text-center py-8">
+      <p className="text-sm text-faint mb-3">{text}</p>
+      {href && cta && (
+        <Link href={href} className="text-xs px-3 py-1.5 rounded-lg transition-opacity hover:opacity-80"
+          style={{ background: "rgba(58,111,201,0.12)", color: "var(--accent)", border: "1px solid rgba(58,111,201,0.2)" }}>
+          {cta}
+        </Link>
+      )}
+    </div>
+  )
 }

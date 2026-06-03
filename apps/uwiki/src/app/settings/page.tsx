@@ -4,7 +4,7 @@ import { PomojikanForm } from "@/components/settings/PomojikanForm"
 import { ApiKeySection } from "@/components/settings/ApiKeySection"
 import { GoogleAuthSection } from "@/components/settings/GoogleAuthSection"
 import { getWeatherFromSettings } from "@/lib/weather"
-import { Settings2, CloudRain, Thermometer, MapPin, Timer, Key, Chrome } from "lucide-react"
+import { Settings2, CloudRain, MapPin, Timer, Key, Chrome, Link2 } from "lucide-react"
 
 export const dynamic = "force-dynamic"
 
@@ -28,6 +28,16 @@ export default async function SettingsPage() {
 
       <div className="space-y-8">
 
+        {/* クイックセットアップ */}
+        {!settings?.city && (
+          <section className="animate-fade-in">
+            <div className="rounded-xl p-4" style={{ background: "rgba(201,168,76,0.06)", border: "1px solid rgba(201,168,76,0.2)" }}>
+              <p className="text-xs font-medium mb-1" style={{ color: "var(--amber)" }}>セットアップ</p>
+              <p className="text-xs text-dim">都市名を設定すると、雨のアニメーションが実際の天気に連動します。</p>
+            </div>
+          </section>
+        )}
+
         {/* Google 連携 */}
         <section className="animate-fade-in delay-100">
           <p className="section-label flex items-center gap-2"><Chrome size={11} /> Google 連携</p>
@@ -35,6 +45,18 @@ export default async function SettingsPage() {
             Google Calendar とカレンダーを同期。Gmail アドレス: fukuisho0603@gmail.com
           </p>
           <GoogleAuthSection />
+        </section>
+
+        <hr className="divider" />
+
+        {/* データ移行 */}
+        <section className="animate-fade-in delay-100">
+          <p className="section-label flex items-center gap-2"><Link2 size={11} /> データ移行</p>
+          <p className="text-xs text-dim mb-3">旧UIKI（rainybrainch.github.io/uiki/）から砂のログ・引力雨域データを移行できます。</p>
+          <a href="/migrate" className="text-xs px-3 py-2 rounded-lg inline-flex items-center gap-2 transition-opacity hover:opacity-80"
+            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)", color: "var(--dim)" }}>
+            移行ツールを開く →
+          </a>
         </section>
 
         <hr className="divider" />
@@ -59,7 +81,7 @@ export default async function SettingsPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <Thermometer size={14} className="text-dim" />
+                  <span className="text-xs text-dim font-mono"></span>
                   <p className="text-sm font-mono">{weather.temperature}°C</p>
                 </div>
                 <div>

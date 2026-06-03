@@ -104,6 +104,26 @@ export default async function DreamsPage() {
         <div className="mb-6">
           <DreamForm catLabels={CAT_LABELS} />
         </div>
+
+        {/* 世界が少ない時のヒント */}
+        {active.length < 5 && (
+          <div className="mb-6 rounded-xl p-4" style={{ background: "rgba(139,92,246,0.04)", border: "1px dashed rgba(139,92,246,0.2)" }}>
+            <p className="text-xs text-dim mb-3">十二の誓いから世界を掘ってみる：</p>
+            <div className="flex flex-wrap gap-2">
+              {[
+                "RAINY BRAIN起業", "マネぼう", "RA'I'NA", "雨と世界",
+                "ぽもじかん", "電脳世界", "SASUKE完全制覇", "ボカロP活動",
+                "VTuber活動", "法人化+書店", "Blender 3D", "音楽制作",
+              ].filter((name) => !active.find((d: any) => d.title === name)).slice(0, 6).map((name) => (
+                <span key={name} className="text-xs px-2.5 py-1 rounded-full cursor-default"
+                  style={{ background: "rgba(139,92,246,0.1)", color: "#a78bfa", border: "1px solid rgba(139,92,246,0.2)" }}>
+                  {name}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
         <DreamList byCategory={byCategory} done={done} catColors={CAT_COLORS} catLabels={CAT_LABELS} />
       </div>
     </div>

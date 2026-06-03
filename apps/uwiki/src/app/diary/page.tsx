@@ -49,7 +49,7 @@ export default async function DiaryPage({
         <h1 className="text-2xl font-serif font-light tracking-wide">日記</h1>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] gap-5 md:gap-8">
         <DiaryCalendar
           selectedDate={selectedDate}
           monthStr={monthStr}
