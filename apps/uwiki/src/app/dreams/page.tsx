@@ -31,10 +31,12 @@ export default async function DreamsPage() {
     dreams = await prisma.dream.findMany({ orderBy: [{ achieved: "asc" }, { layer: "asc" }, { order: "asc" }] })
   } catch {}
 
+  // ルート定義（百層世界自体）を分離
+  const rootDream = dreams.find((d) => d.id === "hyakuso-root")
   const total = 100
-  const achieved = dreams.filter((d) => d.achieved).length
-  const active = dreams.filter((d) => !d.achieved)
-  const done = dreams.filter((d) => d.achieved)
+  const achieved = dreams.filter((d) => d.achieved && d.id !== "hyakuso-root").length
+  const active = dreams.filter((d) => !d.achieved && d.id !== "hyakuso-root")
+  const done = dreams.filter((d) => d.achieved && d.id !== "hyakuso-root")
   const pct = Math.round((achieved / total) * 100)
 
   const byCategory = Object.keys(CAT_LABELS).map((cat) => ({
@@ -52,6 +54,21 @@ export default async function DreamsPage() {
           <h1 className="text-2xl font-serif font-light tracking-wide">百層世界</h1>
           <span className="text-xs font-mono text-dim ml-1">{dreams.length}/100</span>
         </div>
+
+        {/* ルート定義カード */}
+        {rootDream && (
+          <div className="rounded-xl p-5 mb-4" style={{ background: "rgba(139,92,246,0.08)", border: "1.5px solid rgba(139,92,246,0.4)" }}>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-[10px] font-mono tracking-widest" style={{ color: "#8b5cf6" }}>ROOT DEFINITION</span>
+            </div>
+            <p className="text-sm font-serif font-light leading-relaxed mb-2" style={{ color: "rgba(255,255,255,0.9)" }}>
+              {rootDream.vision}
+            </p>
+            <p className="text-xs text-dim leading-relaxed border-t pt-2 mt-2" style={{ borderColor: "rgba(139,92,246,0.2)" }}>
+              {rootDream.vow?.split("。")[0]}。
+            </p>
+          </div>
+        )}
 
         {/* 進捗バー */}
         <div className="rounded-xl p-5 mb-4" style={{ background: "rgba(139,92,246,0.06)", border: "1px solid rgba(139,92,246,0.2)" }}>
