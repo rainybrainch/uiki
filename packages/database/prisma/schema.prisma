@@ -222,6 +222,30 @@ model Dream {
   updatedAt   DateTime    @updatedAt
 }
 
+// ─── 修正ログ（月次Act記録）────────────────────────────────
+
+model AdjustmentLog {
+  id        String     @id @default(cuid())
+  month     String     // YYYY-MM
+  type      AdjType    @default(MONTHLY)
+  // 何を変えたか
+  what      String
+  // なぜ変えたか
+  why       String?
+  // 結果はどうだったか
+  result    String?
+  // 誓約は守れていたか（週次Check用）
+  vowCheck  Boolean?
+  // 制約の中で実行できていたか
+  constCheck Boolean?
+  // 目的に向かって進んでいたか
+  visionCheck Boolean?
+  // 関連する世界（DreamのID or タイトル）
+  relatedDream String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
 // ─── Enum ────────────────────────────────────────────────
 
 enum Priority {
@@ -263,4 +287,9 @@ enum DreamCat {
   BUSINESS     // 事業
   CREATIVE     // 創作
   OTHER        // その他
+}
+
+enum AdjType {
+  WEEKLY   // 週次Check
+  MONTHLY  // 月次Act
 }
