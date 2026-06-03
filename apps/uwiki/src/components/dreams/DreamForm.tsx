@@ -2,52 +2,140 @@
 
 import { useState, useTransition } from "react"
 import { createDream } from "@/actions/dreams"
-import { Plus } from "lucide-react"
+import { Plus, ChevronDown, ChevronUp } from "lucide-react"
+
+const CATEGORIES = [
+  { value: "OATH",     label: "十二の誓い" },
+  { value: "CREATIVE", label: "創作（個人）" },
+  { value: "BODY",     label: "身体・修行" },
+  { value: "HABIT",    label: "習慣・継続" },
+  { value: "PROJECT",  label: "プロジェクト（RB）" },
+  { value: "BUSINESS", label: "事業・収益" },
+  { value: "OTHER",    label: "その他" },
+]
+
+const FIELDS = [
+  { key: "definition",  label: "② 定義",          placeholder: "この世界とは何か",           rows: 2 },
+  { key: "vision",      label: "③ 目的/ビジョン",  placeholder: "なぜ創るか、最終形",         rows: 3 },
+  { key: "vow",         label: "④ 誓約",           placeholder: "目的を実現するための約束",   rows: 2 },
+  { key: "constraints", label: "⑤ 制約",           placeholder: "誓約を実現するための枠",     rows: 2 },
+  { key: "period",      label: "⑥ 期間",           placeholder: "例: 2026年中 / 生涯",       rows: 1 },
+  { key: "kpi",         label: "⑦ 評価軸/KPI",     placeholder: "成功の測り方",               rows: 2 },
+  { key: "connections", label: "⑧ 相互関連性",     placeholder: "他の世界との繋がり（例: ぽもじかん, 電脳世界）", rows: 2 },
+] as const
+
+type FieldKey = typeof FIELDS[number]["key"]
 
 export function DreamForm({ catLabels }: { catLabels: Record<string, string> }) {
   const [open, setOpen] = useState(false)
+  const [showAll, setShowAll] = useState(false)
   const [title, setTitle] = useState("")
-  const [description, setDescription] = useState("")
-  const [category, setCategory] = useState("OTHER")
+  const [category, setCategory] = useState("OATH")
   const [layer, setLayer] = useState("")
+  const [fields, setFields] = useState<Record<FieldKey, string>>({
+    definition: "", vision: "", vow: "", constraints: "", period: "", kpi: "", connections: "",
+  })
   const [isPending, startTransition] = useTransition()
 
-  const reset = () => { setTitle(""); setDescription(""); setCategory("OTHER"); setLayer(""); setOpen(false) }
+  const setField = (key: FieldKey, val: string) =>
+    setFields((prev) => ({ ...prev, [key]: val }))
+
+  const reset = () => {
+    setTitle(""); setCategory("OATH"); setLayer("")
+    setFields({ definition: "", vision: "", vow: "", constraints: "", period: "", kpi: "", connections: "" })
+    setOpen(false); setShowAll(false)
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!title.trim()) return
     startTransition(async () => {
-      await createDream({ title: title.trim(), description: description || undefined, category, layer: layer ? Number(layer) : undefined })
+      await createDream({
+        title: title.trim(),
+        category,
+        layer: layer ? Number(layer) : undefined,
+        ...fields,
+      })
       reset()
     })
   }
 
-  if (!open) return (
-    <button onClick={() => setOpen(true)}
-      className="w-full flex items-center gap-2 px-4 py-3 rounded-xl text-sm transition-all hover:opacity-80"
-      style={{ background: "rgba(139,92,246,0.08)", border: "1px dashed rgba(139,92,246,0.3)", color: "#8b5cf6" }}
-    >
-      <Plus size={15} /> 目標を追加（層を掘る）
-    </button>
-  )
+  if (!open) {
+    return (
+      <button onClick={() => setOpen(true)}
+        className="w-full flex items-center gap-2 px-4 py-3 rounded-xl text-sm transition-all hover:opacity-80"
+        style={{ background: "rgba(139,92,246,0.08)", border: "1px dashed rgba(139,92,246,0.3)", color: "#8b5cf6" }}
+      >
+        <Plus size={15} /> 新しい世界を掘る
+      </button>
+    )
+  }
 
   return (
-    <form onSubmit={handleSubmit} className="rounded-xl p-5" style={{ background: "rgba(139,92,246,0.05)", border: "1px solid rgba(139,92,246,0.2)" }}>
-      <div className="grid grid-cols-2 gap-3 mb-3">
-        <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="目標タイトル *" required className="col-span-2 input-base" />
-        <select value={category} onChange={(e) => setCategory(e.target.value)} className="input-base">
-          {Object.entries(catLabels).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-        </select>
-        <input value={layer} onChange={(e) => setLayer(e.target.value)} type="number" min="1" max="100" placeholder="層番号（1〜100）" className="input-base" />
-        <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="詳細・説明（任意）" rows={2} className="col-span-2 input-base resize-none" />
+    <form onSubmit={handleSubmit} className="rounded-xl p-5"
+      style={{ background: "rgba(139,92,246,0.05)", border: "1px solid rgba(139,92,246,0.25)" }}
+    >
+      {/* ① 世界名 */}
+      <div className="mb-4">
+        <label className="text-xs text-dim block mb-1">① 世界名 *</label>
+        <input value={title} onChange={(e) => setTitle(e.target.value)}
+          placeholder="例: ぽもじかん" required className="input-base text-sm font-medium" />
       </div>
+
+      <div className="grid grid-cols-2 gap-3 mb-4">
+        <div>
+          <label className="text-xs text-dim block mb-1">カテゴリ</label>
+          <select value={category} onChange={(e) => setCategory(e.target.value)} className="input-base">
+            {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="text-xs text-dim block mb-1">層番号（1〜100）</label>
+          <input value={layer} onChange={(e) => setLayer(e.target.value)}
+            type="number" min="1" max="100" placeholder="自動" className="input-base" />
+        </div>
+      </div>
+
+      {/* 詳細フィールドトグル */}
+      <button type="button" onClick={() => setShowAll((v) => !v)}
+        className="flex items-center gap-1 text-xs mb-4 transition-colors"
+        style={{ color: showAll ? "#8b5cf6" : "var(--dim)", background: "none", border: "none", cursor: "pointer" }}
+      >
+        {showAll ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+        {showAll ? "詳細を閉じる" : "定義・ビジョン・誓約・KPIを入力"}
+      </button>
+
+      {showAll && (
+        <div className="space-y-4 mb-4">
+          {FIELDS.map(({ key, label, placeholder, rows }) => (
+            <div key={key}>
+              <label className="text-xs text-dim block mb-1">{label}</label>
+              {rows === 1 ? (
+                <input value={fields[key]} onChange={(e) => setField(key, e.target.value)}
+                  placeholder={placeholder} className="input-base text-sm" />
+              ) : (
+                <textarea value={fields[key]} onChange={(e) => setField(key, e.target.value)}
+                  placeholder={placeholder} rows={rows}
+                  className="input-base text-sm resize-none" />
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
       <div className="flex gap-2">
         <button type="submit" disabled={!title.trim() || isPending}
           className="px-5 py-2 rounded-lg text-sm font-medium disabled:opacity-40"
           style={{ background: "#8b5cf6", color: "white" }}
-        >掘る</button>
-        <button type="button" onClick={reset} className="px-4 py-2 rounded-lg text-sm text-dim" style={{ border: "1px solid var(--border)" }}>キャンセル</button>
+        >
+          掘る
+        </button>
+        <button type="button" onClick={reset}
+          className="px-4 py-2 rounded-lg text-sm text-dim"
+          style={{ border: "1px solid var(--border)", background: "none", cursor: "pointer" }}
+        >
+          キャンセル
+        </button>
       </div>
     </form>
   )

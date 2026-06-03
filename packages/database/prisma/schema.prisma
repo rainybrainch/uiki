@@ -194,9 +194,24 @@ model Case {
 // ─── 百層世界 ───────────────────────────────────────────
 
 model Dream {
-  id          String      @id @default(cuid())
-  title       String
-  description String?
+  id           String      @id @default(cuid())
+  // ① 世界名
+  title        String
+  // ② 定義
+  definition   String?
+  // ③ 目的/ビジョン
+  vision       String?
+  // ④ 誓約
+  vow          String?
+  // ⑤ 制約
+  constraints  String?
+  // ⑥ 期間
+  period       String?     // テキスト（例: "2026年中"）
+  // ⑦ 評価軸/KPI
+  kpi          String?
+  // ⑧ 相互関連性
+  connections  String?     // 他の世界名のCSV
+
   category    DreamCat    @default(OTHER)
   layer       Int         @default(1)   // 1〜100層
   progress    Int         @default(0)   // 0〜100%
