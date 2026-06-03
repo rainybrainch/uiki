@@ -47,7 +47,7 @@ export default async function DreamsPage() {
   })).filter((g) => g.dreams.length > 0)
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col max-w-3xl mx-auto w-full">
       <div className="px-4 py-5 md:px-8 md:py-8 shrink-0">
         <div className="flex items-center gap-3 mb-6">
           <Layers size={20} strokeWidth={1.5} style={{ color: "#8b5cf6" }} />
@@ -72,37 +72,72 @@ export default async function DreamsPage() {
 
         {/* 進捗バー */}
         <div className="rounded-xl p-5 mb-4" style={{ background: "rgba(139,92,246,0.06)", border: "1px solid rgba(139,92,246,0.2)" }}>
-          <div className="flex items-end justify-between mb-3">
+          <div className="flex items-center justify-between mb-3">
             <div>
               <p className="text-xs text-dim mb-1">達成した層</p>
-              <p className="text-3xl font-serif font-light" style={{ color: "#8b5cf6" }}>
-                {achieved} <span className="text-lg text-dim">/ {total}</span>
+              <p className="text-2xl md:text-3xl font-serif font-light" style={{ color: "#8b5cf6" }}>
+                {achieved}<span className="text-base md:text-lg text-dim ml-1">/ {total}</span>
               </p>
             </div>
             <div className="text-right">
-              <p className="text-3xl font-serif font-light" style={{ color: "#8b5cf6" }}>{pct}%</p>
+              <p className="text-xs text-dim mb-1">達成率</p>
+              <p className="text-2xl md:text-3xl font-serif font-light" style={{ color: "#8b5cf6" }}>{pct}%</p>
             </div>
           </div>
-          <div className="h-2 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
-            <div
-              className="h-full rounded-full transition-all duration-700"
-              style={{ width: `${(dreams.length / 100) * 100}%`, background: "rgba(139,92,246,0.4)" }}
-            />
-            <div
-              className="h-full rounded-full transition-all duration-700 -mt-2"
-              style={{ width: `${pct}%`, background: "linear-gradient(90deg, #8b5cf6, #a78bfa)" }}
-            />
+          {/* 入力済み層 */}
+          <div className="mb-2">
+            <div className="flex justify-between mb-1 text-[10px] font-mono text-faint">
+              <span>入力済み</span><span>{dreams.length}/100層</span>
+            </div>
+            <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
+              <div className="h-full rounded-full animate-bar-grow"
+                style={{ width: `${(dreams.length / 100) * 100}%`, background: "rgba(139,92,246,0.35)" }} />
+            </div>
           </div>
-          <div className="flex justify-between mt-2 text-xs font-mono text-dim">
-            <span>入力済み {dreams.length}層</span>
-            <span>達成 {achieved}層</span>
+          {/* 達成層 */}
+          <div className="mb-4">
+            <div className="flex justify-between mb-1 text-[10px] font-mono" style={{ color: "#8b5cf6" }}>
+              <span>達成</span><span>{achieved}層</span>
+            </div>
+            <div className="h-2 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
+              <div className="h-full rounded-full animate-bar-grow-slow"
+                style={{ width: `${pct}%`, background: "linear-gradient(90deg, #8b5cf6, #a78bfa)" }} />
+            </div>
           </div>
+
+          {/* カテゴリ別内訳 */}
+          {byCategory.length > 0 && (
+            <div style={{ borderTop: "1px solid rgba(139,92,246,0.15)", paddingTop: "1rem" }}>
+              <p className="text-[10px] font-mono text-faint mb-3 tracking-wider">カテゴリ別</p>
+              <div className="space-y-2">
+                {byCategory.map(({ cat, label, color, dreams: catDreams }) => {
+                  const avgProgress = catDreams.length > 0
+                    ? Math.round(catDreams.reduce((s: number, d: any) => s + (d.progress ?? 0), 0) / catDreams.length)
+                    : 0
+                  return (
+                    <div key={cat} className="flex items-center gap-3">
+                      <div className="w-2 h-2 rounded-full shrink-0" style={{ background: color }} />
+                      <span className="text-[10px] text-dim w-28 shrink-0 truncate">{label}</span>
+                      <div className="flex-1 h-1 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
+                        <div className="h-full rounded-full transition-all"
+                          style={{ width: `${avgProgress}%`, background: color, opacity: 0.8 }} />
+                      </div>
+                      <span className="text-[10px] font-mono shrink-0 w-12 text-right"
+                        style={{ color: avgProgress > 0 ? color : "var(--faint)" }}>
+                        {catDreams.length}層 {avgProgress > 0 ? `${avgProgress}%` : ""}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 pb-8 md:px-8 md:pb-12">
         <div className="mb-6">
-          <DreamForm catLabels={CAT_LABELS} />
+          <DreamForm catLabels={CAT_LABELS} usedLayers={dreams.map((d: any) => d.layer).filter(Boolean)} />
         </div>
 
         {/* 世界が少ない時のヒント */}
@@ -124,7 +159,13 @@ export default async function DreamsPage() {
           </div>
         )}
 
-        <DreamList byCategory={byCategory} done={done} catColors={CAT_COLORS} catLabels={CAT_LABELS} />
+        <DreamList
+          byCategory={byCategory}
+          done={done}
+          catColors={CAT_COLORS}
+          catLabels={CAT_LABELS}
+          dreamIdByTitle={Object.fromEntries(dreams.map((d: any) => [d.title, d.id]))}
+        />
       </div>
     </div>
   )

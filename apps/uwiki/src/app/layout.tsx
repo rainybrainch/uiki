@@ -6,6 +6,7 @@ import { MobileNav } from "@/components/layout/MobileNav"
 import { SessionProvider } from "@/components/layout/SessionProvider"
 import { RainCanvas } from "@/components/layout/RainCanvas"
 import { QuickSearch } from "@/components/search/QuickSearch"
+import { KeyboardHelp } from "@/components/layout/KeyboardHelp"
 import { SwRegister } from "@/components/layout/SwRegister"
 import { prisma } from "@/lib/db"
 import { getWeatherFromSettings } from "@/lib/weather"
@@ -48,6 +49,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <SwRegister />
           <RainCanvas intensity={rainIntensity} />
           <QuickSearch />
+          <KeyboardHelp />
 
           {/* 全体レイアウト */}
           <div style={{ position: "relative", zIndex: 10, display: "flex", width: "100%", minHeight: "100dvh" }}>

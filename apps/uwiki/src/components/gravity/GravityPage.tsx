@@ -19,7 +19,7 @@ export function GravityPage({ gravityLogs, metrics, graphData, initialTab = "mai
     <div style={{ minHeight: "100vh", paddingBottom: "4rem" }}>
       {/* ヒーロー */}
       <div style={{
-        padding: "3.5rem 2.5rem 2rem",
+        padding: "clamp(1.5rem, 6vw, 3.5rem) clamp(1rem, 5vw, 2.5rem) 2rem",
         textAlign: "center",
         position: "relative",
         overflow: "hidden",
@@ -83,7 +83,7 @@ export function GravityPage({ gravityLogs, metrics, graphData, initialTab = "mai
         ))}
       </div>
 
-      <div style={{ padding: "0 2rem" }}>
+      <div style={{ padding: "0 clamp(1rem, 4vw, 2rem)" }}>
         {tab === "main"     && <GravityMain graphData={graphData} onNav={setTab} gravityLogs={gravityLogs} metrics={metrics} />}
         {tab === "internal" && <GravityInternal logs={gravityLogs} />}
         {tab === "external" && <GravityExternal metrics={metrics} />}

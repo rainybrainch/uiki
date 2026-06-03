@@ -32,11 +32,11 @@ export function GravityMain({ graphData, onNav, gravityLogs, metrics }: {
   const todayAttraction = metrics.filter((m) => m.logs.some((l: any) => l.date === format(new Date(), "yyyy-MM-dd"))).length
 
   return (
-    <div style={{ maxWidth: 720, margin: "0 auto" }}>
+    <div style={{ maxWidth: "min(720px, 100%)", margin: "0 auto" }}>
 
       {/* 2大カード */}
       <div style={{
-        display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.2rem", marginBottom: "2.5rem",
+        display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1.2rem", marginBottom: "2.5rem",
       }}>
         {/* 重力雨域カード */}
         <BigCard
@@ -81,6 +81,13 @@ export function GravityMain({ graphData, onNav, gravityLogs, metrics }: {
         }}>
           成長の可視化 ── 重力と引力の均衡
         </h3>
+        {graphData.every((d) => d.gravityScore === 0 && d.attractionScore === 0) ? (
+          <div style={{ textAlign: "center", padding: "2rem 0", color: "var(--dim)", fontSize: "0.85rem" }}>
+            <div style={{ fontSize: "1.8rem", marginBottom: "0.5rem", opacity: 0.3 }}>🌧</div>
+            <p>まだデータがありません</p>
+            <p style={{ fontSize: "0.75rem", marginTop: "0.3rem", color: "var(--faint)" }}>砂のログを記録するとグラフが描かれます</p>
+          </div>
+        ) : (<>
         <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: 180 }} aria-label="成長グラフ">
           <defs>
             <linearGradient id="gg" x1="0" y1="0" x2="0" y2="1">
@@ -149,10 +156,11 @@ export function GravityMain({ graphData, onNav, gravityLogs, metrics }: {
             外向き測定（引力＝雨）
           </span>
         </div>
+        </>)}
       </div>
 
       {/* AI役割カード */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1rem", marginBottom: "2rem" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "1rem", marginBottom: "2rem" }}>
         {[
           { icon: "✨", name: "メンター（重力）", desc: "夢や熱量を肯定し、言葉を砂として堆積させる" },
           { icon: "📊", name: "アナリスト（引力）", desc: "数値から冷徹に現状を測定する" },

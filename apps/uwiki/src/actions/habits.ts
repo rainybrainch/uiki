@@ -10,6 +10,12 @@ export async function createHabit(data: { name: string; description?: string; co
   revalidatePath("/")
 }
 
+export async function updateHabit(id: string, data: { name?: string; description?: string; color?: string }) {
+  await prisma.habit.update({ where: { id }, data })
+  revalidatePath("/habits")
+  revalidatePath("/")
+}
+
 export async function deleteHabit(id: string) {
   await prisma.habit.delete({ where: { id } })
   revalidatePath("/habits")

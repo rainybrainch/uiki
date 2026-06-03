@@ -3,10 +3,10 @@
 import Link from "next/link"
 import {
   format, startOfMonth, endOfMonth, eachDayOfInterval,
-  startOfWeek, endOfWeek, isSameMonth, isToday, parseISO,
+  startOfWeek, endOfWeek, isSameMonth, isToday,
 } from "date-fns"
 import { ja } from "date-fns/locale"
-import { ChevronLeft, ChevronRight, CheckSquare, BookOpen } from "lucide-react"
+import { ChevronLeft, ChevronRight, BookOpen, Briefcase, CalendarDays } from "lucide-react"
 import clsx from "clsx"
 
 type Task = {
@@ -20,6 +20,8 @@ type GoogleEvent = {
   htmlLink: string
 }
 
+type CaseItem = { id: string; name: string; dueDate: string | Date; status: string }
+
 type Props = {
   monthStr: string
   prevMonth: string
@@ -29,6 +31,7 @@ type Props = {
   habitCountByDate: Record<string, number>
   totalHabits: number
   googleEvents?: GoogleEvent[]
+  casesByDate?: Record<string, CaseItem[]>
 }
 
 const DOW = ["日", "月", "火", "水", "木", "金", "土"]
@@ -39,8 +42,10 @@ const priorityDot: Record<string, string> = {
 export function CalendarView({
   monthStr, prevMonth, nextMonth,
   tasksByDate, diaryByDate, habitCountByDate, totalHabits,
-  googleEvents = [],
+  googleEvents = [], casesByDate = {},
 }: Props) {
+  const currentMonthStr = format(new Date(), "yyyy-MM")
+  const isCurrentMonth = monthStr === currentMonthStr
   // Google Calendar イベントを日付別に整理
   const gEventsByDate: Record<string, GoogleEvent[]> = {}
   for (const ev of googleEvents) {
@@ -61,7 +66,7 @@ export function CalendarView({
     <div className="surface rounded-xl overflow-hidden">
       {/* ヘッダー */}
       <div
-        className="flex items-center justify-between px-6 py-4"
+        className="flex items-center justify-between px-4 py-4 sm:px-6"
         style={{ borderBottom: "1px solid var(--border)" }}
       >
         <Link
@@ -70,9 +75,27 @@ export function CalendarView({
         >
           <ChevronLeft size={16} />
         </Link>
-        <h2 className="font-serif text-lg">
-          {format(monthDate, "yyyy年 M月", { locale: ja })}
-        </h2>
+
+        <div className="flex items-center gap-3">
+          <h2 className="font-serif text-lg">
+            {format(monthDate, "yyyy年 M月", { locale: ja })}
+          </h2>
+          {!isCurrentMonth && (
+            <Link
+              href={`/calendar?month=${currentMonthStr}`}
+              className="flex items-center gap-1 text-[10px] px-2 py-1 rounded-full transition-all hover:opacity-80"
+              style={{
+                background: "rgba(58,111,201,0.12)",
+                color: "var(--accent)",
+                border: "1px solid rgba(58,111,201,0.25)",
+              }}
+            >
+              <CalendarDays size={9} />
+              今月
+            </Link>
+          )}
+        </div>
+
         <Link
           href={`/calendar?month=${nextMonth}`}
           className="p-2 rounded-lg hover:bg-[var(--faint)] text-dim transition-colors"
@@ -103,6 +126,7 @@ export function CalendarView({
           const tasks = tasksByDate[dateStr] ?? []
           const diary = diaryByDate[dateStr]
           const gEvents = gEventsByDate[dateStr] ?? []
+          const casesOnDay = casesByDate[dateStr] ?? []
           const habitCount = habitCountByDate[dateStr] ?? 0
           const habitRate = totalHabits > 0 ? habitCount / totalHabits : 0
 
@@ -115,22 +139,27 @@ export function CalendarView({
                 idx % 7 !== 6 && "border-r",
                 Math.floor(idx / 7) < Math.floor((days.length - 1) / 7) && "border-b",
               )}
-              style={{ borderColor: "var(--border)" }}
+              style={{
+                borderColor: "var(--border)",
+                background: today ? "rgba(58,111,201,0.04)" : undefined,
+              }}
             >
               {/* 日付 */}
               <div className="flex items-center justify-between mb-1">
-                <span
+                <Link
+                  href={`/diary?date=${dateStr}`}
                   className={clsx(
-                    "w-6 h-6 flex items-center justify-center rounded-full text-xs font-mono",
-                    today && "font-bold text-white"
+                    "w-6 h-6 flex items-center justify-center rounded-full text-xs font-mono transition-all",
+                    today ? "font-bold text-white" : "hover:bg-[var(--faint)]"
                   )}
                   style={{
                     background: today ? "var(--accent-2)" : "transparent",
                     color: today ? "white" : idx % 7 === 0 ? "#f87171" : "var(--dim)",
                   }}
+                  title={diary ? `日記: ${diary.title}` : `${format(day, "M/d")} の日記を書く`}
                 >
                   {format(day, "d")}
-                </span>
+                </Link>
 
                 {/* 習慣達成インジケーター */}
                 {totalHabits > 0 && habitRate > 0 && (
@@ -149,7 +178,7 @@ export function CalendarView({
               {tasks.slice(0, 3).map((task) => (
                 <Link
                   key={task.id}
-                  href="/tasks"
+                  href={`/tasks/${task.id}`}
                   className={clsx(
                     "flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] mb-0.5 truncate block",
                     "hover:opacity-80 transition-opacity",
@@ -181,6 +210,20 @@ export function CalendarView({
                   {ev.summary}
                 </a>
               ))}
+
+              {/* 案件期限 */}
+              {casesOnDay.slice(0, 1).map((c) => (
+                <Link key={c.id} href="/cases"
+                  className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] mb-0.5 truncate block hover:opacity-80 transition-opacity"
+                  style={{ background: "rgba(201,168,76,0.12)", borderLeft: "2px solid #c9a84c", color: "var(--text)" }}
+                >
+                  <Briefcase size={8} style={{ color: "#c9a84c", flexShrink: 0 }} />
+                  <span className="truncate">{c.name}</span>
+                </Link>
+              ))}
+              {casesOnDay.length > 1 && (
+                <p className="text-[9px] text-faint px-1">+{casesOnDay.length - 1}件</p>
+              )}
 
               {/* 日記インジケーター */}
               {diary && (

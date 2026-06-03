@@ -36,11 +36,11 @@ export function LibraryFilter({ typeLabels, typeCounts, current }: Props) {
   return (
     <div className="space-y-3">
       {/* タイプフィルター */}
-      <div className="flex flex-wrap gap-2">
+      <div className="flex gap-2 overflow-x-auto pb-1 flex-nowrap md:flex-wrap">
         <Link
           href="/library"
           className={clsx(
-            "px-3 py-1 rounded-full text-xs border transition-all",
+            "px-3 py-1 rounded-full text-xs border transition-all shrink-0",
             !current.type
               ? "border-[var(--accent)] text-white bg-[rgba(58,111,201,0.2)]"
               : "border-[var(--border)] text-[var(--dim)] hover:border-[var(--accent)]"
@@ -53,7 +53,7 @@ export function LibraryFilter({ typeLabels, typeCounts, current }: Props) {
             key={type}
             href={typeHref(type)}
             className={clsx(
-              "px-3 py-1 rounded-full text-xs border transition-all",
+              "px-3 py-1 rounded-full text-xs border transition-all shrink-0",
               current.type === type
                 ? "border-[var(--accent)] text-white bg-[rgba(58,111,201,0.2)]"
                 : "border-[var(--border)] text-[var(--dim)] hover:border-[var(--accent)]"

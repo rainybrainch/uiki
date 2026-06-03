@@ -4,16 +4,21 @@ import { format, subDays, eachDayOfInterval, startOfWeek } from "date-fns"
 import { ja } from "date-fns/locale"
 import { calcStreak } from "@/lib/date"
 
-type Props = { logDates: string[]; color: string; name: string }
+type Props = { logDates: string[]; color: string; name: string; createdAt?: Date | string }
 
-const WEEKS = 15
+const WEEKS = 8
 
-export function HabitHeatmap({ logDates, color, name }: Props) {
+export function HabitHeatmap({ logDates, color, name, createdAt }: Props) {
   const today = new Date()
   const startDate = startOfWeek(subDays(today, WEEKS * 7), { locale: ja })
 
   const days = eachDayOfInterval({ start: startDate, end: today })
   const dateSet = new Set(logDates)
+
+  // 作成日（ローカル日付文字列）
+  const createdDateStr = createdAt
+    ? format(new Date(createdAt), "yyyy-MM-dd")
+    : null
 
   const weeks: Date[][] = []
   let week: Date[] = []
@@ -23,9 +28,14 @@ export function HabitHeatmap({ logDates, color, name }: Props) {
   }
   if (week.length > 0) weeks.push(week)
 
-  const totalDays = days.length
-  const doneDays = days.filter((d) => dateSet.has(format(d, "yyyy-MM-dd"))).length
-  const streak = calcStreak(logDates)  // lib/date.ts の統一実装を使用
+  // 作成日以降の日数のみカウント
+  const activeDays = days.filter((d) => {
+    const ds = format(d, "yyyy-MM-dd")
+    return !createdDateStr || ds >= createdDateStr
+  })
+  const totalDays = activeDays.length
+  const doneDays = activeDays.filter((d) => dateSet.has(format(d, "yyyy-MM-dd"))).length
+  const streak = calcStreak(logDates)
 
   return (
     <div className="mt-4">
@@ -42,15 +52,25 @@ export function HabitHeatmap({ logDates, color, name }: Props) {
             {w.map((d) => {
               const ds = format(d, "yyyy-MM-dd")
               const done = dateSet.has(ds)
+              const beforeCreation = createdDateStr && ds < createdDateStr
               return (
                 <div
                   key={ds}
                   className="w-3 h-3 rounded-sm transition-all"
                   style={{
-                    background: done ? color : "rgba(255,255,255,0.06)",
-                    opacity: done ? 0.85 : 1,
+                    background: beforeCreation
+                      ? "transparent"
+                      : done ? color : "rgba(255,255,255,0.06)",
+                    opacity: beforeCreation ? 0.2 : done ? 0.85 : 1,
+                    border: beforeCreation ? "1px dashed rgba(255,255,255,0.08)" : "none",
                   }}
-                  title={`${format(d, "M/d")}${done ? " ✓" : ""}`}
+                  title={beforeCreation
+                    ? `${format(d, "M/d")} (習慣作成前)`
+                    : `${format(d, "M/d")}${done ? " ✓" : ""}`}
+                  aria-label={beforeCreation
+                    ? `${format(d, "M月d日", { locale: ja })} 作成前`
+                    : `${format(d, "M月d日", { locale: ja })} ${done ? "達成" : "未達成"}`}
+                  role="img"
                 />
               )
             })}

@@ -141,8 +141,18 @@ export function MobileNav() {
                 color: active ? "white" : "var(--dim)",
                 fontSize: "0.62rem", minHeight: 56,
                 transition: "color 0.12s",
+                position: "relative",
               }}
             >
+              {/* アクティブ indicator */}
+              {active && (
+                <span style={{
+                  position: "absolute", top: 0, left: "50%",
+                  transform: "translateX(-50%)",
+                  width: 24, height: 2.5, borderRadius: "0 0 3px 3px",
+                  background: "var(--accent)",
+                }} />
+              )}
               <Icon size={20} strokeWidth={active ? 2.2 : 1.5}
                 style={{ color: active ? "var(--accent)" : "inherit", transition: "color 0.12s" }} />
               {label}

@@ -42,6 +42,14 @@ model Task {
   projectId   String?
   project     Project?  @relation(fields: [projectId], references: [id])
   subtasks    SubTask[]
+  // ─── 階層構造 ───────────────────────────────────────────
+  parentTaskId String?
+  parent       Task?   @relation("TaskTree", fields: [parentTaskId], references: [id], onDelete: Cascade)
+  children     Task[]  @relation("TaskTree")
+  depth        Int     @default(0)  // 0=ルート 1=Phase 2=SubGoal 3=葉タスク
+  // ─── 百層世界リンク ──────────────────────────────────────
+  dreamId      String?
+  dream        Dream?  @relation(fields: [dreamId], references: [id], onDelete: SetNull)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 }
@@ -220,6 +228,8 @@ model Dream {
   order       Int         @default(0)
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
+  // ─── タスクとの逆参照 ──────────────────────────────────
+  tasks       Task[]
 }
 
 // ─── 修正ログ（月次Act記録）────────────────────────────────

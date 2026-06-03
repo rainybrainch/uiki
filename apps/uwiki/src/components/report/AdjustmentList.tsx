@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react"
 import { createAdjustment, updateAdjustmentResult, deleteAdjustment } from "@/actions/adjustments"
 import { Plus, Trash2, Pencil } from "lucide-react"
+import { ConfirmButton } from "@/components/ui/ConfirmButton"
 import { format } from "date-fns"
 import { ja } from "date-fns/locale"
 
@@ -93,7 +94,6 @@ function AdjCard({ adj }: { adj: any }) {
   }
 
   const handleDelete = () => {
-    if (!confirm("このログを削除しますか？")) return
     startTransition(() => deleteAdjustment(adj.id))
   }
 
@@ -115,10 +115,7 @@ function AdjCard({ adj }: { adj: any }) {
           <p className="text-sm font-medium mb-1">{adj.what}</p>
           {adj.why && <p className="text-xs text-dim">理由: {adj.why}</p>}
         </div>
-        <button onClick={handleDelete} disabled={isPending}
-          className="p-1 text-faint hover:text-red-400 transition-colors shrink-0">
-          <Trash2 size={11} />
-        </button>
+        <ConfirmButton onConfirm={handleDelete} disabled={isPending} size="xs" className="p-1 shrink-0" />
       </div>
 
       {/* 結果フィールド */}

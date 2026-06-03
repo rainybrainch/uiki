@@ -15,8 +15,8 @@ export default async function HabitsPage() {
   let habits: any[] = []
   try {
     habits = await prisma.habit.findMany({
-      // ヒートマップ用に15週(105日)分取得
-      include: { logs: { orderBy: { date: "desc" }, take: 110 } },
+      // ヒートマップ用に8週(56日)+バッファ分取得
+      include: { logs: { orderBy: { date: "desc" }, take: 63 } },
       orderBy: { createdAt: "asc" },
     })
   } catch {
@@ -54,10 +54,14 @@ export default async function HabitsPage() {
             {doneCount} / {habits.length}
           </span>{" "}
           件完了
-          {doneCount === habits.length && habits.length > 0 && (
-            <span className="ml-2 text-xs" style={{ color: "var(--green)" }}>全済 ✓</span>
-          )}
         </p>
+        {doneCount === habits.length && habits.length > 0 && (
+          <div className="mt-4 rounded-xl px-5 py-4 animate-pop-in"
+            style={{ background: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.3)" }}>
+            <p className="text-sm font-medium" style={{ color: "var(--green)" }}>🌧 今日の習慣、全部済み！</p>
+            <p className="text-xs text-dim mt-0.5">雨が降り続けている。この積み重ねが、やがて大きな流れになる。</p>
+          </div>
+        )}
       </div>
 
       <div className="animate-fade-in delay-100">
@@ -67,17 +71,19 @@ export default async function HabitsPage() {
       <div className="mt-8 animate-fade-in delay-150">
         {habitsWithStats.length === 0 ? (
           <div className="surface rounded-xl py-16 text-center">
-            <p className="text-sm text-faint">習慣を追加してください</p>
+            <div className="text-3xl mb-3 opacity-25">🌱</div>
+            <p className="text-sm text-faint mb-1">習慣がまだありません</p>
+            <p className="text-xs text-faint opacity-60">毎日の小さな積み重ねが、やがて大きな流れになる。</p>
           </div>
         ) : (
-          <>
-            {/* 7日グリッド */}
+          <div className="xl:grid xl:grid-cols-[1fr_320px] xl:gap-8 xl:items-start">
+            {/* 左: 7日グリッド */}
             <HabitGrid habits={habitsWithStats} last7={last7} todayStr={todayStr} />
 
-            {/* ヒートマップ（習慣ごと） */}
-            <div className="mt-8 space-y-6">
+            {/* 右: ヒートマップ（PC は右カラム / モバイルは下） */}
+            <div className="mt-8 xl:mt-0 space-y-4">
               {habitsWithStats.map((habit) => (
-                <div key={habit.id} className="surface rounded-xl p-5">
+                <div key={habit.id} className="surface rounded-xl p-4">
                   <div className="flex items-center gap-2 mb-1">
                     <div className="w-2 h-2 rounded-full" style={{ background: habit.color }} />
                     <p className="text-sm font-medium">{habit.name}</p>
@@ -86,11 +92,12 @@ export default async function HabitsPage() {
                     logDates={habit.logDates}
                     color={habit.color}
                     name={habit.name}
+                    createdAt={habit.createdAt}
                   />
                 </div>
               ))}
             </div>
-          </>
+          </div>
         )}
       </div>
     </div>

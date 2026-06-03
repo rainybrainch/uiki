@@ -16,7 +16,7 @@ function buildFlatItems(results: Results | null): FlatItem[] {
     ...results.diary.map((d) => ({ id: d.id, title: d.title, sub: d.date, href: `/diary?date=${d.date}` })),
     ...results.library.map((l) => ({ id: l.id, title: l.title, sub: l.creator ?? undefined, href: "/library" })),
     ...(results.cases ?? []).map((c) => ({ id: c.id, title: c.name, sub: c.client ?? undefined, href: "/cases" })),
-    ...(results.dreams ?? []).map((d) => ({ id: d.id, title: d.title, sub: d.vision?.slice(0, 40) ?? undefined, href: "/dreams" })),
+    ...(results.dreams ?? []).map((d) => ({ id: d.id, title: d.title, sub: `No.${(d as any).layer ?? ""} ${d.vision?.slice(0, 35) ?? ""}`.trim(), href: `/dreams#dream-${d.id}` })),
   ]
 }
 
@@ -93,7 +93,7 @@ export function QuickSearch() {
   const dreamCount = (results?.dreams ?? []).length
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 md:pt-24 px-4"
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-4 md:pt-20 px-3 md:px-4"
       style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(6px)" }}
       onClick={close}>
       <div className="w-full max-w-xl rounded-2xl overflow-hidden shadow-2xl animate-fade-in"
@@ -142,6 +142,13 @@ export function QuickSearch() {
               onSelect={(href) => navigate(href)} />
           ) : null}
 
+          {results?.library.length ? (
+            <ResultSection icon={<Library size={11} />} label="ライブラリ" color="var(--dim)"
+              items={flatItems.slice(taskCount + diaryCount, taskCount + diaryCount + libCount)}
+              selectedIndex={selectedIndex} indexOffset={taskCount + diaryCount}
+              onSelect={(href) => navigate(href)} />
+          ) : null}
+
           {(results?.cases ?? []).length ? (
             <ResultSection icon={<Briefcase size={11} />} label="案件" color="#c9a84c"
               items={flatItems.slice(taskCount + diaryCount + libCount, taskCount + diaryCount + libCount + caseCount)}
@@ -153,13 +160,6 @@ export function QuickSearch() {
             <ResultSection icon={<Layers size={11} />} label="百層世界" color="#8b5cf6"
               items={flatItems.slice(taskCount + diaryCount + libCount + caseCount)}
               selectedIndex={selectedIndex} indexOffset={taskCount + diaryCount + libCount + caseCount}
-              onSelect={(href) => navigate(href)} />
-          ) : null}
-
-          {results?.library.length ? (
-            <ResultSection icon={<Library size={11} />} label="ライブラリ" color="var(--dim)"
-              items={flatItems.slice(taskCount + diaryCount, taskCount + diaryCount + libCount)}
-              selectedIndex={selectedIndex} indexOffset={taskCount + diaryCount}
               onSelect={(href) => navigate(href)} />
           ) : null}
         </div>

@@ -56,14 +56,21 @@ export function HabitForm() {
               {COLORS.map((c) => (
                 <button
                   key={c}
-                  className="w-6 h-6 rounded-full border-2 transition-all"
+                  className="w-7 h-7 rounded-full border-2 transition-all flex items-center justify-center"
                   style={{
                     background: c,
-                    borderColor: color === c ? "white" : "transparent",
-                    transform: color === c ? "scale(1.15)" : "scale(1)",
+                    borderColor: color === c ? "white" : "rgba(255,255,255,0.2)",
+                    transform: color === c ? "scale(1.2)" : "scale(1)",
+                    boxShadow: color === c ? `0 0 8px ${c}80` : "none",
                   }}
                   onClick={() => setColor(c)}
-                />
+                >
+                  {color === c && (
+                    <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                      <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                </button>
               ))}
             </div>
           </div>

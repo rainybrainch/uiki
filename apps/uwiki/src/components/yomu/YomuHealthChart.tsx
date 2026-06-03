@@ -64,15 +64,22 @@ export function YomuHealthChart({ label, unit, dates, values }: {
           strokeLinejoin="round"
           strokeLinecap="round"
         />
-        {values.map((v, i) => (
-          <circle
-            key={i}
-            cx={PAD + (i / Math.max(values.length - 1, 1)) * (W - PAD * 2)}
-            cy={(H - PAD) - ((v - min) / range) * (H - PAD * 2)}
-            r="2.5"
-            fill="#3a6fc9"
-          />
-        ))}
+        {values.map((v, i) => {
+          const cx = PAD + (i / Math.max(values.length - 1, 1)) * (W - PAD * 2)
+          const cy = (H - PAD) - ((v - min) / range) * (H - PAD * 2)
+          const isLast = i === values.length - 1
+          return (
+            <g key={i}>
+              {isLast && (
+                <circle cx={cx} cy={cy} r="6" fill="#3a6fc9" opacity="0.2">
+                  <animate attributeName="r" values="4;8;4" dur="2.2s" repeatCount="indefinite" />
+                  <animate attributeName="opacity" values="0.25;0;0.25" dur="2.2s" repeatCount="indefinite" />
+                </circle>
+              )}
+              <circle cx={cx} cy={cy} r={isLast ? 3 : 2} fill="#3a6fc9" />
+            </g>
+          )
+        })}
       </svg>
 
       <div className="flex justify-between mt-1 text-[10px] font-mono text-faint">

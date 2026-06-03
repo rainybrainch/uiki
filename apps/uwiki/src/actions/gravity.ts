@@ -11,6 +11,16 @@ export async function createGravityLog({ text, intensity }: { text: string; inte
   revalidatePath("/gravity")
 }
 
+export async function deleteGravityLog(id: string) {
+  await prisma.gravityLog.delete({ where: { id } })
+  revalidatePath("/gravity")
+}
+
+export async function deleteAttractionMetric(id: string) {
+  await prisma.attractionMetric.delete({ where: { id } })
+  revalidatePath("/gravity")
+}
+
 export async function createAttractionMetric({
   name, target, unit,
 }: { name: string; target?: number; unit?: string }) {
@@ -18,6 +28,25 @@ export async function createAttractionMetric({
   await prisma.attractionMetric.create({
     data: { name, target, unit, order: count },
   })
+  revalidatePath("/gravity")
+}
+
+export async function recordSelfReport({ label, value }: { label: string; value: number }) {
+  const date = today()
+  // 同名の指標を探す、なければ自動作成
+  let metric = await prisma.attractionMetric.findFirst({ where: { name: label } })
+  if (!metric) {
+    const count = await prisma.attractionMetric.count()
+    metric = await prisma.attractionMetric.create({
+      data: { name: label, target: 5, unit: "/ 5", order: count },
+    })
+  }
+  await prisma.attractionLog.upsert({
+    where: { metricId_date: { metricId: metric.id, date } },
+    update: { value },
+    create: { metricId: metric.id, date, value },
+  })
+  await prisma.attractionMetric.update({ where: { id: metric.id }, data: { value } })
   revalidatePath("/gravity")
 }
 

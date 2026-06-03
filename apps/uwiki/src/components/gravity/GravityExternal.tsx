@@ -1,7 +1,9 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import { createAttractionMetric, recordAttractionValue } from "@/actions/gravity"
+import { Trash2 } from "lucide-react"
+import { ConfirmButton } from "@/components/ui/ConfirmButton"
+import { createAttractionMetric, recordAttractionValue, recordSelfReport, deleteAttractionMetric } from "@/actions/gravity"
 
 const SELF_METRICS = [
   { key: "mood",    label: "😊 気分",  opts: ["😞 1","😐 2","🙂 3","😄 4","🤩 5"] },
@@ -15,6 +17,7 @@ export function GravityExternal({ metrics }: { metrics: any[] }) {
   const [target, setTarget]       = useState("")
   const [unit, setUnit]           = useState("")
   const [selfReport, setSelf]     = useState<Record<string, number>>({})
+  const [selfPending, startSelfTransition] = useTransition()
   const [isPending, startTransition] = useTransition()
 
   const handleAdd = (e: React.FormEvent) => {
@@ -27,7 +30,7 @@ export function GravityExternal({ metrics }: { metrics: any[] }) {
   }
 
   return (
-    <div style={{ maxWidth: 720, margin: "0 auto" }}>
+    <div style={{ maxWidth: "min(720px, 100%)", margin: "0 auto" }}>
       {/* ヘッダー */}
       <div style={{
         borderLeft: "3px solid #3a6fc9",
@@ -58,8 +61,9 @@ export function GravityExternal({ metrics }: { metrics: any[] }) {
         border: "1px dashed rgba(58,111,201,0.3)",
         borderRadius: "0.4rem",
       }}>
-        <div style={{ fontSize: "0.82rem", color: "var(--dim)", marginBottom: "0.8rem" }}>
-          今の自己申告（タップで記録）
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.8rem" }}>
+          <span style={{ fontSize: "0.82rem", color: "var(--dim)" }}>今の自己申告（タップで記録）</span>
+          {selfPending && <span style={{ fontSize: "0.7rem", color: "var(--dim)" }}>記録中...</span>}
         </div>
         {SELF_METRICS.map(({ key, label, opts }) => (
           <div key={key} style={{ display: "flex", alignItems: "center", gap: "0.6rem", marginBottom: "0.6rem" }}>
@@ -68,7 +72,12 @@ export function GravityExternal({ metrics }: { metrics: any[] }) {
               {opts.map((opt, i) => (
                 <button
                   key={i}
-                  onClick={() => setSelf((prev) => ({ ...prev, [key]: i + 1 }))}
+                  disabled={selfPending}
+                  onClick={() => {
+                    const val = i + 1
+                    setSelf((prev) => ({ ...prev, [key]: val }))
+                    startSelfTransition(() => recordSelfReport({ label, value: val }))
+                  }}
                   style={{
                     padding: "0.2rem 0.55rem",
                     fontSize: "0.72rem", borderRadius: "999px",
@@ -76,6 +85,7 @@ export function GravityExternal({ metrics }: { metrics: any[] }) {
                     background: selfReport[key] === i + 1 ? "rgba(58,111,201,0.2)" : "transparent",
                     border: `1px solid ${selfReport[key] === i + 1 ? "#3a6fc9" : "var(--border)"}`,
                     color: selfReport[key] === i + 1 ? "#3a6fc9" : "var(--dim)",
+                    opacity: selfPending ? 0.6 : 1,
                   }}
                 >
                   {opt}
@@ -162,8 +172,9 @@ export function GravityExternal({ metrics }: { metrics: any[] }) {
 }
 
 function MetricCard({ metric }: { metric: any }) {
-  const [value, setValue]         = useState("")
+  const [value, setValue] = useState("")
   const [isPending, startTransition] = useTransition()
+  const [isDeleting, startDeleteTransition] = useTransition()
   const latestLog = metric.logs[metric.logs.length - 1]
   const current   = latestLog?.value ?? metric.value ?? null
   const pct       = metric.target && current !== null
@@ -179,63 +190,57 @@ function MetricCard({ metric }: { metric: any }) {
     })
   }
 
+  const handleDelete = () => {
+    startDeleteTransition(() => deleteAttractionMetric(metric.id))
+  }
+
   return (
-    <div style={{
-      padding: "1rem 1.2rem",
-      background: "rgba(255,255,255,0.02)",
-      border: "1px solid var(--border)", borderRadius: "0.4rem",
-    }}>
+    <div className="surface rounded-xl p-4 group/metric relative">
       {/* ヘッダー */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "0.6rem", marginBottom: "0.6rem" }}>
-        <span style={{ fontSize: "0.92rem", fontWeight: 500, color: "var(--text)" }}>{metric.name}</span>
-        <span style={{ color: "#3a6fc9", fontFamily: "monospace", fontSize: "1.1rem", fontWeight: 600 }}>
-          {current !== null ? current : "—"}
-          {metric.unit && <span style={{ fontSize: "0.75rem", color: "var(--dim)", marginLeft: "0.2rem" }}>{metric.unit}</span>}
-        </span>
+      <div className="flex items-baseline justify-between gap-2 mb-3">
+        <span className="text-sm font-medium">{metric.name}</span>
+        <div className="flex items-baseline gap-2">
+          <span className="text-xl font-serif font-light" style={{ color: "#3a6fc9" }}>
+            {current !== null ? current : "—"}
+          </span>
+          {metric.unit && <span className="text-xs text-dim">{metric.unit}</span>}
+        </div>
       </div>
 
       {/* プログレスバー */}
       {pct !== null && (
-        <div style={{ marginBottom: "0.8rem" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.3rem", fontSize: "0.7rem", color: "var(--dim)" }}>
+        <div className="mb-3">
+          <div className="flex justify-between mb-1 text-[10px] font-mono text-dim">
             <span>目標: {metric.target}{metric.unit}</span>
-            <span style={{ color: "#3a6fc9", fontFamily: "monospace" }}>{pct}%</span>
+            <span style={{ color: "#3a6fc9" }}>{pct}%</span>
           </div>
-          <div style={{ height: 6, background: "rgba(255,255,255,0.05)", borderRadius: 3, overflow: "hidden" }}>
-            <div style={{
-              height: "100%", borderRadius: 3,
-              background: "linear-gradient(90deg, #3a6fc9, rgba(58,111,201,0.6))",
-              width: `${pct}%`,
-              transition: "width 0.6s cubic-bezier(0.4,0,0.2,1)",
-            }} />
+          <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.05)" }}>
+            <div className="h-full rounded-full transition-all duration-700"
+              style={{ width: `${pct}%`, background: "linear-gradient(90deg, #3a6fc9, rgba(58,111,201,0.6))" }} />
           </div>
         </div>
       )}
 
       {/* 記録フォーム */}
-      <form onSubmit={handleRecord} style={{ display: "flex", gap: "0.5rem" }}>
+      <form onSubmit={handleRecord} className="flex gap-2">
         <input
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          type="number" placeholder="値を記録する"
-          style={{
-            flex: 1, padding: "0.4rem 0.6rem",
-            background: "rgba(0,0,0,0.3)", border: "1px solid var(--border)",
-            borderRadius: "2px", color: "var(--text)", fontSize: "0.82rem", outline: "none",
-          }}
+          type="number"
+          placeholder="値を入力"
+          className="input-base text-sm flex-1"
         />
-        <button type="submit" disabled={!value || isPending} style={{
-          padding: "0.4rem 0.9rem",
-          background: "rgba(58,111,201,0.15)",
-          border: "1px solid rgba(58,111,201,0.4)",
-          color: "#3a6fc9", borderRadius: "2px",
-          cursor: "pointer", fontSize: "0.82rem",
-          opacity: !value || isPending ? 0.4 : 1,
-          transition: "opacity 0.2s",
-        }}>
+        <button type="submit" disabled={!value || isPending}
+          className="px-3 py-1.5 rounded-lg text-xs font-medium transition-opacity disabled:opacity-40"
+          style={{ background: "rgba(58,111,201,0.15)", border: "1px solid rgba(58,111,201,0.4)", color: "#3a6fc9", minHeight: 36 }}>
           記録
         </button>
       </form>
+
+      {/* 削除ボタン */}
+      <div className="absolute top-3 right-3 opacity-0 group-hover/metric:opacity-100 transition-opacity">
+        <ConfirmButton onConfirm={handleDelete} disabled={isDeleting} size="xs" className="p-1 rounded" />
+      </div>
     </div>
   )
 }

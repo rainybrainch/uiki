@@ -3,7 +3,9 @@
 import { useState, useTransition } from "react"
 import { format } from "date-fns"
 import { ja } from "date-fns/locale"
-import { createGravityLog } from "@/actions/gravity"
+import { Trash2 } from "lucide-react"
+import { createGravityLog, deleteGravityLog } from "@/actions/gravity"
+import { ConfirmButton } from "@/components/ui/ConfirmButton"
 
 const WEIGHTS = [
   { val: 1, label: "軽",    emoji: "",   borderW: 2,  bg: "rgba(184,122,58,0.04)", borderColor: "#b87a3a" },
@@ -16,6 +18,7 @@ export function GravityInternal({ logs }: { logs: any[] }) {
   const [text, setText] = useState("")
   const [weight, setWeight] = useState(1)
   const [isPending, startTransition] = useTransition()
+  const [deleting, startDeleteTransition] = useTransition()
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -28,7 +31,7 @@ export function GravityInternal({ logs }: { logs: any[] }) {
   }
 
   return (
-    <div style={{ maxWidth: 720, margin: "0 auto" }}>
+    <div style={{ maxWidth: "min(720px, 100%)", margin: "0 auto" }}>
       {/* セクションヘッダー */}
       <div style={{
         borderLeft: "3px solid #c9a84c",
@@ -86,12 +89,14 @@ export function GravityInternal({ logs }: { logs: any[] }) {
                 type="button"
                 onClick={() => setWeight(val)}
                 style={{
-                  flex: 1, padding: "0.3rem",
+                  flex: 1, padding: "0.55rem 0.4rem",
+                  minHeight: 40,
                   background: weight === val ? "rgba(201,168,76,0.15)" : "transparent",
                   border: `1px solid ${weight === val ? "#c9a84c" : "var(--border)"}`,
                   color: weight === val ? "#c9a84c" : "var(--dim)",
-                  borderRadius: "2px", cursor: "pointer",
-                  fontSize: "0.72rem", transition: "all 0.2s ease",
+                  borderRadius: "6px", cursor: "pointer",
+                  fontSize: "0.75rem", fontWeight: weight === val ? 600 : 400,
+                  transition: "all 0.2s ease",
                 }}
               >
                 {label}
@@ -105,14 +110,16 @@ export function GravityInternal({ logs }: { logs: any[] }) {
             type="submit"
             disabled={!text.trim() || isPending}
             style={{
-              padding: "0.5rem 1.2rem",
+              padding: "0.55rem 1.2rem",
+              minHeight: 40,
               background: "#c9a84c",
               color: "#060c1a",
-              border: "none", borderRadius: "2px",
+              border: "none", borderRadius: "6px",
               cursor: "pointer", fontWeight: 700,
               fontSize: "0.85rem", letterSpacing: "0.08em",
               opacity: (!text.trim() || isPending) ? 0.35 : 1,
               transition: "opacity 0.2s",
+              whiteSpace: "nowrap",
             }}
           >
             沈める
@@ -135,10 +142,10 @@ export function GravityInternal({ logs }: { logs: any[] }) {
             <div
               key={log.id}
               style={{
-                padding: "0.7rem 0.9rem",
+                padding: "0.7rem 2rem 0.7rem 0.9rem",
                 background: w.bg,
                 borderLeft: `${w.borderW}px solid ${w.borderColor}`,
-                borderRadius: "2px",
+                borderRadius: "6px",
                 fontSize: "0.88rem",
                 lineHeight: 1.5,
                 position: "relative",
@@ -150,12 +157,20 @@ export function GravityInternal({ logs }: { logs: any[] }) {
                   {w.emoji}
                 </span>
               )}
-              <p style={{ margin: 0, color: "var(--text)" }}>{log.text}</p>
-              <div style={{ display: "flex", justifyContent: "space-between", marginTop: "0.4rem", fontSize: "0.7rem", color: "var(--dim)" }}>
+              <p style={{ margin: 0, color: "var(--text)", paddingRight: "1.5rem" }}>{log.text}</p>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "0.4rem", fontSize: "0.7rem", color: "var(--dim)" }}>
                 <span>{w.label}</span>
                 <span style={{ fontFamily: "monospace" }}>
                   {format(new Date(log.createdAt), "M月d日 HH:mm", { locale: ja })}
                 </span>
+              </div>
+              <div style={{ position: "absolute", top: 4, right: 4 }}>
+                <ConfirmButton
+                  onConfirm={() => startDeleteTransition(() => deleteGravityLog(log.id))}
+                  disabled={deleting}
+                  size="xs"
+                  className="p-1 rounded"
+                />
               </div>
             </div>
           )

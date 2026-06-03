@@ -25,6 +25,7 @@ export function TaskForm({
   const [tags, setTags] = useState("")
   const [recurrence, setRecurrence] = useState<Recurrence | "">("")
   const [projectId, setProjectId] = useState<string>(defaultProjectId ?? "")
+  const [justAdded, setJustAdded] = useState(false)
   const [pending, startTransition] = useTransition()
   const titleRef = useRef<HTMLInputElement>(null)
 
@@ -43,18 +44,23 @@ export function TaskForm({
       setTitle(""); setMemo(""); setPriority("MEDIUM")
       setDueDate(""); setTags(""); setRecurrence("")
       setOpen(false)
-      setTimeout(() => titleRef.current?.focus(), 0)
+      setJustAdded(true)
+      setTimeout(() => { setJustAdded(false); titleRef.current?.focus() }, 1200)
     })
   }
 
   return (
     <div className="surface rounded-xl overflow-hidden">
-      <div className="flex items-center gap-3 px-4 py-3">
-        <Plus size={15} strokeWidth={1.5} className="text-dim shrink-0" />
+      <div className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: open ? "1px solid var(--border)" : undefined }}>
+        {justAdded
+          ? <span className="text-sm shrink-0 animate-check-pop" style={{ color: "var(--green)" }}>✓</span>
+          : <Plus size={15} strokeWidth={1.5} className="text-dim shrink-0" />
+        }
         <input
           ref={titleRef}
-          className="flex-1 bg-transparent outline-none text-sm placeholder:text-dim"
-          placeholder="タスクを追加..."
+          className="flex-1 bg-transparent outline-none text-sm"
+          placeholder={justAdded ? "追加しました！" : "タスクを追加..."}
+          style={{ color: justAdded ? "var(--green)" : "var(--text)" }}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           onKeyDown={(e) => {
@@ -78,11 +84,26 @@ export function TaskForm({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs mb-1.5 block text-dim">優先度</label>
-              <select className="input-field text-xs" value={priority} onChange={(e) => setPriority(e.target.value as Priority)}>
-                <option value="HIGH">🔴 高</option>
-                <option value="MEDIUM">🔵 中</option>
-                <option value="LOW">⚪ 低</option>
-              </select>
+              <div className="flex gap-1">
+                {([
+                  { v: "HIGH",   label: "高", color: "var(--red)" },
+                  { v: "MEDIUM", label: "中", color: "var(--accent)" },
+                  { v: "LOW",    label: "低", color: "var(--dim)" },
+                ] as const).map(({ v, label, color }) => (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => setPriority(v)}
+                    className="flex-1 py-1.5 rounded-lg text-xs border transition-all"
+                    style={{
+                      background: priority === v ? `${color}18` : "transparent",
+                      borderColor: priority === v ? color : "var(--border)",
+                      color: priority === v ? color : "var(--dim)",
+                      fontWeight: priority === v ? 600 : 400,
+                    }}
+                  >{label}</button>
+                ))}
+              </div>
             </div>
             <div>
               <label className="text-xs mb-1.5 block text-dim">締切日</label>
@@ -93,12 +114,27 @@ export function TaskForm({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs mb-1.5 block text-dim">繰り返し</label>
-              <select className="input-field text-xs" value={recurrence} onChange={(e) => setRecurrence(e.target.value as Recurrence | "")}>
-                <option value="">なし</option>
-                <option value="daily">毎日</option>
-                <option value="weekly">毎週</option>
-                <option value="monthly">毎月</option>
-              </select>
+              <div className="flex gap-1">
+                {([
+                  { v: "",        label: "なし" },
+                  { v: "daily",   label: "毎日" },
+                  { v: "weekly",  label: "毎週" },
+                  { v: "monthly", label: "毎月" },
+                ] as const).map(({ v, label }) => (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => setRecurrence(v as Recurrence | "")}
+                    className="flex-1 py-1.5 rounded-lg text-[10px] border transition-all"
+                    style={{
+                      background: recurrence === v ? "rgba(58,111,201,0.15)" : "transparent",
+                      borderColor: recurrence === v ? "var(--accent)" : "var(--border)",
+                      color: recurrence === v ? "var(--accent)" : "var(--dim)",
+                      fontWeight: recurrence === v ? 600 : 400,
+                    }}
+                  >{label}</button>
+                ))}
+              </div>
             </div>
             <div>
               <label className="text-xs mb-1.5 block text-dim">タグ</label>
@@ -109,12 +145,29 @@ export function TaskForm({
           {projects.length > 0 && (
             <div>
               <label className="text-xs mb-1.5 block text-dim">プロジェクト</label>
-              <select className="input-field text-xs" value={projectId} onChange={(e) => setProjectId(e.target.value)}>
-                <option value="">なし</option>
+              <div className="flex flex-wrap gap-1.5">
+                <button type="button" onClick={() => setProjectId("")}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs border transition-all"
+                  style={{
+                    background: !projectId ? "rgba(255,255,255,0.08)" : "transparent",
+                    borderColor: !projectId ? "rgba(255,255,255,0.3)" : "var(--border)",
+                    color: !projectId ? "white" : "var(--dim)",
+                  }}>
+                  なし
+                </button>
                 {projects.map((p) => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
+                  <button key={p.id} type="button" onClick={() => setProjectId(p.id)}
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs border transition-all"
+                    style={{
+                      background: projectId === p.id ? `${p.color}18` : "transparent",
+                      borderColor: projectId === p.id ? p.color : "var(--border)",
+                      color: projectId === p.id ? p.color : "var(--dim)",
+                    }}>
+                    <span className="w-2 h-2 rounded-full" style={{ background: p.color }} />
+                    {p.name}
+                  </button>
                 ))}
-              </select>
+              </div>
             </div>
           )}
 

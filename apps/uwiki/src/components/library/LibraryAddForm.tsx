@@ -1,17 +1,20 @@
 "use client"
 
 import { useState, useTransition, useRef } from "react"
+import { format } from "date-fns"
 import { createLibraryItem } from "@/actions/library"
 import { Plus, ChevronDown, ChevronUp } from "lucide-react"
-import type { ItemType } from "@uwiki/database"
+import type { ItemType, ItemStatus } from "@uwiki/database"
 
 export function LibraryAddForm({ typeLabels }: { typeLabels: Record<string, string> }) {
   const [open, setOpen] = useState(false)
   const [type, setType] = useState<ItemType>("BOOK")
+  const [status, setStatus] = useState<ItemStatus>("WANT")
   const [title, setTitle] = useState("")
   const [creator, setCreator] = useState("")
   const [url, setUrl] = useState("")
   const [note, setNote] = useState("")
+  const [tags, setTags] = useState("")
   const [pending, startTransition] = useTransition()
   const titleRef = useRef<HTMLInputElement>(null)
 
@@ -20,15 +23,19 @@ export function LibraryAddForm({ typeLabels }: { typeLabels: Record<string, stri
     startTransition(async () => {
       await createLibraryItem({
         type,
+        status,
         title: title.trim(),
         creator: creator || undefined,
         url: url || undefined,
         note: note || undefined,
+        tags: tags || undefined,
+        finishedAt: status === "DONE" ? format(new Date(), "yyyy-MM-dd") : undefined,
       })
       setTitle("")
       setCreator("")
       setUrl("")
       setNote("")
+      setTags("")
       setOpen(false)
       setTimeout(() => titleRef.current?.focus(), 0)
     })
@@ -58,29 +65,42 @@ export function LibraryAddForm({ typeLabels }: { typeLabels: Record<string, stri
 
       {open && (
         <div className="border-t px-4 py-4 space-y-3" style={{ borderColor: "var(--border)" }}>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs mb-1 block" style={{ color: "var(--dim)" }}>種類</label>
-              <select
-                className="input-field text-xs"
-                value={type}
-                onChange={(e) => setType(e.target.value as ItemType)}
-              >
-                {Object.entries(typeLabels).map(([v, l]) => (
-                  <option key={v} value={v}>{l}</option>
-                ))}
-              </select>
+          {/* 種類グリッド */}
+          <div>
+            <label className="text-xs mb-2 block" style={{ color: "var(--dim)" }}>種類</label>
+            <div className="grid grid-cols-4 gap-1.5">
+              {Object.entries(typeLabels).map(([v, l]) => {
+                const emoji = l.split(" ")[0]
+                const name = l.split(" ").slice(1).join(" ")
+                const active = type === v
+                return (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => setType(v as ItemType)}
+                    className="flex flex-col items-center gap-1 py-2 rounded-lg text-[10px] border transition-all"
+                    style={{
+                      background: active ? "rgba(58,111,201,0.15)" : "transparent",
+                      borderColor: active ? "var(--accent)" : "var(--border)",
+                      color: active ? "white" : "var(--dim)",
+                    }}
+                  >
+                    <span className="text-base leading-none">{emoji}</span>
+                    <span>{name}</span>
+                  </button>
+                )
+              })}
             </div>
-            <div>
-              <label className="text-xs mb-1 block" style={{ color: "var(--dim)" }}>
-                {type === "BOOK" ? "著者" : type === "MOVIE" ? "監督" : type === "MUSIC" ? "アーティスト" : "作者 / 発信元"}
-              </label>
-              <input
-                className="input-field text-xs"
-                value={creator}
-                onChange={(e) => setCreator(e.target.value)}
-              />
-            </div>
+          </div>
+          <div>
+            <label className="text-xs mb-1 block" style={{ color: "var(--dim)" }}>
+              {type === "BOOK" ? "著者" : type === "MOVIE" ? "監督" : type === "MUSIC" ? "アーティスト" : "作者 / 発信元"}
+            </label>
+            <input
+              className="input-field text-xs"
+              value={creator}
+              onChange={(e) => setCreator(e.target.value)}
+            />
           </div>
           {(type === "YOUTUBE" || type === "ARTICLE" || type === "URL") && (
             <div>
@@ -94,6 +114,27 @@ export function LibraryAddForm({ typeLabels }: { typeLabels: Record<string, stri
               />
             </div>
           )}
+          {/* ステータス */}
+          <div>
+            <label className="text-xs mb-2 block" style={{ color: "var(--dim)" }}>ステータス</label>
+            <div className="flex gap-2">
+              {([
+                { v: "WANT", label: "積んでる", color: "rgba(255,255,255,0.45)" },
+                { v: "DOING", label: "進行中",  color: "var(--accent)" },
+                { v: "DONE", label: "完了",    color: "#4ade80" },
+              ] as const).map(({ v, label, color }) => (
+                <button key={v} type="button" onClick={() => setStatus(v)}
+                  className="flex-1 py-1.5 rounded-lg text-xs border transition-all"
+                  style={{
+                    background: status === v ? `${color}18` : "transparent",
+                    borderColor: status === v ? color : "var(--border)",
+                    color: status === v ? color : "var(--dim)",
+                  }}>
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
           <div>
             <label className="text-xs mb-1 block" style={{ color: "var(--dim)" }}>メモ</label>
             <textarea
@@ -101,6 +142,15 @@ export function LibraryAddForm({ typeLabels }: { typeLabels: Record<string, stri
               rows={2}
               value={note}
               onChange={(e) => setNote(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="text-xs mb-1 block" style={{ color: "var(--dim)" }}>タグ（カンマ区切り）</label>
+            <input
+              className="input-field text-xs"
+              placeholder="読書, 技術, 2026"
+              value={tags}
+              onChange={(e) => setTags(e.target.value)}
             />
           </div>
           <div className="flex justify-end gap-2">

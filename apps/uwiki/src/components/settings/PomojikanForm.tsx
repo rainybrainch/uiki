@@ -29,12 +29,12 @@ export function PomojikanForm({
         <span className="text-sm">ぽもじかん連携を有効にする</span>
         <button
           onClick={() => setEnabled(!enabled)}
-          className="relative w-10 h-5 rounded-full transition-colors"
+          className="relative w-12 h-6 rounded-full transition-colors shrink-0"
           style={{ background: enabled ? "var(--accent-2)" : "var(--faint)" }}
         >
           <div
-            className="absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all"
-            style={{ left: enabled ? "calc(100% - 18px)" : "2px" }}
+            className="absolute top-0.5 w-5 h-5 bg-white rounded-full transition-all shadow-sm"
+            style={{ left: enabled ? "calc(100% - 22px)" : "2px" }}
           />
         </button>
       </label>

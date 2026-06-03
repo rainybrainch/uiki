@@ -4,8 +4,11 @@ import { TaskList } from "@/components/tasks/TaskList"
 import { KanbanBoard } from "@/components/tasks/KanbanBoard"
 import { ViewToggle } from "@/components/tasks/ViewToggle"
 import { ProjectSidebar } from "@/components/tasks/ProjectSidebar"
+import { DoneSection } from "@/components/tasks/DoneSection"
+import { BulkAddTasks } from "@/components/tasks/BulkAddTasks"
+import { FlowView } from "@/components/tasks/FlowView"
 import { AlertCircle } from "lucide-react"
-import { format, isToday, isTomorrow, isThisWeek, isPast, startOfDay } from "date-fns"
+import { format, isToday, isTomorrow, isPast, startOfDay, differenceInCalendarDays } from "date-fns"
 import { ja } from "date-fns/locale"
 import Link from "next/link"
 
@@ -17,39 +20,75 @@ const COLUMNS = [
   { id: "done",  label: "完了"   },
 ]
 
-type View = "all" | "today" | "upcoming" | "overdue" | "board"
+type View = "all" | "today" | "upcoming" | "overdue" | "board" | "flow"
 type Filter = "all" | string
 export type SmartViewDef = { id: string; label: string; count: number | null }
 
 export default async function TasksPage({
   searchParams,
 }: {
-  searchParams: Promise<{ view?: string; project?: string }>
+  searchParams: Promise<{ view?: string; project?: string; tag?: string }>
 }) {
   const params = await searchParams
   const view = (params.view ?? "all") as View
   const projectFilter = params.project ?? "all"
+  const tagFilter = params.tag ?? ""
 
   let allTasks: any[] = []
   let projects: any[] = []
+  let flowRoots: any[] = []
+  let flowDreamTitle: string | undefined
+  let flowTaskCount = 0
+  const projectWhere = {
+    ...(projectFilter !== "all" ? { projectId: projectFilter } : {}),
+    ...(tagFilter ? { tags: { contains: tagFilter } } : {}),
+  }
+
   try {
-    ;[allTasks, projects] = await Promise.all([
-      prisma.task.findMany({
-        include: {
-          subtasks: { orderBy: { order: "asc" } },
-          project: { select: { id: true, name: true, color: true } },
-        },
-        where: {
-          ...(projectFilter !== "all" ? { projectId: projectFilter } : {}),
-        },
-        orderBy: [{ order: "asc" }, { createdAt: "desc" }],
-      }),
-      prisma.project.findMany({
-        where: { archived: false },
-        orderBy: { order: "asc" },
-        include: { _count: { select: { tasks: { where: { completed: false } } } } },
-      }),
-    ])
+    if (view === "flow") {
+      // フロービュー: root タスク一覧とプロジェクト一覧のみ取得
+      const [allFlowTasks, projs] = await Promise.all([
+        prisma.task.findMany({
+          where: { ...projectWhere },
+          orderBy: [{ depth: "asc" }, { order: "asc" }, { createdAt: "asc" }],
+        }),
+        prisma.project.findMany({
+          where: { archived: false },
+          orderBy: { order: "asc" },
+          include: { _count: { select: { tasks: { where: { completed: false, parentTaskId: null } } } } },
+        }),
+      ])
+      projects = projs
+      flowRoots = buildTree(allFlowTasks.filter((t: any) => t.parentTaskId === null), allFlowTasks)
+      flowTaskCount = allFlowTasks.length
+
+      const anyDreamId = allFlowTasks.find((t: any) => t.dreamId)?.dreamId
+      if (anyDreamId) {
+        const dream = await prisma.dream.findUnique({ where: { id: anyDreamId }, select: { title: true } })
+        flowDreamTitle = dream?.title
+      }
+    } else {
+      // リスト・ボードビュー: 子タスクを除外して取得
+      const [tasks, projs, flowCount] = await Promise.all([
+        prisma.task.findMany({
+          include: {
+            subtasks: { orderBy: { order: "asc" } },
+            project: { select: { id: true, name: true, color: true } },
+          },
+          where: { ...projectWhere, parentTaskId: null },
+          orderBy: [{ order: "asc" }, { createdAt: "desc" }],
+        }),
+        prisma.project.findMany({
+          where: { archived: false },
+          orderBy: { order: "asc" },
+          include: { _count: { select: { tasks: { where: { completed: false, parentTaskId: null } } } } },
+        }),
+        prisma.task.count({ where: { ...projectWhere, parentTaskId: { not: null } } }),
+      ])
+      allTasks = tasks
+      projects = projs
+      flowTaskCount = flowCount
+    }
   } catch {
     // DB未接続時はデフォルト値
   }
@@ -57,8 +96,10 @@ export default async function TasksPage({
   const now = new Date()
   const todayStart = startOfDay(now)
 
-  const active = allTasks.filter((t) => !t.completed)
-  const done   = allTasks.filter((t) => t.completed)
+  // フロービュー以外では allTasks は既に parentTaskId=null 済み
+  const flatTasks = allTasks
+  const active = flatTasks.filter((t: any) => !t.completed)
+  const done   = flatTasks.filter((t: any) => t.completed)
 
   // スマートリスト（startOfDay でタイムゾーン境界を正規化）
   const todayTasks    = active.filter((t) => t.dueDate && isToday(startOfDay(new Date(t.dueDate))))
@@ -71,6 +112,7 @@ export default async function TasksPage({
     { id: "upcoming", label: "今後",     count: upcomingTasks.length },
     { id: "overdue",  label: "期限切れ", count: overdueTasks.length },
     { id: "board",    label: "ボード",   count: null },
+    { id: "flow",     label: "フロー",   count: flowTaskCount > 0 ? flowTaskCount : null },
   ]
 
   // 表示するタスクを決定
@@ -98,7 +140,7 @@ export default async function TasksPage({
       />
 
       {/* メインエリア */}
-      <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
+      <div className="flex-1 min-w-0 flex flex-col overflow-hidden max-w-[1100px]">
         {/* ヘッダー */}
         <div className="flex items-center justify-between px-4 py-4 md:px-7 md:py-5 shrink-0">
           <div className="flex items-center gap-3">
@@ -112,8 +154,14 @@ export default async function TasksPage({
                 : "すべて"}
             </h1>
             <span className="text-xs font-mono text-dim">{active.length} 件</span>
+            {view === "all" && done.length > 0 && (
+              <span className="text-[10px] font-mono text-faint">完了 {done.length}</span>
+            )}
           </div>
-          <ViewToggle current={view} projectFilter={projectFilter} />
+          <div className="flex items-center gap-2">
+            <BulkAddTasks projectId={projectFilter !== "all" ? projectFilter : undefined} />
+            <ViewToggle current={view} projectFilter={projectFilter} />
+          </div>
         </div>
 
         {/* モバイル: スマートビュー切り替え（sm未満のみ表示） */}
@@ -134,6 +182,25 @@ export default async function TasksPage({
           ))}
         </div>
 
+        {/* アクティブタグフィルターバー */}
+        {tagFilter && (
+          <div className="px-4 pb-2 md:px-7 shrink-0 flex items-center gap-2">
+            <span className="text-[10px] text-dim">タグ絞り込み:</span>
+            <span className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium"
+              style={{ background: "rgba(58,111,201,0.15)", color: "var(--accent)", border: "1px solid rgba(58,111,201,0.3)" }}>
+              #{tagFilter}
+              <Link
+                href={`/tasks?view=${view}${projectFilter !== "all" ? `&project=${projectFilter}` : ""}`}
+                className="text-dim hover:text-white transition-colors ml-0.5 hover:opacity-80"
+                aria-label={`タグ「${tagFilter}」のフィルターを解除`}
+              >
+                ×
+              </Link>
+            </span>
+            <span className="text-[10px] text-faint">{active.length} 件</span>
+          </div>
+        )}
+
         {/* タスク追加フォーム */}
         <div className="px-4 pb-3 md:px-7 md:pb-4 shrink-0">
           <TaskForm
@@ -147,6 +214,14 @@ export default async function TasksPage({
         {view === "board" ? (
           <div className="flex-1 overflow-hidden px-4 pb-4 md:px-7 md:pb-6">
             <KanbanBoard columns={COLUMNS} tasks={allTasks} />
+          </div>
+        ) : view === "flow" ? (
+          <div className="flex-1 overflow-y-auto px-4 pb-6 md:px-7 md:pb-10">
+            <FlowView
+              roots={flowRoots}
+              dreamTitle={flowDreamTitle}
+              projectId={projectFilter !== "all" ? projectFilter : undefined}
+            />
           </div>
         ) : (
           <div className="flex-1 overflow-y-auto px-4 pb-6 md:px-7 md:pb-10">
@@ -167,15 +242,19 @@ export default async function TasksPage({
               grouped.map(({ project, tasks }) => (
                 <section key={project?.id ?? "none"} className="mb-8">
                   {project && (
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="w-2 h-2 rounded-full" style={{ background: project.color }} />
+                    <div className="flex items-center gap-2 mb-3 px-1">
+                      <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: project.color }} />
                       <Link
                         href={`/tasks?view=all&project=${project.id}`}
-                        className="text-xs font-medium text-dim hover:text-white transition-colors"
+                        className="text-xs font-semibold hover:opacity-80 transition-opacity"
+                        style={{ color: project.color }}
                       >
                         {project.name}
                       </Link>
-                      <span className="text-[10px] text-faint">{tasks.length}</span>
+                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full"
+                        style={{ background: `${project.color}15`, color: project.color }}>
+                        {tasks.length}
+                      </span>
                     </div>
                   )}
                   {!project && tasks.length > 0 && (
@@ -184,16 +263,42 @@ export default async function TasksPage({
                   <TaskList tasks={tasks} />
                 </section>
               ))
+            ) : view === "upcoming" ? (
+              /* 今後7日ビュー — 日付別グループ */
+              (() => {
+                const groups = new Map<string, typeof displayTasks>()
+                for (const t of displayTasks) {
+                  const d = t.dueDate ? format(startOfDay(new Date(t.dueDate)), "yyyy-MM-dd") : "未設定"
+                  if (!groups.has(d)) groups.set(d, [])
+                  groups.get(d)!.push(t)
+                }
+                return Array.from(groups.entries()).map(([dateKey, tasks]) => {
+                  const label = dateKey === "未設定" ? "期限未設定" :
+                    isToday(new Date(dateKey)) ? "今日" :
+                    isTomorrow(new Date(dateKey)) ? "明日" :
+                    `${differenceInCalendarDays(new Date(dateKey), new Date())}日後（${format(new Date(dateKey), "M/d")}）`
+                  return (
+                    <section key={dateKey} className="mb-6">
+                      <p className="text-xs font-mono mb-2 px-1"
+                        style={{ color: isToday(new Date(dateKey)) ? "var(--accent)" : "var(--dim)" }}>
+                        {label}
+                      </p>
+                      <TaskList tasks={tasks} />
+                    </section>
+                  )
+                })
+              })()
             ) : (
               <TaskList tasks={displayTasks} />
             )}
 
-            {/* 完了済み（all/project のみ） */}
-            {(view === "all" && done.length > 0) && (
-              <section className="mt-10 pt-6" style={{ borderTop: "1px solid var(--border)" }}>
-                <p className="text-xs text-faint mb-3">完了 — {done.length}件</p>
-                <TaskList tasks={done} dimmed />
-              </section>
+            {/* 完了済み（all/project ビューのみ）— クライアント折りたたみ */}
+            {view === "all" && done.length > 0 && (
+              <DoneSection
+                tasks={done}
+                count={done.length}
+                projectId={projectFilter !== "all" ? projectFilter : undefined}
+              />
             )}
           </div>
         )}
@@ -219,4 +324,14 @@ function groupByProject(
   if (noProject.length > 0) groups.push({ project: null, tasks: noProject })
 
   return groups
+}
+
+function buildTree(roots: any[], all: any[]): any[] {
+  return roots.map((node) => ({
+    ...node,
+    children: buildTree(
+      all.filter((t) => t.parentTaskId === node.id),
+      all
+    ),
+  }))
 }

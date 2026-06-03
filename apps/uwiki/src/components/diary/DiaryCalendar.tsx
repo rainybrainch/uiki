@@ -14,17 +14,28 @@ import {
   isSameMonth,
 } from "date-fns"
 import { ja } from "date-fns/locale"
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import { ChevronLeft, ChevronRight, CalendarDays } from "lucide-react"
 import clsx from "clsx"
+import { isToday as dateFnsIsToday } from "date-fns"
+
+const MOOD_COLORS: Record<number, string> = {
+  1: "#f87171",
+  2: "#fb923c",
+  3: "#94a3b8",
+  4: "#34d399",
+  5: "#3a6fc9",
+}
 
 export function DiaryCalendar({
   selectedDate,
   monthStr,
   entryDates,
+  moodByDate = {},
 }: {
   selectedDate: string
   monthStr: string
   entryDates: string[]
+  moodByDate?: Record<string, number>
 }) {
   const router = useRouter()
   const monthDate = parseISO(monthStr + "-01")
@@ -60,9 +71,22 @@ export function DiaryCalendar({
         <button onClick={prevMonth} className="p-1 rounded hover:bg-[var(--faint)]" style={{ color: "var(--dim)" }}>
           <ChevronLeft size={16} />
         </button>
-        <h3 className="text-sm font-serif" style={{ color: "var(--text)" }}>
-          {format(monthDate, "yyyy年M月", { locale: ja })}
-        </h3>
+        <div className="flex items-center gap-2">
+          <h3 className="text-sm font-serif" style={{ color: "var(--text)" }}>
+            {format(monthDate, "yyyy年M月", { locale: ja })}
+          </h3>
+          {monthStr !== format(new Date(), "yyyy-MM") && (
+            <button
+              onClick={() => navigate(format(new Date(), "yyyy-MM-dd"), format(new Date(), "yyyy-MM"))}
+              className="flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full transition-all hover:opacity-80"
+              style={{ background: "rgba(58,111,201,0.12)", color: "var(--accent)", border: "1px solid rgba(58,111,201,0.25)" }}
+              title="今日へ戻る"
+            >
+              <CalendarDays size={9} />
+              今日
+            </button>
+          )}
+        </div>
         <button onClick={nextMonth} className="p-1 rounded hover:bg-[var(--faint)]" style={{ color: "var(--dim)" }}>
           <ChevronRight size={16} />
         </button>
@@ -83,7 +107,9 @@ export function DiaryCalendar({
           const dateStr = format(day, "yyyy-MM-dd")
           const inMonth = isSameMonth(day, monthDate)
           const isSelected = dateStr === selectedDate
+          const isToday = dateFnsIsToday(day)
           const hasEntry = entryDates.includes(dateStr)
+          const mood = moodByDate[dateStr]
 
           return (
             <button
@@ -95,8 +121,10 @@ export function DiaryCalendar({
                 isSelected && "font-medium",
               )}
               style={{
-                color: isSelected ? "white" : "var(--text)",
+                color: isSelected ? "white" : isToday ? "var(--accent)" : "var(--text)",
                 background: isSelected ? "var(--accent-2)" : "transparent",
+                boxShadow: isToday && !isSelected ? "inset 0 0 0 1.5px rgba(58,111,201,0.5)" : undefined,
+                fontWeight: isToday ? 600 : undefined,
               }}
               onMouseEnter={(e) => {
                 if (!isSelected) (e.currentTarget as HTMLButtonElement).style.background = "var(--faint)"
@@ -108,8 +136,8 @@ export function DiaryCalendar({
               {format(day, "d")}
               {hasEntry && !isSelected && (
                 <span
-                  className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full"
-                  style={{ background: "var(--accent)" }}
+                  className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full"
+                  style={{ background: mood ? MOOD_COLORS[mood] : "var(--accent)" }}
                 />
               )}
             </button>

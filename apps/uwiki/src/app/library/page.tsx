@@ -48,7 +48,7 @@ export default async function LibraryPage({
   )
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col max-w-5xl mx-auto w-full">
       <div className="px-4 py-5 md:px-8 md:py-8 shrink-0">
         <div className="flex items-center gap-3 mb-6">
           <Library size={20} strokeWidth={1.5} style={{ color: "var(--accent)" }} />

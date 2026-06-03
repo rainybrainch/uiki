@@ -26,16 +26,23 @@ const FIELDS = [
 
 type FieldKey = typeof FIELDS[number]["key"]
 
-export function DreamForm({ catLabels }: { catLabels: Record<string, string> }) {
+export function DreamForm({ catLabels, usedLayers = [] }: { catLabels: Record<string, string>; usedLayers?: number[] }) {
+  const nextLayer = (() => {
+    const used = new Set(usedLayers)
+    for (let i = 1; i <= 100; i++) { if (!used.has(i)) return i }
+    return null
+  })()
+
   const [open, setOpen] = useState(false)
   const [showAll, setShowAll] = useState(false)
   const [title, setTitle] = useState("")
   const [category, setCategory] = useState("OATH")
-  const [layer, setLayer] = useState("")
+  const [layer, setLayer] = useState(nextLayer ? String(nextLayer) : "")
   const [fields, setFields] = useState<Record<FieldKey, string>>({
     definition: "", vision: "", vow: "", constraints: "", period: "", kpi: "", connections: "",
   })
   const [isPending, startTransition] = useTransition()
+  const [justAdded, setJustAdded] = useState("")
 
   const setField = (key: FieldKey, val: string) =>
     setFields((prev) => ({ ...prev, [key]: val }))
@@ -49,25 +56,36 @@ export function DreamForm({ catLabels }: { catLabels: Record<string, string> }) 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!title.trim()) return
+    const t = title.trim()
     startTransition(async () => {
       await createDream({
-        title: title.trim(),
+        title: t,
         category,
         layer: layer ? Number(layer) : undefined,
         ...fields,
       })
+      setJustAdded(t)
       reset()
+      setTimeout(() => setJustAdded(""), 2500)
     })
   }
 
   if (!open) {
     return (
-      <button onClick={() => setOpen(true)}
-        className="w-full flex items-center gap-2 px-4 py-3 rounded-xl text-sm transition-all hover:opacity-80"
-        style={{ background: "rgba(139,92,246,0.08)", border: "1px dashed rgba(139,92,246,0.3)", color: "#8b5cf6" }}
-      >
-        <Plus size={15} /> 新しい世界を掘る
-      </button>
+      <div className="space-y-2">
+        {justAdded && (
+          <div className="rounded-xl px-4 py-3 text-sm animate-pop-in"
+            style={{ background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.3)", color: "#a78bfa" }}>
+            ✓ 「{justAdded}」を百層世界に刻みました
+          </div>
+        )}
+        <button onClick={() => setOpen(true)}
+          className="w-full flex items-center gap-2 px-4 py-3 rounded-xl text-sm transition-all hover:opacity-80"
+          style={{ background: "rgba(139,92,246,0.08)", border: "1px dashed rgba(139,92,246,0.3)", color: "#8b5cf6" }}
+        >
+          <Plus size={15} /> 新しい世界を掘る
+        </button>
+      </div>
     )
   }
 
@@ -90,9 +108,19 @@ export function DreamForm({ catLabels }: { catLabels: Record<string, string> }) 
           </select>
         </div>
         <div>
-          <label className="text-xs text-dim block mb-1">層番号（1〜100）</label>
+          <label className="text-xs text-dim block mb-1">
+            No.（1〜100）
+            {nextLayer && layer === String(nextLayer) && (
+              <span className="ml-1.5 text-[10px]" style={{ color: "var(--accent)" }}>← 次の空き</span>
+            )}
+          </label>
           <input value={layer} onChange={(e) => setLayer(e.target.value)}
-            type="number" min="1" max="100" placeholder="自動" className="input-base" />
+            type="number" min="1" max="100"
+            placeholder={nextLayer ? `次の空き: ${nextLayer}` : "自動"}
+            className="input-base" />
+          {layer && usedLayers.includes(Number(layer)) && (
+            <p className="text-[10px] mt-1" style={{ color: "var(--red)" }}>⚠ No.{layer} は既に使用中</p>
+          )}
         </div>
       </div>
 

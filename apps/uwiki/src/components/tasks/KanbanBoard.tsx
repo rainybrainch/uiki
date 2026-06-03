@@ -1,8 +1,9 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import { moveTask, deleteTask } from "@/actions/tasks"
-import { Trash2 } from "lucide-react"
+import { moveTask, deleteTask, toggleTask } from "@/actions/tasks"
+import { ArrowRight } from "lucide-react"
+import { ConfirmButton } from "@/components/ui/ConfirmButton"
 import clsx from "clsx"
 import Link from "next/link"
 import { isToday, isPast, startOfDay } from "date-fns"
@@ -24,7 +25,7 @@ const columnAccent: Record<string, string> = {
 
 export function KanbanBoard({ columns, tasks }: { columns: Column[]; tasks: Task[] }) {
   return (
-    <div className="flex gap-4 h-full overflow-x-auto pb-2">
+    <div className="flex gap-4 h-full overflow-x-auto pb-2 xl:gap-6">
       {columns.map((col) => (
         <KanbanCol key={col.id} column={col} tasks={tasks.filter((t) => t.column === col.id)} />
       ))}
@@ -47,7 +48,7 @@ function KanbanCol({ column, tasks }: { column: Column; tasks: Task[] }) {
 
   return (
     <div
-      className="flex flex-col shrink-0 w-72 rounded-xl transition-colors duration-150"
+      className="flex flex-col shrink-0 w-72 xl:w-80 rounded-xl transition-colors duration-150"
       style={{
         background: isDragOver ? "rgba(58,111,201,0.08)" : "var(--surface)",
         border: `1px solid ${isDragOver ? "var(--border-h)" : "var(--border)"}`,
@@ -78,11 +79,26 @@ function KanbanCol({ column, tasks }: { column: Column; tasks: Task[] }) {
 
 function KanbanCard({ task }: { task: Task }) {
   const [hovered, setHovered] = useState(false)
+  const [popping, setPopping] = useState(false)
+  const [optimistic, setOptimistic] = useState<boolean | null>(null)
   const [, startTransition] = useTransition()
+
+  const shown = optimistic !== null ? optimistic : task.completed
 
   const onDragStart = (e: React.DragEvent) => {
     e.dataTransfer.setData("taskId", task.id)
     e.dataTransfer.effectAllowed = "move"
+  }
+
+  const handleCheck = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    const next = !shown
+    setOptimistic(next)
+    if (next) { setPopping(true); setTimeout(() => setPopping(false), 350) }
+    startTransition(async () => {
+      await toggleTask(task.id, next)
+      setOptimistic(null)
+    })
   }
 
   const dueDateObj = task.dueDate ? startOfDay(new Date(task.dueDate)) : null
@@ -98,7 +114,7 @@ function KanbanCard({ task }: { task: Task }) {
       onMouseLeave={() => setHovered(false)}
       className={clsx(
         "group relative p-3 rounded-lg cursor-grab active:cursor-grabbing select-none transition-all duration-150",
-        task.completed && "opacity-40"
+        shown && "opacity-40"
       )}
       style={{
         background: hovered ? "rgba(58,111,201,0.05)" : "rgba(255,255,255,0.03)",
@@ -106,25 +122,61 @@ function KanbanCard({ task }: { task: Task }) {
       }}
     >
       <div className="absolute left-0 top-3 bottom-3 w-[2px] rounded-full" style={{ background: priorityColor[task.priority] }} />
-      <Link
-        href={`/tasks/${task.id}`}
-        className={clsx("block text-sm leading-snug pl-3 hover:text-accent transition-colors", task.completed && "line-through")}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {task.title}
-      </Link>
-      {task.memo && <p className="text-xs mt-1.5 pl-3 line-clamp-2 text-dim">{task.memo}</p>}
+
+      {/* チェックボックス + タイトル */}
+      <div className="flex items-start gap-2 pl-2">
+        <button
+          onClick={handleCheck}
+          aria-label={shown ? "タスクを未完了にする" : "タスクを完了にする"}
+          aria-pressed={shown}
+          className={`mt-0.5 shrink-0 w-3.5 h-3.5 rounded border flex items-center justify-center transition-all cursor-pointer ${popping ? "animate-check-pop" : ""}`}
+          style={{
+            borderColor: shown ? "var(--accent)" : "var(--border)",
+            background: shown ? "var(--accent-2)" : "transparent",
+          }}
+        >
+          {shown && (
+            <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
+              <path d="M1 2.5L3 4.5L7 1" stroke="white" strokeWidth="1.3" strokeLinecap="round" />
+            </svg>
+          )}
+        </button>
+        <Link
+          href={`/tasks/${task.id}`}
+          className={clsx("flex-1 text-sm leading-snug hover:text-accent transition-colors", shown && "line-through")}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {task.title}
+        </Link>
+      </div>
+
+      {task.memo && <p className="text-xs mt-1.5 pl-7 line-clamp-2 text-dim">{task.memo}</p>}
       {task.dueDate && (
-        <p className="text-[10px] mt-2 pl-3 font-mono" style={{ color: dueDateColor }}>
+        <p className="text-[10px] mt-2 pl-7 font-mono" style={{ color: dueDateColor }}>
           {isOverdue && "⚠ "}{new Date(task.dueDate).toLocaleDateString("ja-JP", { month: "short", day: "numeric" })}
         </p>
       )}
-      <button
-        onClick={(e) => { e.stopPropagation(); startTransition(() => deleteTask(task.id)) }}
-        className="absolute top-2 right-2 p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity hover:bg-[var(--faint)] text-dim"
-      >
-        <Trash2 size={11} />
-      </button>
+      {/* モバイル移動ボタン */}
+      <div className="flex gap-1 mt-2 sm:hidden">
+        {(["todo","doing","done"] as KanbanColumn[]).filter((c) => c !== task.column).map((col) => {
+          const labels: Record<string, string> = { todo: "未着手", doing: "進行中", done: "完了" }
+          return (
+            <button key={col} onClick={(e) => { e.stopPropagation(); startTransition(() => moveTask(task.id, col)) }}
+              className="flex items-center gap-0.5 text-[10px] px-2 py-1 rounded-lg transition-colors"
+              style={{ background: "var(--faint)", color: "var(--dim)" }}>
+              <ArrowRight size={9} /> {labels[col]}
+            </button>
+          )
+        })}
+      </div>
+
+      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+        <ConfirmButton
+          onConfirm={() => startTransition(() => deleteTask(task.id))}
+          size="xs"
+          className="p-1 rounded hover:bg-[var(--faint)]"
+        />
+      </div>
     </div>
   )
 }

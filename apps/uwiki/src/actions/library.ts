@@ -13,6 +13,7 @@ export async function createLibraryItem(data: {
   status?: ItemStatus
   note?: string
   tags?: string
+  finishedAt?: string
 }) {
   await prisma.libraryItem.create({ data })
   revalidatePath("/library")

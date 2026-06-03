@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db"
 import { CasePipeline } from "@/components/cases/CasePipeline"
 import { CaseForm } from "@/components/cases/CaseForm"
 import { Briefcase } from "lucide-react"
+import Link from "next/link"
 
 export const dynamic = "force-dynamic"
 
@@ -16,10 +17,18 @@ const STATUS_LABELS: Record<string, string> = {
   DONE:        "完了",
 }
 
-export default async function CasesPage() {
+export default async function CasesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ filter?: string }>
+}) {
+  const { filter } = await searchParams
   let cases: any[] = []
   try {
-    cases = await prisma.case.findMany({ orderBy: { createdAt: "desc" } })
+    cases = await prisma.case.findMany({
+      where: filter && filter !== "all" ? { status: filter as any } : {},
+      orderBy: { createdAt: "desc" },
+    })
   } catch {}
 
   const earned = cases
@@ -39,7 +48,7 @@ export default async function CasesPage() {
   }))
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col max-w-4xl mx-auto w-full">
       {/* ヘッダー */}
       <div className="px-4 py-5 md:px-8 md:py-8 shrink-0">
         <div className="flex items-center gap-3 mb-6">
@@ -56,20 +65,20 @@ export default async function CasesPage() {
           <div className="flex items-end justify-between mb-3">
             <div>
               <p className="text-xs text-dim mb-1">獲得額</p>
-              <p className="text-3xl font-serif font-light" style={{ color: "var(--amber)" }}>
+              <p className="text-2xl md:text-3xl font-serif font-light" style={{ color: "var(--amber)" }}>
                 ¥{earned.toLocaleString()}
               </p>
             </div>
             <div className="text-right">
               <p className="text-xs text-dim mb-1">目標</p>
-              <p className="text-lg font-mono text-dim">¥1,000,000</p>
+              <p className="text-base md:text-lg font-mono text-dim">¥1,000,000</p>
             </div>
           </div>
 
           {/* プログレスバー */}
           <div className="h-3 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
             <div
-              className="h-full rounded-full transition-all duration-700"
+              className="h-full rounded-full animate-bar-grow"
               style={{
                 width: `${pct}%`,
                 background: pct >= 100
@@ -92,21 +101,31 @@ export default async function CasesPage() {
           </div>
         </div>
 
-        {/* 統計 */}
+        {/* 統計 + フィルター */}
         <div className="flex gap-2 overflow-x-auto pb-1 mt-3">
+          <Link
+            href="/cases"
+            className={`rounded-lg p-3 text-center shrink-0 min-w-[72px] transition-colors ${!filter || filter === "all" ? "bg-[rgba(58,111,201,0.15)] border border-[rgba(58,111,201,0.4)]" : "surface hover:bg-[var(--faint)]"}`}
+          >
+            <p className={`text-lg font-serif ${!filter || filter === "all" ? "text-white" : ""}`}>{cases.length}</p>
+            <p className={`text-[10px] whitespace-nowrap ${!filter || filter === "all" ? "text-[var(--accent)]" : "text-dim"}`}>すべて</p>
+          </Link>
           {STATUS_ORDER.map((s) => {
             const count = cases.filter((c) => c.status === s).length
+            const active = filter === s
+            const empty = count === 0 && !active
             return (
-              <div key={s} className="surface rounded-lg p-3 text-center shrink-0 min-w-[72px]">
-                <p className="text-lg font-serif">{count}</p>
-                <p className="text-[10px] text-dim whitespace-nowrap">{STATUS_LABELS[s]}</p>
-              </div>
+              <Link
+                key={s}
+                href={`/cases?filter=${s}`}
+                className={`rounded-lg p-3 text-center shrink-0 min-w-[72px] transition-all ${active ? "bg-[rgba(58,111,201,0.15)] border border-[rgba(58,111,201,0.4)]" : "surface hover:bg-[var(--faint)]"}`}
+                style={{ opacity: empty ? 0.45 : 1 }}
+              >
+                <p className={`text-lg font-serif ${active ? "text-white" : ""}`}>{count}</p>
+                <p className={`text-[10px] whitespace-nowrap ${active ? "text-[var(--accent)]" : "text-dim"}`}>{STATUS_LABELS[s]}</p>
+              </Link>
             )
           })}
-          <div className="surface rounded-lg p-3 text-center shrink-0 min-w-[72px]">
-            <p className="text-lg font-serif">{cases.length}</p>
-            <p className="text-[10px] text-dim">合計</p>
-          </div>
         </div>
       </div>
 

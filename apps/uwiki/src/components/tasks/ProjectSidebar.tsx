@@ -3,7 +3,8 @@
 import Link from "next/link"
 import { useTransition, useState } from "react"
 import { createProject, deleteProject } from "@/actions/projects"
-import { Plus, Trash2, Layers, Sun, Calendar, AlertCircle, Kanban } from "lucide-react"
+import { Plus, Trash2, Layers, Sun, Calendar, AlertCircle, Kanban, GitBranch } from "lucide-react"
+import { ConfirmButton } from "@/components/ui/ConfirmButton"
 import clsx from "clsx"
 import type { SmartViewDef } from "@/app/tasks/page"
 
@@ -16,6 +17,7 @@ const VIEW_ICONS: Record<string, React.ElementType> = {
   upcoming: Calendar,
   overdue:  AlertCircle,
   board:    Kanban,
+  flow:     GitBranch,
 }
 
 const PROJECT_COLORS = ["#3a6fc9","#2456b8","#6366f1","#8b5cf6","#ec4899","#10b981","#f59e0b","#ef4444"]
@@ -43,7 +45,7 @@ export function ProjectSidebar({
 
   return (
     <div
-      className="hidden sm:flex w-40 lg:w-48 shrink-0 flex-col h-full overflow-y-auto"
+      className="hidden sm:flex w-40 lg:w-48 xl:w-56 shrink-0 flex-col h-full overflow-y-auto"
       style={{ borderRight: "1px solid var(--border)", background: "rgba(6,12,26,0.5)" }}
     >
       <div className="px-3 pt-5 pb-3">
@@ -59,14 +61,23 @@ export function ProjectSidebar({
                 href={`/tasks?view=${id}`}
                 className={clsx(
                   "flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs transition-all",
-                  active ? "font-medium text-white bg-[rgba(36,86,184,0.2)]" : "text-dim hover:text-white hover:bg-[var(--faint)]"
+                  active
+                    ? id === "overdue" ? "font-medium text-white bg-[rgba(248,113,113,0.15)]" : "font-medium text-white bg-[rgba(36,86,184,0.2)]"
+                    : "text-dim hover:text-white hover:bg-[var(--faint)]"
                 )}
-                style={active ? { border: "1px solid rgba(58,111,201,0.28)" } : {}}
+                style={active
+                  ? { border: `1px solid ${id === "overdue" ? "rgba(248,113,113,0.35)" : "rgba(58,111,201,0.28)"}` }
+                  : {}}
               >
-                <Icon size={13} strokeWidth={active ? 2 : 1.5} style={{ color: active ? "var(--accent)" : "inherit" }} />
-                <span className="flex-1">{label}</span>
+                <Icon size={13} strokeWidth={active ? 2 : 1.5}
+                  style={{ color: active ? (id === "overdue" ? "var(--red)" : "var(--accent)") : id === "overdue" && count && count > 0 ? "var(--red)" : "inherit" }} />
+                <span className="flex-1" style={{ color: id === "overdue" && count && count > 0 && !active ? "var(--red)" : undefined }}>{label}</span>
                 {count !== null && count > 0 && (
-                  <span className="text-[9px] font-mono" style={{ color: active ? "var(--accent)" : "var(--faint)" }}>
+                  <span className="text-[9px] font-mono px-1 py-0.5 rounded"
+                    style={{
+                      color: id === "overdue" ? "var(--red)" : active ? "var(--accent)" : "var(--faint)",
+                      background: id === "overdue" && count > 0 ? "rgba(248,113,113,0.12)" : "transparent",
+                    }}>
                     {count}
                   </span>
                 )}
@@ -127,22 +138,27 @@ export function ProjectSidebar({
                   href={`/tasks?view=all&project=${project.id}`}
                   className={clsx(
                     "flex-1 flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs transition-all",
-                    active ? "font-medium text-white bg-[rgba(36,86,184,0.2)]" : "text-dim hover:text-white hover:bg-[var(--faint)]"
+                    active ? "font-medium text-white" : "text-dim hover:text-white hover:bg-[var(--faint)]"
                   )}
-                  style={active ? { border: "1px solid rgba(58,111,201,0.28)" } : {}}
+                  style={active ? {
+                    background: `${project.color}20`,
+                    border: `1px solid ${project.color}40`,
+                  } : {}}
                 >
                   <div className="w-2 h-2 rounded-full shrink-0" style={{ background: project.color }} />
                   <span className="flex-1 truncate">{project.name}</span>
                   {project._count.tasks > 0 && (
-                    <span className="text-[9px] font-mono text-faint">{project._count.tasks}</span>
+                    <span className="text-[9px] font-mono"
+                      style={{ color: active ? project.color : "var(--faint)" }}>
+                      {project._count.tasks}
+                    </span>
                   )}
                 </Link>
-                <button
-                  onClick={() => startTransition(() => deleteProject(project.id))}
-                  className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-[var(--faint)] text-dim transition-all"
-                >
-                  <Trash2 size={10} />
-                </button>
+                <ConfirmButton
+                  onConfirm={() => startTransition(() => deleteProject(project.id))}
+                  size="xs"
+                  className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-[var(--faint)] transition-all"
+                />
               </div>
             )
           })}

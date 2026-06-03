@@ -40,9 +40,12 @@ export default async function SettingsPage() {
 
         {/* Google 連携 */}
         <section className="animate-fade-in delay-100">
-          <p className="section-label flex items-center gap-2"><Chrome size={11} /> Google 連携</p>
+          <div className="flex items-center gap-2 mb-1">
+            <Chrome size={13} style={{ color: "var(--accent)" }} />
+            <p className="section-label mb-0 flex items-center gap-2">Google 連携</p>
+          </div>
           <p className="text-xs text-dim mb-4">
-            Google Calendar とカレンダーを同期。Gmail アドレス: fukuisho0603@gmail.com
+            Google Calendar とカレンダーを同期します。
           </p>
           <GoogleAuthSection />
         </section>

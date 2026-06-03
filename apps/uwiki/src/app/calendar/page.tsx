@@ -34,8 +34,9 @@ export default async function CalendarPage({
   let diaryEntries: any[] = []
   let habitLogs: any[] = []
   let habits: any[] = []
+  let cases: any[] = []
   try {
-    ;[tasks, diaryEntries, habitLogs, habits] = await Promise.all([
+    ;[tasks, diaryEntries, habitLogs, habits, cases] = await Promise.all([
       prisma.task.findMany({
         where: {
           dueDate: {
@@ -54,9 +55,27 @@ export default async function CalendarPage({
         select: { date: true, habitId: true },
       }),
       prisma.habit.findMany({ select: { id: true, color: true } }),
+      prisma.case.findMany({
+        where: {
+          dueDate: {
+            gte: new Date(monthStart),
+            lte: new Date(monthEnd + "T23:59:59"),
+          },
+          status: { not: "DONE" },
+        },
+        select: { id: true, name: true, dueDate: true, status: true },
+      }),
     ])
   } catch {
     // DB未接続時はデフォルト値
+  }
+
+  const casesByDate: Record<string, typeof cases> = {}
+  for (const c of cases) {
+    if (!c.dueDate) continue
+    const d = format(new Date(c.dueDate), "yyyy-MM-dd")
+    if (!casesByDate[d]) casesByDate[d] = []
+    casesByDate[d].push(c)
   }
 
   // 日付 → データのマップを構築
@@ -83,13 +102,13 @@ export default async function CalendarPage({
   const nextMonth = format(addMonths(monthDate, 1), "yyyy-MM")
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col max-w-5xl mx-auto w-full">
       <div className="flex items-center gap-3 px-4 py-5 md:px-8 md:py-8 shrink-0">
         <CalendarDays size={20} strokeWidth={1.5} style={{ color: "var(--accent)" }} />
         <h1 className="text-2xl font-serif font-light tracking-wide">カレンダー</h1>
       </div>
 
-      <div className="flex-1 overflow-auto px-8 pb-8">
+      <div className="flex-1 overflow-auto px-3 pb-4 md:px-8 md:pb-8">
         <CalendarView
           monthStr={monthStr}
           prevMonth={prevMonth}
@@ -99,6 +118,7 @@ export default async function CalendarPage({
           habitCountByDate={habitCountByDate}
           totalHabits={habits.length}
           googleEvents={googleEvents}
+          casesByDate={casesByDate}
         />
       </div>
     </div>

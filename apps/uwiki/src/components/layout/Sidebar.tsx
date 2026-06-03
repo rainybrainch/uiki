@@ -62,7 +62,9 @@ export function Sidebar({ weather }: { weather: WeatherData | null }) {
     return true
   }
 
-  const w = mounted ? (collapsed ? 56 : 208) : 208
+  // 1280px未満: 208px / 1280px以上: 220px / collapsed: 56px
+  const isWide = mounted && typeof window !== "undefined" && window.innerWidth >= 1280
+  const w = mounted ? (collapsed ? 56 : isWide ? 220 : 208) : 208
 
   return (
     <aside
@@ -106,7 +108,14 @@ export function Sidebar({ weather }: { weather: WeatherData | null }) {
               return <div key={`sec-${i}`} style={{ height: 1, background: "var(--border)", margin: "4px 4px" }} />
             }
             return (
-              <div key={`sec-${i}`} style={{ padding: "8px 10px 3px", fontSize: "0.6rem", fontFamily: "monospace", letterSpacing: "0.12em", color: "var(--faint)", textTransform: "uppercase" }}>
+              <div key={`sec-${i}`} style={{
+                padding: "12px 10px 3px",
+                fontSize: "0.58rem", fontFamily: "monospace",
+                letterSpacing: "0.18em", color: "rgba(255,255,255,0.28)",
+                textTransform: "uppercase",
+                borderTop: "1px solid var(--border)",
+                marginTop: 4,
+              }}>
                 {item.section}
               </div>
             )
@@ -131,8 +140,8 @@ export function Sidebar({ weather }: { weather: WeatherData | null }) {
                 fontSize: "0.8125rem",
                 textDecoration: "none",
                 transition: "background 0.12s, color 0.12s",
-                background: active ? (color ? `${color}18` : "rgba(36,86,184,0.18)") : "transparent",
-                border: `1px solid ${active ? (color ? `${color}30` : "rgba(58,111,201,0.25)") : "transparent"}`,
+                background: active ? (color ? `${color}22` : "rgba(36,86,184,0.22)") : "transparent",
+                border: `1px solid ${active ? (color ? `${color}40` : "rgba(58,111,201,0.35)") : "transparent"}`,
                 color: active ? "white" : "var(--dim)",
                 whiteSpace: "nowrap",
                 overflow: "hidden",
@@ -175,7 +184,7 @@ export function Sidebar({ weather }: { weather: WeatherData | null }) {
           )
         })()}
 
-        {/* 折りたたみ */}
+        {/* 折りたたみ + ヘルプヒント */}
         <button onClick={toggle}
           style={{
             width: "100%", display: "flex", alignItems: "center",
@@ -188,7 +197,15 @@ export function Sidebar({ weather }: { weather: WeatherData | null }) {
           onMouseEnter={(e) => e.currentTarget.style.color = "var(--dim)"}
           onMouseLeave={(e) => e.currentTarget.style.color = "var(--faint)"}
         >
-          {!collapsed && <span style={{ fontSize: "0.6rem", fontFamily: "monospace" }}>v0.6</span>}
+          {!collapsed && (
+            <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.6rem", fontFamily: "monospace" }}>
+              v0.7
+              <kbd style={{
+                padding: "1px 4px", borderRadius: 3, fontSize: "0.58rem",
+                background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
+              }}>?</kbd>
+            </span>
+          )}
           {collapsed ? <ChevronRight size={13} /> : <ChevronLeft size={13} />}
         </button>
       </div>

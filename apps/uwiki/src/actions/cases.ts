@@ -25,6 +25,29 @@ export async function createCase(data: {
   revalidatePath("/")
 }
 
+export async function updateCase(id: string, data: {
+  name?: string
+  client?: string | null
+  reward?: number
+  category?: string | null
+  dueDate?: string | null
+  memo?: string | null
+}) {
+  await prisma.case.update({
+    where: { id },
+    data: {
+      ...(data.name !== undefined ? { name: data.name } : {}),
+      ...(data.client !== undefined ? { client: data.client } : {}),
+      ...(data.reward !== undefined ? { reward: data.reward } : {}),
+      ...(data.category !== undefined ? { category: data.category } : {}),
+      ...(data.dueDate !== undefined ? { dueDate: data.dueDate ? new Date(data.dueDate) : null } : {}),
+      ...(data.memo !== undefined ? { memo: data.memo } : {}),
+    },
+  })
+  revalidatePath("/cases")
+  revalidatePath("/")
+}
+
 export async function updateCaseStatus(id: string, status: string) {
   await prisma.case.update({
     where: { id },

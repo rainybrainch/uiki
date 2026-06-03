@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react"
 import { createAdjustment } from "@/actions/adjustments"
-import { CheckCircle2, Circle, Plus } from "lucide-react"
+import { CheckCircle2, XCircle, Circle, Plus } from "lucide-react"
 
 export function WeeklyCheck({ dreams, adjustments }: { dreams: any[]; adjustments: any[] }) {
   const [open, setOpen] = useState(false)
@@ -60,11 +60,11 @@ export function WeeklyCheck({ dreams, adjustments }: { dreams: any[]; adjustment
                 {val === true
                   ? <CheckCircle2 size={18} style={{ color: "var(--green)" }} />
                   : val === false
-                  ? <Circle size={18} style={{ color: "var(--red)" }} />
+                  ? <XCircle size={18} style={{ color: "var(--red)" }} />
                   : <Circle size={18} style={{ color: "var(--faint)" }} />
                 }
               </div>
-              <p className="text-[10px] text-dim leading-tight">{label}</p>
+              <p className="text-[10px] leading-tight" style={{ color: val === true ? "var(--green)" : val === false ? "var(--red)" : "var(--dim)" }}>{label}</p>
             </div>
           )
         })}
@@ -144,8 +144,8 @@ export function WeeklyCheck({ dreams, adjustments }: { dreams: any[]; adjustment
                 <p className="text-xs leading-snug">{a.what}</p>
                 {a.relatedDream && <p className="text-[10px] text-faint mt-0.5">{a.relatedDream}</p>}
               </div>
-              <span className="text-[10px] font-mono text-faint shrink-0">
-                {new Date(a.createdAt).toLocaleDateString("ja-JP", { month: "numeric", day: "numeric" })}
+              <span className="text-[10px] font-mono shrink-0" style={{ color: "var(--dim)" }}>
+                {new Date(a.createdAt).toLocaleDateString("ja-JP", { month: "numeric", day: "numeric", weekday: "short" })}
               </span>
             </div>
           ))}

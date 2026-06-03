@@ -7,6 +7,8 @@ import { SubTaskList } from "./SubTaskList"
 import { formatDisplay } from "@/lib/date"
 import { format, isToday, isPast, startOfDay } from "date-fns"
 import { Trash2, Pencil, ChevronDown, ChevronRight, RotateCcw } from "lucide-react"
+import { ConfirmButton } from "@/components/ui/ConfirmButton"
+import { TagLink } from "./TagLink"
 import Link from "next/link"
 import clsx from "clsx"
 
@@ -35,7 +37,12 @@ const recLabel: Record<string, string> = {
 
 export function TaskList({ tasks, dimmed }: { tasks: Task[]; dimmed?: boolean }) {
   if (tasks.length === 0) {
-    return <p className="text-sm text-center py-8 text-faint">タスクはありません</p>
+    return (
+      <div className="text-center py-10">
+        <div className="text-2xl mb-2 opacity-20">☁</div>
+        <p className="text-xs text-faint">タスクはありません</p>
+      </div>
+    )
   }
   return (
     <ul className="space-y-1">
@@ -70,21 +77,37 @@ function TaskItem({ task, dimmed }: { task: Task; dimmed?: boolean }) {
   const hasSubtasks = task.subtasks.length > 0
 
   const dueDateObj = task.dueDate ? startOfDay(new Date(task.dueDate)) : null
-  const isOverdue = dueDateObj && !task.completed && isPast(dueDateObj) && !isToday(dueDateObj)
+  const isOverdue  = dueDateObj && !task.completed && isPast(dueDateObj) && !isToday(dueDateObj)
   const isDueToday = dueDateObj && !task.completed && isToday(dueDateObj)
-  const dueDateColor = isOverdue ? "var(--red)" : isDueToday ? "var(--amber)" : "var(--dim)"
+  const daysUntil  = dueDateObj && !task.completed
+    ? Math.ceil((dueDateObj.getTime() - startOfDay(new Date()).getTime()) / 86400000)
+    : null
+  const dueDateColor = isOverdue ? "var(--red)" : isDueToday ? "var(--amber)" : daysUntil !== null && daysUntil <= 3 ? "#f59e0b" : "var(--dim)"
+  const dueDateLabel = isOverdue
+    ? `${Math.abs(daysUntil ?? 0)}日超過`
+    : isDueToday ? "今日"
+    : daysUntil === 1 ? "明日"
+    : daysUntil !== null ? `${daysUntil}日後`
+    : null
 
   return (
-    <li className={clsx("rounded-lg transition-colors", dimmed && "opacity-40")}>
-      <div className="flex items-start gap-3 px-3 py-3 hover:bg-[var(--faint)] rounded-lg group">
-        {/* 展開ボタン */}
-        <button
-          onClick={() => setExpanded(!expanded)}
-          className="mt-0.5 p-0.5 rounded text-dim hover:text-white transition-colors shrink-0"
-          style={{ visibility: hasSubtasks ? "visible" : "hidden" }}
-        >
-          {expanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-        </button>
+    <li className={clsx("rounded-lg overflow-hidden", dimmed && "opacity-40")}
+      style={{
+        ...(task.priority === "HIGH" && !task.completed ? { borderLeft: "3px solid var(--red)" } : {}),
+        transition: "opacity 0.3s",
+      }}>
+      <div className="flex items-start gap-3 px-3 py-3.5 hover:bg-[var(--faint)] rounded-lg group">
+        {/* 展開ボタン（サブタスクまたはメモがある時のみ表示） */}
+        {(hasSubtasks || task.memo) ? (
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="mt-0.5 p-0.5 rounded text-dim hover:text-white transition-colors shrink-0"
+          >
+            {expanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+          </button>
+        ) : (
+          <span className="w-4 shrink-0" />
+        )}
 
         <TaskCheckbox taskId={task.id} completed={task.completed} />
 
@@ -99,16 +122,22 @@ function TaskItem({ task, dimmed }: { task: Task; dimmed?: boolean }) {
               onBlur={saveEdit}
             />
           ) : (
-            <p className={clsx("text-sm leading-snug", task.completed && "line-through text-dim")}>
+            <p className="text-sm leading-snug" style={{
+              textDecoration: task.completed ? "line-through" : "none",
+              color: task.completed ? "var(--dim)" : "var(--text)",
+              opacity: task.completed ? 0.55 : 1,
+              transition: "color 0.25s, opacity 0.25s, text-decoration 0.2s",
+            }}>
               {task.title}
             </p>
           )}
 
           {/* メタ情報行 */}
           <div className="flex items-center gap-2 mt-1 flex-wrap">
-            {task.dueDate && (
-              <span className="text-[10px] font-mono" style={{ color: dueDateColor }}>
-                {isOverdue && "⚠ "}{formatDisplay(format(new Date(task.dueDate), "yyyy-MM-dd"))}
+            {dueDateLabel && (
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded"
+                style={{ background: `${dueDateColor}18`, color: dueDateColor, border: `1px solid ${dueDateColor}33` }}>
+                {isOverdue && "⚠ "}{dueDateLabel}
               </span>
             )}
             {task.recurrence && (
@@ -116,13 +145,38 @@ function TaskItem({ task, dimmed }: { task: Task; dimmed?: boolean }) {
                 <RotateCcw size={9} /> {recLabel[task.recurrence]}
               </span>
             )}
+            {/* サブタスク進捗 */}
+            {hasSubtasks && !task.completed && (() => {
+              const done = task.subtasks.filter((s: SubTask) => s.completed).length
+              const total = task.subtasks.length
+              const pct = Math.round((done / total) * 100)
+              const allDone = done === total
+              return (
+                <span className="flex items-center gap-1.5 text-[10px] font-mono"
+                  style={{ color: allDone ? "var(--green)" : "var(--dim)" }}>
+                  <span className="w-12 h-1 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.08)" }}>
+                    <span className="block h-full rounded-full transition-all"
+                      style={{ width: `${pct}%`, background: allDone ? "var(--green)" : "var(--accent)" }} />
+                  </span>
+                  {done}/{total}
+                </span>
+              )
+            })()}
             {tags.map((tag) => (
-              <span key={tag} className="text-[10px] badge">{tag}</span>
+              <TagLink key={tag} tag={tag}>#{tag}</TagLink>
             ))}
             {task.memo && !expanded && (
-              <span className="text-[10px] text-faint truncate max-w-[160px]">{task.memo}</span>
+              <span className="text-[10px] text-faint truncate max-w-[120px] sm:max-w-[200px]">{task.memo}</span>
             )}
           </div>
+
+          {/* メモ（展開時） */}
+          {expanded && task.memo && (
+            <p className="text-xs text-dim mt-2 leading-relaxed whitespace-pre-wrap border-l-2 pl-3 py-1"
+              style={{ borderColor: "var(--border)" }}>
+              {task.memo}
+            </p>
+          )}
 
           {/* サブタスク */}
           {expanded && (
@@ -136,19 +190,17 @@ function TaskItem({ task, dimmed }: { task: Task; dimmed?: boolean }) {
           style={{ background: priorityColor[task.priority] }}
         />
 
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+        <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0">
           <Link
             href={`/tasks/${task.id}`}
             className="p-1 rounded hover:bg-[var(--faint)] text-dim"
           >
             <Pencil size={12} />
           </Link>
-          <button
-            onClick={() => startTransition(() => deleteTask(task.id))}
-            className="p-1 rounded hover:bg-[var(--faint)] text-dim"
-          >
-            <Trash2 size={12} />
-          </button>
+          <ConfirmButton
+            onConfirm={() => startTransition(() => deleteTask(task.id))}
+            className="p-1 rounded hover:bg-[var(--faint)]"
+          />
         </div>
       </div>
     </li>

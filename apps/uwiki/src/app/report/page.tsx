@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db"
-import { BarChart2, CheckSquare, Repeat2, BookOpen, Briefcase, Layers } from "lucide-react"
+import { BarChart2, CheckSquare, Repeat2, BookOpen, Briefcase, Layers, TrendingUp } from "lucide-react"
+import Link from "next/link"
 import { format, startOfWeek, endOfWeek, subWeeks } from "date-fns"
 import { ja } from "date-fns/locale"
 import { WeeklyCheck } from "@/components/report/WeeklyCheck"
@@ -17,6 +18,7 @@ export default async function ReportPage() {
   const currentMonth = format(now, "yyyy-MM")
 
   let tasksThisWeek = 0, tasksDone = 0, tasksPrev = 0
+  let doneTasksList: any[] = []
   let habits: any[] = [], habitLogsThisWeek = 0
   let diaryThisWeek: any[] = [], diaryPrev = 0
   let past4Weeks: any[] = []
@@ -31,17 +33,26 @@ export default async function ReportPage() {
       diaryThisWeek, diaryPrev,
       dreams, adjustments, cases,
     ] = await Promise.all([
-      prisma.task.count({ where: { createdAt: { gte: weekStart, lte: weekEnd } } }),
-      prisma.task.count({ where: { completed: true, updatedAt: { gte: weekStart, lte: weekEnd } } }),
-      prisma.task.count({ where: { completed: true, updatedAt: { gte: prevWeekStart, lte: prevWeekEnd } } }),
+      prisma.task.count({ where: { createdAt: { gte: weekStart, lte: weekEnd }, parentTaskId: null } }),
+      prisma.task.count({ where: { completed: true, updatedAt: { gte: weekStart, lte: weekEnd }, parentTaskId: null } }),
+      prisma.task.count({ where: { completed: true, updatedAt: { gte: prevWeekStart, lte: prevWeekEnd }, parentTaskId: null } }),
       prisma.habit.findMany({ include: { logs: { where: { date: { gte: fmt(weekStart), lte: fmt(weekEnd) } } } } }),
       prisma.habitLog.count({ where: { date: { gte: fmt(weekStart), lte: fmt(weekEnd) } } }),
-      prisma.diaryEntry.findMany({ where: { date: { gte: fmt(weekStart), lte: fmt(weekEnd) } }, orderBy: { date: "asc" } }),
+      prisma.diaryEntry.findMany({ where: { date: { gte: fmt(weekStart), lte: fmt(weekEnd) } }, orderBy: { date: "asc" }, select: { id: true, date: true, title: true, mood: true } }),
       prisma.diaryEntry.count({ where: { date: { gte: fmt(prevWeekStart), lte: fmt(prevWeekEnd) } } }),
       prisma.dream.findMany({ where: { achieved: false }, orderBy: { layer: "asc" }, take: 5 }),
       prisma.adjustmentLog.findMany({ orderBy: { createdAt: "desc" }, take: 10 }),
       prisma.case.findMany({ where: { status: { not: "DONE" } }, orderBy: { createdAt: "desc" } }),
     ])
+  } catch {}
+
+  try {
+    doneTasksList = await prisma.task.findMany({
+      where: { completed: true, updatedAt: { gte: weekStart, lte: weekEnd }, parentTaskId: null },
+      orderBy: { updatedAt: "desc" },
+      take: 6,
+      select: { id: true, title: true, priority: true },
+    })
   } catch {}
 
   try {
@@ -78,7 +89,7 @@ export default async function ReportPage() {
       <div className="space-y-5">
 
         {/* ─── サマリーカード ─── */}
-        <div className="grid grid-cols-3 gap-3 animate-fade-in delay-100">
+        <div className="grid grid-cols-3 sm:grid-cols-3 gap-2 md:gap-3 animate-fade-in delay-100" style={{ gridTemplateColumns: "repeat(3, minmax(0, 1fr))" }}>
           <StatCard icon={<CheckSquare size={13} />} label="タスク完了"
             value={tasksDone} sub={`先週比 ${tasksDone >= tasksPrev ? "+" : ""}${tasksDone - tasksPrev}`}
             positive={tasksDone >= tasksPrev} />
@@ -97,11 +108,14 @@ export default async function ReportPage() {
         {past4Weeks.length > 0 && (
           <div className="surface rounded-xl p-5 animate-fade-in delay-150">
             <p className="section-label">習慣達成率（過去4週）</p>
-            <div className="flex items-end gap-3 h-20 mt-3">
+            <div className="flex items-end gap-3 h-24 mt-3">
               {past4Weeks.map((w) => (
-                <div key={w.label} className="flex-1 flex flex-col items-center gap-1.5">
+                <div key={w.label} className="flex-1 flex flex-col items-center gap-1">
+                  <p className="text-[9px] font-mono mb-0.5" style={{ color: w.rate >= 0.7 ? "var(--accent)" : "var(--faint)" }}>
+                    {Math.round(w.rate * 100)}%
+                  </p>
                   <div className="flex-1 w-full flex items-end">
-                    <div className="w-full rounded-t transition-all"
+                    <div className="w-full rounded-t transition-all duration-500"
                       style={{
                         height: `${Math.max(4, w.rate * 100)}%`,
                         background: w.rate >= 0.7 ? "var(--accent)" : w.rate >= 0.4 ? "rgba(58,111,201,0.5)" : "var(--faint)",
@@ -139,8 +153,51 @@ export default async function ReportPage() {
           </div>
         )}
 
+        {/* ─── 案件サマリー ─── */}
+        {cases.length > 0 && (
+          <Link href="/cases" className="block surface rounded-xl p-5 animate-fade-in delay-200 hover:opacity-80 transition-opacity">
+            <div className="flex items-center gap-2 mb-3">
+              <TrendingUp size={13} style={{ color: "var(--amber)" }} />
+              <p className="section-label" style={{ color: "var(--amber)" }}>ライスワーク</p>
+            </div>
+            <div className="flex items-center gap-4 mb-3">
+              <div>
+                <p className="text-[10px] text-dim mb-0.5">進行中案件</p>
+                <p className="text-2xl font-serif">{cases.length}<span className="text-sm text-dim ml-1">件</span></p>
+              </div>
+              <div className="h-8 w-px" style={{ background: "var(--border)" }} />
+              <div>
+                <p className="text-[10px] text-dim mb-0.5">100万円達成</p>
+                <p className="text-2xl font-serif" style={{ color: "var(--amber)" }}>{earningPct}<span className="text-sm ml-0.5">%</span></p>
+              </div>
+            </div>
+            <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.05)" }}>
+              <div className="h-full rounded-full transition-all" style={{ width: `${earningPct}%`, background: "linear-gradient(90deg, #c9a84c, #f0c060)" }} />
+            </div>
+          </Link>
+        )}
+
         {/* ─── 修正ログ（月次Act記録） ─── */}
         <AdjustmentList adjustments={adjustments} dreams={dreams} />
+
+        {/* ─── 今週の完了タスク ─── */}
+        {doneTasksList.length > 0 && (
+          <div className="surface rounded-xl p-5 animate-fade-in delay-200">
+            <p className="section-label">今週の完了タスク</p>
+            <div className="space-y-1 mt-2">
+              {doneTasksList.map((t: any) => {
+                const pc: Record<string, string> = { HIGH: "var(--red)", MEDIUM: "var(--accent)", LOW: "var(--dim)" }
+                return (
+                  <div key={t.id} className="flex items-center gap-3 py-1.5 px-2 rounded-lg hover:bg-[var(--faint)] transition-colors">
+                    <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: pc[t.priority] }} />
+                    <span className="text-sm truncate line-through text-dim">{t.title}</span>
+                  </div>
+                )
+              })}
+              {tasksDone > 6 && <p className="text-xs text-faint pl-2">他 {tasksDone - 6} 件</p>}
+            </div>
+          </div>
+        )}
 
         {/* ─── 今週の日記 ─── */}
         {diaryThisWeek.length > 0 && (
@@ -148,10 +205,13 @@ export default async function ReportPage() {
             <p className="section-label">今週の日記</p>
             <div className="space-y-2 mt-2">
               {diaryThisWeek.map((e) => (
-                <div key={e.id} className="flex items-center gap-3 py-1">
-                  <span className="text-xs font-mono text-dim w-10">{format(new Date(e.date), "M/d")}</span>
-                  <span className="text-sm truncate">{e.title}</span>
-                </div>
+                <a key={e.id} href={`/diary?date=${e.date}`} className="flex items-center gap-3 py-1.5 rounded-lg px-2 hover:bg-[var(--faint)] transition-colors">
+                  <span className="text-xs font-mono text-dim w-8">{format(new Date(e.date), "M/d")}</span>
+                  <span className="text-sm truncate flex-1">{e.title}</span>
+                  {e.mood && (
+                    <span className="text-base shrink-0">{["","😞","😕","😐","🙂","😄"][e.mood]}</span>
+                  )}
+                </a>
               ))}
             </div>
           </div>
@@ -167,11 +227,11 @@ function StatCard({ icon, label, value, sub, positive }: {
 }) {
   return (
     <div className="surface rounded-xl p-3 md:p-4">
-      <div className="flex items-center gap-1.5 text-accent mb-2">{icon}
-        <span className="text-[10px] font-medium">{label}</span>
+      <div className="flex items-center gap-1 text-accent mb-1.5">{icon}
+        <span className="text-[9px] md:text-[10px] font-medium leading-tight">{label}</span>
       </div>
-      <p className="text-xl md:text-2xl font-serif">{value}</p>
-      <p className="text-[10px] mt-1" style={{ color: positive ? "var(--green)" : "var(--dim)" }}>{sub}</p>
+      <p className="text-lg md:text-2xl font-serif leading-none mb-1">{value}</p>
+      <p className="text-[9px] md:text-[10px] leading-tight" style={{ color: positive ? "var(--green)" : "var(--dim)" }}>{sub}</p>
     </div>
   )
 }
