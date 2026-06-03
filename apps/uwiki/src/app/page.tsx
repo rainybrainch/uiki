@@ -127,8 +127,37 @@ export default async function DashboardPage() {
         </div>
       </section>
 
+      {/* 今日のフォーカス — タスクと大目標の接続 */}
+      {tasks.length > 0 && (
+        <div className="px-4 pb-4 md:px-8 lg:px-10 animate-fade-in delay-100">
+          <div className="rounded-xl p-4" style={{ background: "rgba(58,111,201,0.04)", border: "1px solid var(--border)" }}>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-1.5 h-1.5 rounded-full" style={{ background: "var(--accent)" }} />
+              <span className="text-xs font-mono text-dim tracking-widest">TODAY'S FOCUS</span>
+            </div>
+            <p className="text-sm font-medium mb-1 leading-snug">{tasks[0].title}</p>
+            <div className="flex items-center gap-2 mt-2 text-xs text-faint">
+              <span>このタスクを進めると</span>
+              {earningPct < 100 && (
+                <Link href="/cases" className="flex items-center gap-1 hover:text-amber-400 transition-colors" style={{ color: "var(--amber)" }}>
+                  <Briefcase size={10} />
+                  <span>100万円 {earningPct}%</span>
+                </Link>
+              )}
+              {dreamTotal > 0 && (
+                <Link href="/dreams" className="flex items-center gap-1 hover:opacity-80 transition-opacity" style={{ color: "#8b5cf6" }}>
+                  <Layers size={10} />
+                  <span>百層世界 {dreamTotal}層</span>
+                </Link>
+              )}
+              <span>に繋がる</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="px-4 pb-8 md:px-8 lg:px-10 lg:pb-14 grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-        <DashCard icon={<CheckSquare size={14} strokeWidth={1.5} />} title="タスク" href="/tasks" delay="delay-100">
+        <DashCard icon={<CheckSquare size={14} strokeWidth={1.5} />} title="タスク" href="/tasks" delay="delay-150">
           {tasks.length === 0 ? (
             <EmptySlate text="今日のタスクはありません" />
           ) : (

@@ -83,7 +83,7 @@ export default async function DreamsPage() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-8 pb-12">
+      <div className="flex-1 overflow-y-auto px-4 pb-8 md:px-8 md:pb-12">
         <div className="mb-6">
           <DreamForm catLabels={CAT_LABELS} />
         </div>

@@ -43,7 +43,7 @@ export default async function DiaryPage({
   const entryDates = monthEntries.map((e) => e.date)
 
   return (
-    <div className="max-w-5xl mx-auto px-8 py-12">
+    <div className="max-w-5xl mx-auto px-4 py-6 md:px-8 md:py-10">
       <div className="flex items-center gap-3 mb-10">
         <BookOpen size={20} strokeWidth={1.5} style={{ color: "var(--accent)" }} />
         <h1 className="text-2xl font-serif font-light tracking-wide">日記</h1>

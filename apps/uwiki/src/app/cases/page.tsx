@@ -93,25 +93,25 @@ export default async function CasesPage() {
         </div>
 
         {/* 統計 */}
-        <div className="grid grid-cols-4 gap-3">
+        <div className="flex gap-2 overflow-x-auto pb-1 mt-3">
           {STATUS_ORDER.map((s) => {
             const count = cases.filter((c) => c.status === s).length
             return (
-              <div key={s} className="surface rounded-lg p-3 text-center">
+              <div key={s} className="surface rounded-lg p-3 text-center shrink-0 min-w-[72px]">
                 <p className="text-lg font-serif">{count}</p>
-                <p className="text-xs text-dim">{STATUS_LABELS[s]}</p>
+                <p className="text-[10px] text-dim whitespace-nowrap">{STATUS_LABELS[s]}</p>
               </div>
             )
           })}
-          <div className="surface rounded-lg p-3 text-center">
+          <div className="surface rounded-lg p-3 text-center shrink-0 min-w-[72px]">
             <p className="text-lg font-serif">{cases.length}</p>
-            <p className="text-xs text-dim">合計</p>
+            <p className="text-[10px] text-dim">合計</p>
           </div>
         </div>
       </div>
 
       {/* フォーム + パイプライン */}
-      <div className="flex-1 overflow-y-auto px-8 pb-12">
+      <div className="flex-1 overflow-y-auto px-4 pb-8 md:px-8 md:pb-12">
         <div className="mb-6">
           <CaseForm />
         </div>
