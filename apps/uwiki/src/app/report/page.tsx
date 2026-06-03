@@ -60,7 +60,10 @@ export default async function ReportPage() {
   const habitRate = maxHabits > 0 ? habitLogsThisWeek / maxHabits : 0
   const weekLabel = `${format(weekStart, "M/d", { locale: ja })} 〜 ${format(weekEnd, "M/d", { locale: ja })}`
 
-  const earned = 0 // cases で計算
+  const earned = cases
+    .filter((c: any) => c.status === "DONE")
+    .reduce((s: number, c: any) => s + (c.paidAmount || c.reward), 0)
+  const earningPct = Math.min(100, Math.round((earned / 1_000_000) * 100))
 
   return (
     <div className="page-container max-w-2xl">

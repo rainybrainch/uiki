@@ -10,21 +10,26 @@ import {
 import { useState, useEffect } from "react"
 import type { WeatherData } from "@/lib/weather"
 
-const nav = [
-  { href: "/",                     label: "ダッシュボード", icon: LayoutDashboard },
-  { href: "/tasks",                label: "タスク",         icon: CheckSquare },
-  { href: "/calendar",             label: "カレンダー",     icon: CalendarDays },
-  { href: "/habits",               label: "習慣",           icon: Repeat2 },
-  { href: "/diary",                label: "日記",           icon: BookOpen },
-  { href: "/library",              label: "ライブラリ",     icon: Library },
-  { href: "/yomu",                 label: "読雨",           icon: BookMarked, color: "#3a6fc9" },
-  { href: "/report",               label: "レポート",       icon: BarChart2 },
-  null,
-  { href: "/cases",                label: "案件",           icon: Briefcase, color: "#c9a84c" },
-  { href: "/dreams",               label: "百層世界",       icon: Layers,    color: "#8b5cf6" },
-  null,
-  { href: "/gravity?tab=internal", label: "重力雨域",       icon: Flame,     color: "#c9a84c" },
-  { href: "/gravity?tab=external", label: "引力雨域",       icon: Droplets,  color: "#3a6fc9" },
+type NavItem = { href: string; label: string; icon: any; color?: string } | null | { section: string }
+
+const nav: NavItem[] = [
+  // ─── OS
+  { href: "/",          label: "ダッシュボード", icon: LayoutDashboard },
+  { href: "/tasks",     label: "タスク",         icon: CheckSquare },
+  { href: "/calendar",  label: "カレンダー",     icon: CalendarDays },
+  { href: "/habits",    label: "習慣",           icon: Repeat2 },
+  { href: "/diary",     label: "日記",           icon: BookOpen },
+  { href: "/library",   label: "ライブラリ",     icon: Library },
+  { href: "/yomu",      label: "読雨",           icon: BookMarked, color: "#3a6fc9" },
+  { href: "/report",    label: "週次Check",      icon: BarChart2 },
+  // ─── ライスワーク
+  { section: "ライスワーク" },
+  { href: "/cases",     label: "案件",           icon: Briefcase, color: "#c9a84c" },
+  { href: "/dreams",    label: "百層世界",       icon: Layers,    color: "#8b5cf6" },
+  // ─── 雨域
+  { section: "雨域" },
+  { href: "/gravity?tab=internal", label: "重力雨域", icon: Flame,     color: "#c9a84c" },
+  { href: "/gravity?tab=external", label: "引力雨域", icon: Droplets,  color: "#3a6fc9" },
 ]
 
 export function Sidebar({ weather }: { weather: WeatherData | null }) {
@@ -94,7 +99,17 @@ export function Sidebar({ weather }: { weather: WeatherData | null }) {
       <nav style={{ flex: 1, padding: "0 6px", overflowY: "auto", overflowX: "hidden" }}>
         {nav.map((item, i) => {
           if (item === null) {
-            return <div key={`div-${i}`} style={{ height: 1, background: "var(--border)", margin: "4px 4px 4px" }} />
+            return <div key={`div-${i}`} style={{ height: 1, background: "var(--border)", margin: "4px 4px" }} />
+          }
+          if ("section" in item) {
+            if (collapsed) {
+              return <div key={`sec-${i}`} style={{ height: 1, background: "var(--border)", margin: "4px 4px" }} />
+            }
+            return (
+              <div key={`sec-${i}`} style={{ padding: "8px 10px 3px", fontSize: "0.6rem", fontFamily: "monospace", letterSpacing: "0.12em", color: "var(--faint)", textTransform: "uppercase" }}>
+                {item.section}
+              </div>
+            )
           }
           const { href, label, icon: Icon, color } = item
           const active = isActive(href)

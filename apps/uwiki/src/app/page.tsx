@@ -6,6 +6,7 @@ import { CheckSquare, Repeat2, BookOpen, ArrowRight, AlertCircle, Briefcase, Lay
 import Link from "next/link"
 import { TaskCheckbox } from "@/components/tasks/TaskCheckbox"
 import { HabitCheckButton } from "@/components/habits/HabitCheckButton"
+import { QuickAddTask } from "@/components/dashboard/QuickAddTask"
 
 export const dynamic = "force-dynamic"
 
@@ -26,7 +27,8 @@ export default async function DashboardPage() {
     ;[tasks, habits, recentDiaries, doneTasks, overdueCount, cases, dreams] = await Promise.all([
       prisma.task.findMany({
         where: { completed: false },
-        orderBy: [{ dueDate: "asc" }, { priority: "asc" }, { createdAt: "asc" }],
+        orderBy: [{ priority: "asc" }, { dueDate: "asc" }, { createdAt: "asc" }],
+        include: { project: { select: { id: true, name: true, color: true } } },
         take: 6,
       }),
       prisma.habit.findMany({
@@ -135,9 +137,20 @@ export default async function DashboardPage() {
               <div className="w-1.5 h-1.5 rounded-full" style={{ background: "var(--accent)" }} />
               <span className="text-xs font-mono text-dim tracking-widest">TODAY'S FOCUS</span>
             </div>
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
+              {tasks[0].project && (
+                <span className="text-[10px] px-2 py-0.5 rounded-full font-medium"
+                  style={{ background: `${tasks[0].project.color}22`, color: tasks[0].project.color, border: `1px solid ${tasks[0].project.color}44` }}>
+                  {tasks[0].project.name}
+                </span>
+              )}
+              {tasks[0].priority === "HIGH" && (
+                <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: "rgba(248,113,113,0.15)", color: "var(--red)" }}>優先</span>
+              )}
+            </div>
             <p className="text-sm font-medium mb-1 leading-snug">{tasks[0].title}</p>
-            <div className="flex items-center gap-2 mt-2 text-xs text-faint">
-              <span>このタスクを進めると</span>
+            <div className="flex items-center gap-2 mt-2 text-xs text-faint flex-wrap">
+              <span>→</span>
               {earningPct < 100 && (
                 <Link href="/cases" className="flex items-center gap-1 hover:text-amber-400 transition-colors" style={{ color: "var(--amber)" }}>
                   <Briefcase size={10} />
@@ -155,6 +168,11 @@ export default async function DashboardPage() {
           </div>
         </div>
       )}
+
+      {/* クイックタスク追加 */}
+      <div className="px-4 pb-4 md:px-8 lg:px-10 animate-fade-in delay-100">
+        <QuickAddTask />
+      </div>
 
       <div className="px-4 pb-8 md:px-8 lg:px-10 lg:pb-14 grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
         <DashCard icon={<CheckSquare size={14} strokeWidth={1.5} />} title="タスク" href="/tasks" delay="delay-150">
