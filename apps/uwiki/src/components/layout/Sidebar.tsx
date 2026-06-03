@@ -4,7 +4,7 @@ import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
 import {
   LayoutDashboard, CheckSquare, Repeat2, BookOpen,
-  Library, Settings2, CalendarDays, BarChart2, Flame, Droplets, BookMarked,
+  Library, Settings2, CalendarDays, BarChart2, Flame, Droplets, BookMarked, Briefcase, Layers,
 } from "lucide-react"
 import clsx from "clsx"
 import type { WeatherData } from "@/lib/weather"
@@ -18,6 +18,8 @@ const nav = [
   { href: "/library",               label: "ライブラリ",     icon: Library },
   { href: "/yomu",                  label: "読雨",           icon: BookMarked, color: "#3a6fc9" },
   { href: "/report",                label: "レポート",       icon: BarChart2 },
+  { href: "/cases",                  label: "案件",           icon: Briefcase, color: "#c9a84c" },
+  { href: "/dreams",                 label: "百層世界",       icon: Layers,    color: "#8b5cf6" },
   { href: "/gravity?tab=internal",  label: "重力雨域",       icon: Flame,    color: "#c9a84c" },
   { href: "/gravity?tab=external",  label: "引力雨域",       icon: Droplets, color: "#3a6fc9" },
 ]

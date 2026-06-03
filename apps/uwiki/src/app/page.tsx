@@ -2,12 +2,14 @@ import { prisma } from "@/lib/db"
 import { today, calcStreak, formatDisplay } from "@/lib/date"
 import { format, startOfDay } from "date-fns"
 import { ja } from "date-fns/locale"
-import { CheckSquare, Repeat2, BookOpen, ArrowRight, AlertCircle } from "lucide-react"
+import { CheckSquare, Repeat2, BookOpen, ArrowRight, AlertCircle, Briefcase, Layers } from "lucide-react"
 import Link from "next/link"
 import { TaskCheckbox } from "@/components/tasks/TaskCheckbox"
 import { HabitCheckButton } from "@/components/habits/HabitCheckButton"
 
 export const dynamic = "force-dynamic"
+
+const GOAL_100MAN = 1_000_000
 
 export default async function DashboardPage() {
   const todayStr = today()
@@ -17,9 +19,11 @@ export default async function DashboardPage() {
   let recentDiaries: any[] = []
   let doneTasks = 0
   let overdueCount = 0
+  let cases: any[] = []
+  let dreams: any[] = []
 
   try {
-    ;[tasks, habits, recentDiaries, doneTasks, overdueCount] = await Promise.all([
+    ;[tasks, habits, recentDiaries, doneTasks, overdueCount, cases, dreams] = await Promise.all([
       prisma.task.findMany({
         where: { completed: false },
         orderBy: [{ dueDate: "asc" }, { priority: "asc" }, { createdAt: "asc" }],
@@ -37,12 +41,24 @@ export default async function DashboardPage() {
           dueDate: { lt: startOfDay(new Date()) },
         },
       }),
+      prisma.case.findMany({ orderBy: { createdAt: "desc" } }),
+      prisma.dream.findMany({ orderBy: [{ achieved: "asc" }, { layer: "asc" }] }),
     ])
   } catch {
     // DB未接続時はダッシュボードを空で表示
   }
 
   const doneHabitsToday = habits.filter((h: any) => h.logs.some((l: any) => l.date === todayStr)).length
+
+  // 100万円カウンター
+  const earned = cases.filter((c: any) => c.status === "DONE").reduce((s: number, c: any) => s + (c.paidAmount || c.reward), 0)
+  const pending = cases.filter((c: any) => c.status === "WAITING_PAY").reduce((s: number, c: any) => s + c.reward, 0)
+  const earningPct = Math.min(100, Math.round((earned / GOAL_100MAN) * 100))
+
+  // 百層世界
+  const dreamAchieved = dreams.filter((d: any) => d.achieved).length
+  const dreamTotal = dreams.length
+  const dreamPct = Math.round((dreamAchieved / 100) * 100)
 
   const priorityColor: Record<string, string> = {
     HIGH: "var(--red)", MEDIUM: "var(--accent)", LOW: "var(--dim)",
@@ -70,6 +86,44 @@ export default async function DashboardPage() {
               <span style={{ color: "rgba(248,113,113,0.8)" }}>期限切れ</span>
             </a>
           )}
+        </div>
+
+        {/* 大目標ウィジェット */}
+        <div className="grid grid-cols-2 gap-3 mt-6">
+          {/* 100万円 */}
+          <Link href="/cases" className="rounded-xl p-4 transition-opacity hover:opacity-80 block"
+            style={{ background: "rgba(201,168,76,0.06)", border: "1px solid rgba(201,168,76,0.2)" }}>
+            <div className="flex items-center gap-2 mb-2">
+              <Briefcase size={12} style={{ color: "var(--amber)" }} />
+              <span className="text-xs text-dim">ライスワーク</span>
+            </div>
+            <p className="text-xl font-serif font-light mb-2" style={{ color: "var(--amber)" }}>
+              ¥{earned.toLocaleString()}
+              <span className="text-xs text-dim ml-1">/ 100万</span>
+            </p>
+            <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
+              <div className="h-full rounded-full" style={{ width: `${earningPct}%`, background: "var(--amber)" }} />
+            </div>
+            <p className="text-xs font-mono text-dim mt-1">{earningPct}%{pending > 0 && ` · 待ち ¥${pending.toLocaleString()}`}</p>
+          </Link>
+
+          {/* 百層世界 */}
+          <Link href="/dreams" className="rounded-xl p-4 transition-opacity hover:opacity-80 block"
+            style={{ background: "rgba(139,92,246,0.06)", border: "1px solid rgba(139,92,246,0.2)" }}>
+            <div className="flex items-center gap-2 mb-2">
+              <Layers size={12} style={{ color: "#8b5cf6" }} />
+              <span className="text-xs text-dim">百層世界</span>
+            </div>
+            <p className="text-xl font-serif font-light mb-2" style={{ color: "#8b5cf6" }}>
+              {dreamAchieved}
+              <span className="text-xs text-dim ml-1">/ 100層</span>
+            </p>
+            <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
+              <div className="h-full rounded-full" style={{ width: `${(dreamTotal / 100) * 100}%`, background: "rgba(139,92,246,0.3)" }} />
+              <div className="h-full rounded-full -mt-1.5" style={{ width: `${dreamPct}%`, background: "#8b5cf6" }} />
+            </div>
+            <p className="text-xs font-mono text-dim mt-1">{dreamTotal}層入力 · {dreamAchieved}層達成</p>
+          </Link>
         </div>
       </section>
 
