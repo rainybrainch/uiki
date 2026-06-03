@@ -46,7 +46,7 @@ export default async function DreamsPage() {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="px-8 py-8 shrink-0">
+      <div className="px-4 py-5 md:px-8 md:py-8 shrink-0">
         <div className="flex items-center gap-3 mb-6">
           <Layers size={20} strokeWidth={1.5} style={{ color: "#8b5cf6" }} />
           <h1 className="text-2xl font-serif font-light tracking-wide">百層世界</h1>

@@ -100,7 +100,7 @@ export default async function TasksPage({
       {/* メインエリア */}
       <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
         {/* ヘッダー */}
-        <div className="flex items-center justify-between px-7 py-7 shrink-0">
+        <div className="flex items-center justify-between px-4 py-4 md:px-7 md:py-6 shrink-0">
           <div className="flex items-center gap-3">
             <h1 className="text-xl font-serif font-light tracking-wide">
               {view === "today"    ? "今日" :
@@ -117,7 +117,7 @@ export default async function TasksPage({
         </div>
 
         {/* タスク追加フォーム */}
-        <div className="px-7 pb-4 shrink-0">
+        <div className="px-4 pb-3 md:px-7 md:pb-4 shrink-0">
           <TaskForm
             compact={view === "board"}
             projects={projects}
@@ -127,11 +127,11 @@ export default async function TasksPage({
 
         {/* コンテンツ */}
         {view === "board" ? (
-          <div className="flex-1 overflow-hidden px-7 pb-6">
+          <div className="flex-1 overflow-hidden px-4 pb-4 md:px-7 md:pb-6">
             <KanbanBoard columns={COLUMNS} tasks={allTasks} />
           </div>
         ) : (
-          <div className="flex-1 overflow-y-auto px-7 pb-10">
+          <div className="flex-1 overflow-y-auto px-4 pb-6 md:px-7 md:pb-10">
             {view === "today" && overdueTasks.length > 0 && (
               <section className="mb-6">
                 <div className="flex items-center gap-2 mb-3">

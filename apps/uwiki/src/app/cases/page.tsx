@@ -41,7 +41,7 @@ export default async function CasesPage() {
   return (
     <div className="h-full flex flex-col">
       {/* ヘッダー */}
-      <div className="px-8 py-8 shrink-0">
+      <div className="px-4 py-5 md:px-8 md:py-8 shrink-0">
         <div className="flex items-center gap-3 mb-6">
           <Briefcase size={20} strokeWidth={1.5} style={{ color: "var(--amber)" }} />
           <h1 className="text-2xl font-serif font-light tracking-wide">案件</h1>

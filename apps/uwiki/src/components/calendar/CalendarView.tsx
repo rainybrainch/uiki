@@ -95,7 +95,7 @@ export function CalendarView({
       </div>
 
       {/* 日付グリッド */}
-      <div className="grid grid-cols-7 auto-rows-[minmax(100px,auto)]">
+      <div className="grid grid-cols-7 auto-rows-[minmax(72px,auto)] sm:auto-rows-[minmax(100px,auto)]">
         {days.map((day, idx) => {
           const dateStr = format(day, "yyyy-MM-dd")
           const inMonth = isSameMonth(day, monthDate)

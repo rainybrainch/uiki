@@ -43,7 +43,7 @@ export function ProjectSidebar({
 
   return (
     <div
-      className="w-48 shrink-0 flex flex-col h-full overflow-y-auto"
+      className="hidden sm:flex w-40 lg:w-48 shrink-0 flex-col h-full overflow-y-auto"
       style={{ borderRight: "1px solid var(--border)", background: "rgba(6,12,26,0.5)" }}
     >
       <div className="px-3 pt-5 pb-3">

@@ -66,11 +66,11 @@ export default async function DashboardPage() {
 
   return (
     <div className="min-h-screen">
-      <section className="px-10 pt-14 pb-10 animate-fade-in">
+      <section className="px-4 pt-8 pb-6 md:px-8 md:pt-12 md:pb-8 lg:px-10 lg:pt-14 animate-fade-in">
         <p className="text-xs font-mono tracking-widest mb-3 text-dim">
           {format(new Date(), "yyyy / MM / dd  E", { locale: ja })}
         </p>
-        <h1 className="font-serif text-4xl font-light tracking-wider leading-none mb-1">
+        <h1 className="font-serif text-2xl md:text-3xl lg:text-4xl font-light tracking-wider leading-none mb-1">
           おかえり
         </h1>
         <p className="text-sm text-dim mt-2">今日も雨が降っている。</p>
@@ -127,7 +127,7 @@ export default async function DashboardPage() {
         </div>
       </section>
 
-      <div className="px-10 pb-14 grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="px-4 pb-8 md:px-8 lg:px-10 lg:pb-14 grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
         <DashCard icon={<CheckSquare size={14} strokeWidth={1.5} />} title="タスク" href="/tasks" delay="delay-100">
           {tasks.length === 0 ? (
             <EmptySlate text="今日のタスクはありません" />
