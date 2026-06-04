@@ -22,6 +22,7 @@ export function TaskForm({
   const [memo, setMemo] = useState("")
   const [priority, setPriority] = useState<Priority>("MEDIUM")
   const [dueDate, setDueDate] = useState("")
+  const [dueTime, setDueTime] = useState("")
   const [tags, setTags] = useState("")
   const [recurrence, setRecurrence] = useState<Recurrence | "">("")
   const [projectId, setProjectId] = useState<string>(defaultProjectId ?? "")
@@ -32,17 +33,20 @@ export function TaskForm({
   const submit = () => {
     if (!title.trim()) return
     startTransition(async () => {
+      const fullDueDate = dueDate
+        ? dueTime ? `${dueDate}T${dueTime}:00` : dueDate
+        : undefined
       await createTask({
         title: title.trim(),
         memo: memo || undefined,
         priority,
-        dueDate: dueDate || undefined,
+        dueDate: fullDueDate,
         tags: tags || undefined,
         recurrence: (recurrence as Recurrence) || undefined,
         projectId: projectId || undefined,
       })
       setTitle(""); setMemo(""); setPriority("MEDIUM")
-      setDueDate(""); setTags(""); setRecurrence("")
+      setDueDate(""); setDueTime(""); setTags(""); setRecurrence("")
       setOpen(false)
       setJustAdded(true)
       setTimeout(() => { setJustAdded(false); titleRef.current?.focus() }, 1200)
@@ -106,8 +110,11 @@ export function TaskForm({
               </div>
             </div>
             <div>
-              <label className="text-xs mb-1.5 block text-dim">締切日</label>
-              <input type="date" className="input-field text-xs" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+              <label className="text-xs mb-1.5 block text-dim">締切日時</label>
+              <div className="flex gap-1">
+                <input type="date" className="input-field text-xs flex-1" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+                <input type="time" className="input-field text-xs w-24" value={dueTime} onChange={(e) => setDueTime(e.target.value)} />
+              </div>
             </div>
           </div>
 

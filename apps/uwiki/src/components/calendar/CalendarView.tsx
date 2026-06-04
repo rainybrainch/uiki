@@ -10,7 +10,7 @@ import { ChevronLeft, ChevronRight, BookOpen, Briefcase, CalendarDays } from "lu
 import clsx from "clsx"
 
 type Task = {
-  id: string; title: string; priority: string; completed: boolean
+  id: string; title: string; priority: string; completed: boolean; dueDate?: string | Date | null
 }
 
 type GoogleEvent = {
@@ -175,24 +175,43 @@ export function CalendarView({
               </div>
 
               {/* タスク */}
-              {tasks.slice(0, 3).map((task) => (
-                <Link
-                  key={task.id}
-                  href={`/tasks/${task.id}`}
-                  className={clsx(
-                    "flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] mb-0.5 truncate block",
-                    "hover:opacity-80 transition-opacity",
-                    task.completed && "opacity-40"
-                  )}
-                  style={{
-                    background: "rgba(58,111,201,0.1)",
-                    color: "var(--text)",
-                    borderLeft: `2px solid ${priorityDot[task.priority]}`,
-                  }}
-                >
-                  {task.title}
-                </Link>
-              ))}
+              {tasks
+                .slice()
+                .sort((a, b) => {
+                  const ta = a.dueDate ? new Date(a.dueDate).getTime() : 0
+                  const tb = b.dueDate ? new Date(b.dueDate).getTime() : 0
+                  return ta - tb
+                })
+                .slice(0, 3)
+                .map((task) => {
+                  const timeStr = task.dueDate
+                    ? (() => {
+                        const d = new Date(task.dueDate)
+                        const h = d.getHours(); const m = d.getMinutes()
+                        return (h !== 0 || m !== 0) ? `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")} ` : ""
+                      })()
+                    : ""
+                  return (
+                    <Link
+                      key={task.id}
+                      href={`/tasks/${task.id}`}
+                      className={clsx(
+                        "flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] mb-0.5 truncate block",
+                        "hover:opacity-80 transition-opacity",
+                        task.completed && "opacity-40"
+                      )}
+                      style={{
+                        background: "rgba(58,111,201,0.1)",
+                        color: "var(--text)",
+                        borderLeft: `2px solid ${priorityDot[task.priority]}`,
+                      }}
+                    >
+                      {timeStr && <span className="text-[9px] font-mono shrink-0" style={{ color: "var(--accent)" }}>{timeStr}</span>}
+                      <span className="truncate">{task.title}</span>
+                    </Link>
+                  )
+                })
+              }
               {tasks.length > 3 && (
                 <p className="text-[9px] text-faint px-1">+{tasks.length - 3}件</p>
               )}

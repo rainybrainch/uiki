@@ -53,6 +53,7 @@ export default async function CalendarPage({
           },
         },
         orderBy: { dueDate: "asc" },
+        select: { id: true, title: true, priority: true, completed: true, dueDate: true },
       }),
       prisma.diaryEntry.findMany({
         where: { date: { gte: monthStart, lte: monthEnd } },
@@ -90,9 +91,9 @@ export default async function CalendarPage({
   const tasksByDate: Record<string, typeof tasks> = {}
   for (const task of tasks) {
     if (!task.dueDate) continue
-    const d = format(new Date(task.dueDate), "yyyy-MM-dd")
+    const d = format(new Date(task.dueDate as Date), "yyyy-MM-dd")
     if (!tasksByDate[d]) tasksByDate[d] = []
-    tasksByDate[d].push(task)
+    tasksByDate[d].push({ ...task, dueDate: (task.dueDate as Date).toISOString() })
   }
 
   const diaryByDate: Record<string, { id: string; title: string }> = {}
