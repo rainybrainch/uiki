@@ -2,6 +2,8 @@
 
 import { useState, useTransition, useEffect } from "react"
 import { updateDreamProgress, achieveDream, deleteDream, updateDream } from "@/actions/dreams"
+import { polishText } from "@/actions/ai-write"
+import { AiPolishButton } from "@/components/ui/AiPolishButton"
 import { CheckCircle2, Circle, Trash2, ChevronDown, ChevronUp, Pencil, ChevronRight, ExternalLink } from "lucide-react"
 import { ConfirmButton } from "@/components/ui/ConfirmButton"
 import Link from "next/link"
@@ -275,6 +277,12 @@ function DreamCard({ dream, color, achieved = false, dreamIdByTitle = {} }: {
                         className="input-base text-xs resize-none w-full"
                       />
                       <div className="flex gap-1.5">
+                        {val.trim() && (
+                          <AiPolishButton
+                            onPolish={() => polishText(val, `百層世界「${dream.title}」の${label}`)}
+                            onResult={(text) => setEditFields((p) => ({ ...p, [key]: text }))}
+                          />
+                        )}
                         <button onClick={() => handleSaveField(key)} disabled={isPending}
                           className="flex-1 text-xs px-2 py-1.5 rounded"
                           style={{ background: `${color}22`, color }}>保存</button>

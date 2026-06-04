@@ -3,8 +3,12 @@
 import { useState, useTransition, useRef } from "react"
 import { format } from "date-fns"
 import { createLibraryItem } from "@/actions/library"
-import { Plus, ChevronDown, ChevronUp } from "lucide-react"
+import { polishText, generateYomuPost, generateBooklogReview } from "@/actions/ai-write"
+import { AiPolishButton } from "@/components/ui/AiPolishButton"
+import { Plus, ChevronDown, ChevronUp, ExternalLink } from "lucide-react"
 import type { ItemType, ItemStatus } from "@uwiki/database"
+
+const YOMU_GIST_ID = "cffc5abcf62103b27effe2efba25ca6a"
 
 export function LibraryAddForm({ typeLabels }: { typeLabels: Record<string, string> }) {
   const [open, setOpen] = useState(false)
@@ -136,12 +140,19 @@ export function LibraryAddForm({ typeLabels }: { typeLabels: Record<string, stri
             </div>
           </div>
           <div>
-            <label className="text-xs mb-1 block" style={{ color: "var(--dim)" }}>メモ</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs" style={{ color: "var(--dim)" }}>メモ・感想</label>
+              <AiPolishButton
+                onPolish={() => polishText(note, `${type}: ${title}`)}
+                onResult={setNote}
+              />
+            </div>
             <textarea
               className="input-field text-xs resize-none"
-              rows={2}
+              rows={3}
               value={note}
               onChange={(e) => setNote(e.target.value)}
+              placeholder="走り書きでOK。AI整形できます"
             />
           </div>
           <div>
@@ -153,6 +164,40 @@ export function LibraryAddForm({ typeLabels }: { typeLabels: Record<string, stri
               onChange={(e) => setTags(e.target.value)}
             />
           </div>
+
+          {/* AI アクション */}
+          {(type === "BOOK" || type === "MOVIE" || type === "MUSIC" || type === "GAME") && note && title && (
+            <div className="flex flex-wrap gap-2 pt-1">
+              {/* 読雨へ投稿 */}
+              <AiPolishButton
+                label="読雨に投稿"
+                onPolish={async () => {
+                  const typeLabel = { BOOK: "本", MOVIE: "映画", MUSIC: "音楽", GAME: "ゲーム" }[type] ?? type
+                  const res = await generateYomuPost({ title, type: typeLabel, rawImpression: note })
+                  const params = new URLSearchParams({
+                    raw: res.text, title, site: typeLabel,
+                    stars: String(res.stars), tags: res.tags,
+                  })
+                  window.open(`https://rainybrainch.github.io/yomu/?${params}`, "_blank")
+                  return ""
+                }}
+                onResult={() => {}}
+              />
+              {/* ブクログ向けレビュー */}
+              {type === "BOOK" && (
+                <AiPolishButton
+                  label="ブクログ用レビュー生成"
+                  onPolish={async () => {
+                    const review = await generateBooklogReview({ title, author: creator, rawImpression: note })
+                    setNote(review)
+                    return ""
+                  }}
+                  onResult={() => {}}
+                />
+              )}
+            </div>
+          )}
+
           <div className="flex justify-end gap-2">
             <button className="btn-ghost text-xs" onClick={() => setOpen(false)}>キャンセル</button>
             <button

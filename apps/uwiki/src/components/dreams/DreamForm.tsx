@@ -2,6 +2,8 @@
 
 import { useState, useTransition } from "react"
 import { createDream } from "@/actions/dreams"
+import { polishText } from "@/actions/ai-write"
+import { AiPolishButton } from "@/components/ui/AiPolishButton"
 import { Plus, ChevronDown, ChevronUp } from "lucide-react"
 
 const CATEGORIES = [
@@ -137,7 +139,15 @@ export function DreamForm({ catLabels, usedLayers = [] }: { catLabels: Record<st
         <div className="space-y-4 mb-4">
           {FIELDS.map(({ key, label, placeholder, rows }) => (
             <div key={key}>
-              <label className="text-xs text-dim block mb-1">{label}</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs text-dim">{label}</label>
+                {fields[key].trim() && (
+                  <AiPolishButton
+                    onPolish={() => polishText(fields[key], `百層世界「${title}」の${label}`)}
+                    onResult={(text) => setField(key, text)}
+                  />
+                )}
+              </div>
               {rows === 1 ? (
                 <input value={fields[key]} onChange={(e) => setField(key, e.target.value)}
                   placeholder={placeholder} className="input-base text-sm" />

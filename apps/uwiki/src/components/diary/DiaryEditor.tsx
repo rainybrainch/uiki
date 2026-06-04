@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useTransition, useRef, useCallback } from "react"
 import { saveDiaryEntry, deleteDiaryEntry } from "@/actions/diary"
+import { polishDiary } from "@/actions/ai-write"
+import { AiPolishButton } from "@/components/ui/AiPolishButton"
 import { formatDisplay } from "@/lib/date"
 import { Save, Trash2, Check } from "lucide-react"
 import { ConfirmButton } from "@/components/ui/ConfirmButton"
@@ -108,6 +110,13 @@ export function DiaryEditor({ date, entry }: { date: string; entry: Entry }) {
               disabled={pending}
               confirmLabel="日記を削除"
               className="p-1.5 rounded hover:bg-[var(--faint)] transition-colors"
+            />
+          )}
+          {content.trim() && (
+            <AiPolishButton
+              label="AI整形"
+              onPolish={() => polishDiary(content, mood ? String(mood) : undefined)}
+              onResult={(text) => { setContent(text); scheduleAutoSave(title, text, mood, tags) }}
             />
           )}
           <button onClick={() => save()}
