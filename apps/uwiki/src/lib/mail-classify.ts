@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from "@google/generative-ai"
+import { ai } from "@/lib/ai"
 
 export type MailCategory =
   | "案件"
@@ -30,7 +30,9 @@ export { CATEGORY_COLORS }
 export async function classifyMails(
   mails: { id: string; account: string; subject: string; from: string; snippet: string }[]
 ): Promise<ClassifiedMail[]> {
-  if (!process.env.GEMINI_API_KEY || mails.length === 0) {
+  const keys = ["GEMINI_API_KEY","GEMINI_API_KEY_2","GEMINI_API_KEY_3","GEMINI_API_KEY_4","GEMINI_API_KEY_5"]
+  const hasKey = keys.some((k) => process.env[k])
+  if (!hasKey || mails.length === 0) {
     return mails.map((m) => ({
       id: m.id, account: m.account,
       category: "その他" as MailCategory,
@@ -39,15 +41,13 @@ export async function classifyMails(
     }))
   }
 
-  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
-  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" })
-
   const mailList = mails.map((m, i) =>
     `[${i}] from: ${m.from} | subject: ${m.subject} | snippet: ${m.snippet.slice(0, 120)}`
   ).join("\n")
 
-  const result = await model.generateContent(
-    `以下のメール一覧を分類してください。各メールについてJSON配列で返してください。
+  try {
+    const text = await ai.flash(
+      `以下のメール一覧を分類してください。各メールについてJSON配列で返してください。
 
 カテゴリ: 案件 / 重要 / 通知 / SNS / ニュース / その他
 優先度: 1(高)=即対応が必要 2(中)=確認すべき 3(低)=流し読みでOK
@@ -58,10 +58,7 @@ summary: 日本語1行要約（最大30文字）
 
 メール一覧:
 ${mailList}`
-  )
-
-  try {
-    const text = result.response.text()
+    )
     const jsonMatch = text.match(/\[[\s\S]*\]/)
     if (!jsonMatch) throw new Error("no JSON")
     const results: { index: number; category: MailCategory; priority: 1|2|3; summary: string }[] = JSON.parse(jsonMatch[0])
