@@ -5,7 +5,7 @@ import { usePathname, useSearchParams } from "next/navigation"
 import {
   LayoutDashboard, CheckSquare, Repeat2, BookOpen,
   Library, Settings2, CalendarDays, BarChart2,
-  Flame, Droplets, BookMarked, Briefcase, Layers, ChevronLeft, ChevronRight, Search, Mail,
+  Flame, Droplets, BookMarked, Briefcase, Layers, ChevronLeft, ChevronRight, Search, Mail, Users,
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import type { WeatherData } from "@/lib/weather"
@@ -31,6 +31,7 @@ const nav: NavItem[] = [
   { section: "雨域" },
   { href: "/gravity?tab=internal", label: "重力雨域", icon: Flame,     color: "#c9a84c" },
   { href: "/gravity?tab=external", label: "引力雨域", icon: Droplets,  color: "#3a6fc9" },
+  { href: "/personas",             label: "コメント人格", icon: Users, color: "#a0b4ff" },
 ]
 
 export function Sidebar({ weather }: { weather: WeatherData | null }) {

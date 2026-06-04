@@ -317,3 +317,31 @@ enum AdjType {
   WEEKLY   // 週次Check
   MONTHLY  // 月次Act
 }
+
+// ─── コメント人格 ─────────────────────────────────────────
+
+model CommentPersona {
+  id          String   @id @default(cuid())
+  name        String
+  roleType    String   @default("共感勢")
+  catchphrase String   @default("")
+  color       String   @default("#a0b4ff")
+  words       String   @default("")   // カンマ区切り
+  genres      String   @default("")   // カンマ区切り（配信ジャンルマッチング用）
+  tags        String   @default("")   // カンマ区切り
+  tone        String   @default("")
+  enabled     Boolean  @default(true)
+  sourceUrl   String?                 // 生成元YouTube URL
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model PersonaYoutubeSource {
+  id            String    @id @default(cuid())
+  url           String
+  description   String    @default("")
+  streamGenres  String    @default("")  // 対象ストリームジャンル（カンマ区切り）
+  lastGenerated DateTime?
+  personaCount  Int       @default(0)
+  createdAt     DateTime  @default(now())
+}
