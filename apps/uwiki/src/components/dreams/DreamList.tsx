@@ -148,9 +148,9 @@ function DreamCard({ dream, color, achieved = false, dreamIdByTitle = {} }: {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1 flex-wrap">
               {dream.layer && (
-                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded"
-                  style={{ background: `${color}22`, color }}>
-                  No.{dream.layer}
+                <span className="font-mono font-bold shrink-0"
+                  style={{ fontSize: "0.7rem", color, letterSpacing: "0.05em", opacity: 0.9 }}>
+                  No.{String(dream.layer).padStart(2, "0")}
                 </span>
               )}
               <p className={`text-sm font-medium ${achieved ? "line-through" : ""}`}

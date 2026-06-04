@@ -52,7 +52,10 @@ export default async function DreamsPage() {
         <div className="flex items-center gap-3 mb-6">
           <Layers size={20} strokeWidth={1.5} style={{ color: "#8b5cf6" }} />
           <h1 className="text-2xl font-serif font-light tracking-wide">百層世界</h1>
-          <span className="text-xs font-mono text-dim ml-1">{dreams.length}/100</span>
+          <span className="text-xs font-mono ml-1" style={{ color: "#8b5cf6" }}>
+            {dreams.length}<span className="text-faint">/100</span>
+          </span>
+          <span className="text-[10px] font-mono text-faint ml-1">HundredLayerWorld</span>
         </div>
 
         {/* ルート定義カード */}
