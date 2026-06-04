@@ -51,7 +51,9 @@ export const authOptions: NextAuthOptions = {
                 useGmail:     true,
               },
             })
-          } catch {}
+          } catch (e) {
+            console.error("[jwt] GoogleAccount upsert failed:", e)
+          }
         }
       }
       return token

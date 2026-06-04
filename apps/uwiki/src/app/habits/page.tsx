@@ -16,7 +16,7 @@ export default async function HabitsPage() {
   try {
     habits = await prisma.habit.findMany({
       // ヒートマップ用に8週(56日)+バッファ分取得
-      include: { logs: { orderBy: { date: "desc" }, take: 63 } },
+      include: { logs: { orderBy: { date: "desc" } } },
       orderBy: { createdAt: "asc" },
     })
   } catch {

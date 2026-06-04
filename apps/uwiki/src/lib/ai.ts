@@ -75,8 +75,7 @@ export async function geminiGenerate(
         continue
       }
       if (status === 503 || status === 500) {
-        // 一時エラー → 10秒後に同キーで再試行
-        await new Promise((r) => setTimeout(r, 10_000))
+        // 一時エラー → 即リトライ（serverless環境で長いsleepはタイムアウトになるため）
         continue
       }
       throw err

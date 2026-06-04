@@ -47,7 +47,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         ...(body.memo      !== undefined ? { memo: body.memo }       : {}),
         ...(body.priority  !== undefined ? { priority: body.priority } : {}),
         ...(body.column    !== undefined ? { column: body.column, completed: body.column === "done" } : {}),
-        ...(body.completed !== undefined ? { completed: body.completed } : {}),
+        // column が同時に指定された場合は column 側を優先するため completed は無視
+        ...(body.completed !== undefined && body.column === undefined ? { completed: body.completed } : {}),
         ...(body.dueDate   !== undefined ? { dueDate: body.dueDate ? new Date(body.dueDate) : null } : {}),
         ...(body.tags      !== undefined ? { tags: body.tags }       : {}),
         ...(body.projectId !== undefined ? { projectId: body.projectId } : {}),
