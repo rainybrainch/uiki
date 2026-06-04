@@ -105,7 +105,7 @@ export default async function DashboardPage() {
   // 百層世界
   const dreamAchieved = dreams.filter((d: any) => d.achieved).length
   const dreamTotal = dreams.length
-  const dreamPct = Math.round((dreamAchieved / 100) * 100)
+  const dreamPct = Math.round((dreamAchieved / Math.max(dreamTotal, 1)) * 100)
 
   const priorityColor: Record<string, string> = {
     HIGH: "var(--red)", MEDIUM: "var(--accent)", LOW: "var(--dim)",

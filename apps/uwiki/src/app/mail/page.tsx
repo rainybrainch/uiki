@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db"
 import { classifyMails, CATEGORY_COLORS } from "@/lib/mail-classify"
 import type { MailCategory } from "@/lib/mail-classify"
 import { Mail, AlertCircle } from "lucide-react"
+import Link from "next/link"
 
 export const dynamic = "force-dynamic"
 
@@ -113,7 +114,7 @@ export default async function MailPage() {
         {sorted.length === 0 ? (
           <div className="text-center py-16 text-dim text-sm">
             {accounts.length === 0
-              ? "設定からGoogleアカウントを追加してください"
+              ? <Link href="/settings" className="underline underline-offset-2" style={{ color: "var(--accent)" }}>設定からGoogleアカウントを追加してください</Link>
               : "メールを取得できませんでした"}
           </div>
         ) : (

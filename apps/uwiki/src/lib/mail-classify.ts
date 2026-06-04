@@ -59,17 +59,19 @@ summary: 日本語1行要約（最大30文字）
 メール一覧:
 ${mailList}`
     )
-    const jsonMatch = text.match(/\[[\s\S]*\]/)
+    const jsonMatch = text.match(/\[[\s\S]*?\](?=\s*$|\s*[^,\]])/)
     if (!jsonMatch) throw new Error("no JSON")
     const results: { index: number; category: MailCategory; priority: 1|2|3; summary: string }[] = JSON.parse(jsonMatch[0])
 
-    return results.map((r) => ({
-      id:       mails[r.index]?.id ?? "",
-      account:  mails[r.index]?.account ?? "",
-      category: r.category ?? "その他",
-      priority: r.priority ?? 3,
-      summary:  r.summary ?? "",
-    }))
+    return results
+      .filter((r) => typeof r.index === "number" && r.index >= 0 && r.index < mails.length)
+      .map((r) => ({
+        id:       mails[r.index].id,
+        account:  mails[r.index].account,
+        category: r.category ?? "その他",
+        priority: r.priority ?? 3,
+        summary:  r.summary ?? "",
+      }))
   } catch {
     return mails.map((m) => ({
       id: m.id, account: m.account,

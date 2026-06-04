@@ -121,6 +121,35 @@ export async function generatePersonasFromSource(sourceId: string) {
   const source = await prisma.personaYoutubeSource.findUnique({ where: { id: sourceId } })
   if (!source) return { error: "ソースが見つかりません" }
 
+  await prisma.personaYoutubeSource.update({
+    where: { id: sourceId },
+    data: { genStatus: "pending", genError: null },
+  })
+
+  const result = await runGeneration(source)
+
+  if (result.error) {
+    await prisma.personaYoutubeSource.update({
+      where: { id: sourceId },
+      data: { genStatus: "failed", genError: result.error },
+    })
+  } else {
+    await prisma.personaYoutubeSource.update({
+      where: { id: sourceId },
+      data: {
+        genStatus: "done",
+        genError: null,
+        lastGenerated: new Date(),
+        personaCount: { increment: result.created ?? 0 },
+      },
+    })
+  }
+
+  revalidatePath("/personas")
+  return result
+}
+
+export async function runGeneration(source: { id: string; url: string; description: string; streamGenres: string }) {
   const key = nextGeminiKey()
   if (!key) return { error: "Gemini APIキーが設定されていません" }
 
@@ -180,16 +209,7 @@ genresには${streamGenres}を2-3個含めること。日本語で。`
       created++
     }
 
-    await prisma.personaYoutubeSource.update({
-      where: { id: sourceId },
-      data: {
-        lastGenerated: new Date(),
-        personaCount: { increment: created },
-      }
-    })
-
     await syncAllToGist()
-    revalidatePath("/personas")
     return { ok: true, created }
   } catch (e: any) {
     return { error: e.message }

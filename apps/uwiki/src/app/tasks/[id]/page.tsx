@@ -4,14 +4,19 @@ import { TaskDetailClient } from "@/components/tasks/TaskDetailClient"
 
 export const dynamic = "force-dynamic"
 
-async function fetchAncestors(parentId: string | null): Promise<{ id: string; title: string }[]> {
-  if (!parentId) return []
+async function fetchAncestors(
+  parentId: string | null,
+  visited = new Set<string>(),
+  depth = 0
+): Promise<{ id: string; title: string }[]> {
+  if (!parentId || depth > 10 || visited.has(parentId)) return []
+  visited.add(parentId)
   const parent = await prisma.task.findUnique({
     where: { id: parentId },
     select: { id: true, title: true, parentTaskId: true },
   })
   if (!parent) return []
-  const ancestors = await fetchAncestors(parent.parentTaskId)
+  const ancestors = await fetchAncestors(parent.parentTaskId, visited, depth + 1)
   return [...ancestors, { id: parent.id, title: parent.title }]
 }
 
