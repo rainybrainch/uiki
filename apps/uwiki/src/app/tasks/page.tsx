@@ -30,7 +30,7 @@ export default async function TasksPage({
   searchParams: Promise<{ view?: string; project?: string; tag?: string }>
 }) {
   const params = await searchParams
-  const view = (params.view ?? "all") as View
+  const view = (params.view ?? "today") as View
   const projectFilter = params.project ?? "all"
   const tagFilter = params.tag ?? ""
 
@@ -165,9 +165,9 @@ export default async function TasksPage({
         </div>
 
         {/* モバイル: スマートビュー切り替え（sm未満のみ表示） */}
-        <div className="flex gap-1.5 px-4 pb-2 overflow-x-auto sm:hidden shrink-0">
+        <div className="flex gap-1.5 px-4 pb-1.5 overflow-x-auto sm:hidden shrink-0 scrollbar-hide">
           {smartViews.map(({ id, label, count }) => (
-            <a key={id} href={`/tasks?view=${id}`}
+            <a key={id} href={`/tasks?view=${id}${projectFilter !== "all" ? `&project=${projectFilter}` : ""}`}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs shrink-0 transition-all"
               style={{
                 background: view === id ? "rgba(58,111,201,0.18)" : "var(--faint)",
@@ -181,6 +181,38 @@ export default async function TasksPage({
             </a>
           ))}
         </div>
+
+        {/* モバイル: プロジェクトチップ行（sm未満のみ表示） */}
+        {projects.length > 0 && (
+          <div className="flex gap-1.5 px-4 pb-2 overflow-x-auto sm:hidden shrink-0 scrollbar-hide">
+            <a href={`/tasks?view=${view}`}
+              className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] shrink-0 transition-all"
+              style={{
+                background: projectFilter === "all" ? "rgba(255,255,255,0.1)" : "var(--faint)",
+                border: `1px solid ${projectFilter === "all" ? "rgba(255,255,255,0.25)" : "transparent"}`,
+                color: projectFilter === "all" ? "white" : "var(--dim)",
+              }}>
+              全部
+            </a>
+            {projects.map((p) => (
+              <a key={p.id} href={`/tasks?view=${view}&project=${p.id}`}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] shrink-0 transition-all"
+                style={{
+                  background: projectFilter === p.id ? `${p.color}22` : "var(--faint)",
+                  border: `1px solid ${projectFilter === p.id ? `${p.color}55` : "transparent"}`,
+                  color: projectFilter === p.id ? p.color : "var(--dim)",
+                }}>
+                <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: p.color }} />
+                {p.name}
+                {p._count.tasks > 0 && (
+                  <span className="font-mono text-[10px]" style={{ color: projectFilter === p.id ? p.color : "var(--faint)" }}>
+                    {p._count.tasks}
+                  </span>
+                )}
+              </a>
+            ))}
+          </div>
+        )}
 
         {/* アクティブタグフィルターバー */}
         {tagFilter && (

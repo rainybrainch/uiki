@@ -353,6 +353,10 @@
     box-shadow: 0 0 0 3px rgba(58,111,201,0.08);
   }
 
+  /* スクロールバー非表示 */
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+
   /* select カスタム矢印 */
   select.input-base, select.input-field {
     appearance: none;

@@ -3,6 +3,7 @@
 import { useState, useTransition, useRef } from "react"
 import { createTask } from "@/actions/tasks"
 import { Plus, SlidersHorizontal } from "lucide-react"
+import { format, addDays } from "date-fns"
 
 type Priority = "HIGH" | "MEDIUM" | "LOW"
 type Recurrence = "daily" | "weekly" | "monthly"
@@ -53,6 +54,16 @@ export function TaskForm({
     })
   }
 
+  const todayStr = format(new Date(), "yyyy-MM-dd")
+  const tomorrowStr = format(addDays(new Date(), 1), "yyyy-MM-dd")
+  const nextWeekStr = format(addDays(new Date(), 7), "yyyy-MM-dd")
+
+  const QUICK_DATES = [
+    { label: "今日", value: todayStr },
+    { label: "明日", value: tomorrowStr },
+    { label: "来週", value: nextWeekStr },
+  ] as const
+
   return (
     <div className="surface rounded-xl overflow-hidden">
       <div className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: open ? "1px solid var(--border)" : undefined }}>
@@ -71,6 +82,26 @@ export function TaskForm({
             if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit() }
           }}
         />
+        {/* クイック日付チップ（コンパクトでない時のみ） */}
+        {!compact && !open && (
+          <div className="flex gap-1 shrink-0">
+            {QUICK_DATES.map(({ label, value }) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setDueDate(dueDate === value ? "" : value)}
+                className="px-2 py-1 rounded-md text-[10px] transition-all hidden sm:block"
+                style={{
+                  background: dueDate === value ? "rgba(58,111,201,0.18)" : "transparent",
+                  border: `1px solid ${dueDate === value ? "rgba(58,111,201,0.4)" : "var(--border)"}`,
+                  color: dueDate === value ? "var(--accent)" : "var(--dim)",
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
         {!compact && (
           <button
             onClick={() => setOpen(!open)}
@@ -80,6 +111,32 @@ export function TaskForm({
           </button>
         )}
       </div>
+
+      {/* スマホ用クイック日付チップ（入力フォーカス時に表示） */}
+      {!compact && !open && title && (
+        <div className="flex gap-1.5 px-4 py-2 sm:hidden" style={{ borderTop: "1px solid var(--border)" }}>
+          {QUICK_DATES.map(({ label, value }) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setDueDate(dueDate === value ? "" : value)}
+              className="px-3 py-1.5 rounded-full text-xs transition-all"
+              style={{
+                background: dueDate === value ? "rgba(58,111,201,0.18)" : "var(--faint)",
+                border: `1px solid ${dueDate === value ? "rgba(58,111,201,0.4)" : "transparent"}`,
+                color: dueDate === value ? "var(--accent)" : "var(--dim)",
+              }}
+            >
+              {label}
+            </button>
+          ))}
+          {dueDate && (
+            <span className="px-2 py-1.5 rounded-full text-xs font-mono" style={{ color: "var(--accent)" }}>
+              {dueDate === todayStr ? "今日" : dueDate === tomorrowStr ? "明日" : dueDate}
+            </span>
+          )}
+        </div>
+      )}
 
       {open && !compact && (
         <div className="border-t px-4 py-4 space-y-3 animate-fade-in-fast" style={{ borderColor: "var(--border)" }}>
