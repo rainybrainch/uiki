@@ -1,4 +1,4 @@
-import Anthropic from "@anthropic-ai/sdk"
+import { GoogleGenerativeAI } from "@google/generative-ai"
 
 export type MailCategory =
   | "案件"
@@ -30,7 +30,7 @@ export { CATEGORY_COLORS }
 export async function classifyMails(
   mails: { id: string; account: string; subject: string; from: string; snippet: string }[]
 ): Promise<ClassifiedMail[]> {
-  if (!process.env.ANTHROPIC_API_KEY || mails.length === 0) {
+  if (!process.env.GEMINI_API_KEY || mails.length === 0) {
     return mails.map((m) => ({
       id: m.id, account: m.account,
       category: "その他" as MailCategory,
@@ -39,33 +39,29 @@ export async function classifyMails(
     }))
   }
 
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
+  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" })
 
   const mailList = mails.map((m, i) =>
     `[${i}] from: ${m.from} | subject: ${m.subject} | snippet: ${m.snippet.slice(0, 120)}`
   ).join("\n")
 
-  const message = await client.messages.create({
-    model: "claude-haiku-4-5-20251001",
-    max_tokens: 1024,
-    messages: [{
-      role: "user",
-      content: `以下のメール一覧を分類してください。各メールについてJSON配列で返してください。
+  const result = await model.generateContent(
+    `以下のメール一覧を分類してください。各メールについてJSON配列で返してください。
 
 カテゴリ: 案件 / 重要 / 通知 / SNS / ニュース / その他
 優先度: 1(高)=即対応が必要 2(中)=確認すべき 3(低)=流し読みでOK
 summary: 日本語1行要約（最大30文字）
 
-必ずこの形式のJSONのみ返してください:
+必ずこの形式のJSONのみ返してください（他のテキスト不要）:
 [{"index":0,"category":"...","priority":1,"summary":"..."},...]
 
 メール一覧:
-${mailList}`,
-    }],
-  })
+${mailList}`
+  )
 
   try {
-    const text = (message.content[0] as any).text
+    const text = result.response.text()
     const jsonMatch = text.match(/\[[\s\S]*\]/)
     if (!jsonMatch) throw new Error("no JSON")
     const results: { index: number; category: MailCategory; priority: 1|2|3; summary: string }[] = JSON.parse(jsonMatch[0])
