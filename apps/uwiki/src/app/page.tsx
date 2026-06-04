@@ -141,10 +141,8 @@ export default async function DashboardPage() {
         {/* 大目標ウィジェット */}
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-6">
           {/* 100万円 */}
-          <Link href="/cases" className="rounded-xl p-4 hover:opacity-90 transition-all block animate-slide-up delay-200"
-            style={{ background: "rgba(201,168,76,0.06)", border: "1px solid rgba(201,168,76,0.2)", transition: "opacity 0.2s, box-shadow 0.3s, transform 0.2s" }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = "0 0 20px rgba(201,168,76,0.15)"; (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)" }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = ""; (e.currentTarget as HTMLElement).style.transform = "" }}>
+          <Link href="/cases" className="rounded-xl p-4 hover:opacity-80 hover:-translate-y-0.5 transition-all block animate-slide-up delay-200"
+            style={{ background: "rgba(201,168,76,0.06)", border: "1px solid rgba(201,168,76,0.2)" }}>
             <div className="flex items-center gap-2 mb-2">
               <Briefcase size={12} style={{ color: "var(--amber)" }} />
               <span className="text-xs text-dim">ライスワーク</span>
@@ -160,10 +158,8 @@ export default async function DashboardPage() {
           </Link>
 
           {/* 百層世界 */}
-          <Link href="/dreams" className="rounded-xl p-4 hover:opacity-90 transition-all block animate-slide-up delay-300"
-            style={{ background: "rgba(139,92,246,0.06)", border: "1px solid rgba(139,92,246,0.2)", transition: "opacity 0.2s, box-shadow 0.3s, transform 0.2s" }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = "0 0 20px rgba(139,92,246,0.15)"; (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)" }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = ""; (e.currentTarget as HTMLElement).style.transform = "" }}>
+          <Link href="/dreams" className="rounded-xl p-4 hover:opacity-80 hover:-translate-y-0.5 transition-all block animate-slide-up delay-300"
+            style={{ background: "rgba(139,92,246,0.06)", border: "1px solid rgba(139,92,246,0.2)" }}>
             <div className="flex items-center gap-2 mb-2">
               <Layers size={12} style={{ color: "#8b5cf6" }} />
               <span className="text-xs text-dim">百層世界</span>
@@ -181,10 +177,8 @@ export default async function DashboardPage() {
           </Link>
 
           {/* 習慣達成率 */}
-          <Link href="/habits" className="hidden sm:block rounded-xl p-4 hover:opacity-90 transition-all animate-slide-up delay-400"
-            style={{ background: "rgba(74,222,128,0.06)", border: "1px solid rgba(74,222,128,0.2)", transition: "opacity 0.2s, box-shadow 0.3s, transform 0.2s" }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = "0 0 20px rgba(74,222,128,0.12)"; (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)" }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = ""; (e.currentTarget as HTMLElement).style.transform = "" }}>
+          <Link href="/habits" className="hidden sm:block rounded-xl p-4 hover:opacity-80 hover:-translate-y-0.5 transition-all animate-slide-up delay-400"
+            style={{ background: "rgba(74,222,128,0.06)", border: "1px solid rgba(74,222,128,0.2)" }}>
             <div className="flex items-center gap-2 mb-2">
               <Repeat2 size={12} style={{ color: "var(--green)" }} />
               <span className="text-xs text-dim">習慣達成</span>
@@ -199,10 +193,8 @@ export default async function DashboardPage() {
           </Link>
 
           {/* タスク完了数 */}
-          <Link href="/tasks" className="hidden sm:block rounded-xl p-4 hover:opacity-90 transition-all animate-slide-up delay-500"
-            style={{ background: "rgba(58,111,201,0.06)", border: "1px solid rgba(58,111,201,0.2)", transition: "opacity 0.2s, box-shadow 0.3s, transform 0.2s" }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = "0 0 20px rgba(58,111,201,0.12)"; (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)" }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = ""; (e.currentTarget as HTMLElement).style.transform = "" }}>
+          <Link href="/tasks" className="hidden sm:block rounded-xl p-4 hover:opacity-80 hover:-translate-y-0.5 transition-all animate-slide-up delay-500"
+            style={{ background: "rgba(58,111,201,0.06)", border: "1px solid rgba(58,111,201,0.2)" }}>
             <div className="flex items-center gap-2 mb-2">
               <CheckSquare size={12} style={{ color: "var(--accent)" }} />
               <span className="text-xs text-dim">完了タスク</span>
