@@ -131,17 +131,20 @@ export default async function DashboardPage() {
             </Link>
           )}
         </div>
-        <h1 className="font-serif text-2xl md:text-3xl lg:text-4xl font-light tracking-wider leading-none mb-1 relative">
+        <h1 className="font-serif text-3xl md:text-3xl lg:text-4xl font-light tracking-wider leading-none mb-1 relative">
           {greeting.text}
         </h1>
-        <div className="flex items-center gap-3 mt-2">
-          <p className="text-sm text-dim relative">{greeting.sub}</p>
-          <OnboardingCard />
-        </div>
+        <p className="text-sm mt-2 relative" style={{ color: "rgba(255,255,255,0.58)" }}>
+          {greeting.sub}
+        </p>
 
-        {/* クイックタスク追加 — greeting 直下でいつでも入力できる */}
+        {/* クイックタ��ク追加 — greeting 直下でいつでも��力できる */}
         <div className="mt-5 relative max-w-xl">
           <QuickAddTask projects={projects} />
+        </div>
+
+        <div className="mt-4 max-w-xl">
+          <OnboardingCard />
         </div>
 
         <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 sm:gap-3 mt-4">

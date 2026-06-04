@@ -65,7 +65,7 @@ export function OnboardingCard() {
   }
 
   return (
-    <div className="animate-fade-in-fast rounded-xl overflow-hidden mb-4"
+    <div className="animate-fade-in-fast rounded-xl overflow-hidden"
       style={{ background: "rgba(58,111,201,0.04)", border: "1px solid rgba(58,111,201,0.2)" }}>
       {/* ヘッダー */}
       <div className="flex items-center justify-between px-4 py-3">
