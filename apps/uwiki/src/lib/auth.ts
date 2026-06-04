@@ -65,6 +65,46 @@ export const authOptions: NextAuthOptions = {
   pages: { signIn: "/settings" },
 }
 
+/** GoogleAccount のアクセストークンを必要に応じてリフレッシュして返す */
+export async function getValidToken(email: string): Promise<string | null> {
+  const { prisma } = await import("@/lib/db")
+  const account = await prisma.googleAccount.findUnique({ where: { email } })
+  if (!account) return null
+
+  const now = BigInt(Date.now())
+  const expired = account.expiresAt ? account.expiresAt < now + BigInt(60_000) : false
+
+  if (!expired) return account.accessToken
+
+  // リフレッシュ
+  if (!account.refreshToken) return account.accessToken
+  try {
+    const res = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        client_id:     process.env.GOOGLE_CLIENT_ID!,
+        client_secret: process.env.GOOGLE_CLIENT_SECRET!,
+        refresh_token: account.refreshToken,
+        grant_type:    "refresh_token",
+      }),
+    })
+    if (!res.ok) return account.accessToken
+    const data = await res.json()
+    const newToken = data.access_token as string
+    await prisma.googleAccount.update({
+      where: { email },
+      data: {
+        accessToken: newToken,
+        expiresAt: data.expires_in ? BigInt(Date.now() + data.expires_in * 1000) : null,
+      },
+    })
+    return newToken
+  } catch {
+    return account.accessToken
+  }
+}
+
 // Google Calendar イベント取得
 export async function fetchCalendarEvents(accessToken: string, days = 14) {
   const now = new Date()

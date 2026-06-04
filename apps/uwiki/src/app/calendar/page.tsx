@@ -4,7 +4,7 @@ import { AddEventButton } from "@/components/calendar/AddEventButton"
 import { CalendarDays } from "lucide-react"
 import { format, startOfMonth, endOfMonth, addMonths, subMonths, parseISO } from "date-fns"
 import { getServerSession } from "next-auth"
-import { authOptions, fetchCalendarEvents } from "@/lib/auth"
+import { authOptions, fetchCalendarEvents, getValidToken } from "@/lib/auth"
 
 export const dynamic = "force-dynamic"
 
@@ -22,18 +22,18 @@ export default async function CalendarPage({
     format(endOfMonth(monthDate), "yyyy-MM-dd"),
   ]
 
-  // Google Calendar イベント取得 — GoogleAccount テーブルのトークンを優先使用
+  // Google Calendar イベント取得 — 自動トークンリフレッシュ対応
   let googleEvents: any[] = []
   try {
     const { prisma: db } = await import("@/lib/db")
     const calAccount = await db.googleAccount.findFirst({ where: { useCalendar: true } })
-    const token = calAccount?.accessToken
-    if (token) {
-      googleEvents = await fetchCalendarEvents(token, 60)
+    if (calAccount) {
+      const token = await getValidToken(calAccount.email)
+      if (token) googleEvents = await fetchCalendarEvents(token, 90)
     } else {
       const session = await getServerSession(authOptions)
       if (session?.accessToken) {
-        googleEvents = await fetchCalendarEvents(session.accessToken, 60)
+        googleEvents = await fetchCalendarEvents(session.accessToken, 90)
       }
     }
   } catch {}
