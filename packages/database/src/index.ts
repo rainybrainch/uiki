@@ -1,4 +1,4 @@
-import { PrismaClient } from "./generated/client"
+import { PrismaClient } from "@prisma/client"
 
 function createPrisma() {
   return new PrismaClient({
@@ -12,4 +12,4 @@ export const prisma = globalForPrisma.prisma ?? createPrisma()
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma
 
-export * from "./generated/client"
+export * from "@prisma/client"
