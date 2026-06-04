@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db"
 import { CalendarView } from "@/components/calendar/CalendarView"
+import { AddEventButton } from "@/components/calendar/AddEventButton"
 import { CalendarDays } from "lucide-react"
 import { format, startOfMonth, endOfMonth, addMonths, subMonths, parseISO } from "date-fns"
 import { getServerSession } from "next-auth"
@@ -103,9 +104,12 @@ export default async function CalendarPage({
 
   return (
     <div className="h-full flex flex-col max-w-5xl mx-auto w-full">
-      <div className="flex items-center gap-3 px-4 py-5 md:px-8 md:py-8 shrink-0">
-        <CalendarDays size={20} strokeWidth={1.5} style={{ color: "var(--accent)" }} />
-        <h1 className="text-2xl font-serif font-light tracking-wide">カレンダー</h1>
+      <div className="px-4 py-5 md:px-8 md:py-8 shrink-0 space-y-3">
+        <div className="flex items-center gap-3">
+          <CalendarDays size={20} strokeWidth={1.5} style={{ color: "var(--accent)" }} />
+          <h1 className="text-2xl font-serif font-light tracking-wide">カレンダー</h1>
+        </div>
+        <AddEventButton defaultDate={format(new Date(), "yyyy-MM-dd")} />
       </div>
 
       <div className="flex-1 overflow-auto px-3 pb-4 md:px-8 md:pb-8">
