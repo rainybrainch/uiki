@@ -1,6 +1,7 @@
 "use server"
 
 import { ai } from "@/lib/ai"
+import { enrichPersonasFromContent } from "@/actions/persona-enrich"
 
 /** 走り書きを読みやすい文に整形 */
 export async function polishText(raw: string, context?: string): Promise<string> {
@@ -39,11 +40,17 @@ JSON形式で返してください:
     const match = result.match(/\{[\s\S]*\}/)
     if (!match) throw new Error()
     const parsed = JSON.parse(match[0])
-    return {
+    const output = {
       text:  parsed.text  ?? params.rawImpression,
       stars: Number(parsed.stars) || 3,
       tags:  parsed.tags  ?? "",
     }
+    // 読雨投稿 → 人格に自動反映（バックグラウンド）
+    enrichPersonasFromContent({
+      title: params.title, type: params.type,
+      impression: output.text, tags: output.tags,
+    }).catch(() => {})
+    return output
   } catch {
     return { text: params.rawImpression, stars: 3, tags: "" }
   }
