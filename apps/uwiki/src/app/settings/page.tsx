@@ -3,18 +3,20 @@ import { CityForm } from "@/components/settings/CityForm"
 import { PomojikanForm } from "@/components/settings/PomojikanForm"
 import { ApiKeySection } from "@/components/settings/ApiKeySection"
 import { GoogleAuthSection } from "@/components/settings/GoogleAuthSection"
+import { GoogleAccountsSection } from "@/components/settings/GoogleAccountsSection"
 import { getWeatherFromSettings } from "@/lib/weather"
-import { Settings2, CloudRain, MapPin, Timer, Key, Chrome, Link2 } from "lucide-react"
+import { prisma } from "@/lib/db"
+import { Settings2, CloudRain, MapPin, Timer, Key, Chrome, Mail } from "lucide-react"
 
 export const dynamic = "force-dynamic"
 
 export default async function SettingsPage() {
   let settings: any = null
+  let googleAccounts: any[] = []
   try {
     settings = await getSettings()
-  } catch {
-    // DB未接続時はデフォルト値
-  }
+    googleAccounts = await prisma.googleAccount.findMany({ orderBy: { createdAt: "asc" } })
+  } catch {}
   const weather = settings ? await getWeatherFromSettings(settings) : null
 
   return (
@@ -52,14 +54,14 @@ export default async function SettingsPage() {
 
         <hr className="divider" />
 
-        {/* データ移行 */}
+        {/* Googleアカウント管理 */}
         <section className="animate-fade-in delay-100">
-          <p className="section-label flex items-center gap-2"><Link2 size={11} /> データ移行</p>
-          <p className="text-xs text-dim mb-3">旧UIKI（rainybrainch.github.io/uiki/）から砂のログ・引力雨域データを移行できます。</p>
-          <a href="/migrate" className="text-xs px-3 py-2 rounded-lg inline-flex items-center gap-2 transition-opacity hover:opacity-80"
-            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)", color: "var(--dim)" }}>
-            移行ツールを開く →
-          </a>
+          <div className="flex items-center gap-2 mb-1">
+            <Mail size={13} style={{ color: "var(--accent)" }} />
+            <p className="section-label mb-0">メールアカウント管理</p>
+          </div>
+          <p className="text-xs text-dim mb-4">複数のGoogleアカウントのメールを統合表示します。</p>
+          <GoogleAccountsSection accounts={googleAccounts} />
         </section>
 
         <hr className="divider" />

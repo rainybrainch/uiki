@@ -5,7 +5,7 @@ import { usePathname, useSearchParams } from "next/navigation"
 import {
   LayoutDashboard, CheckSquare, Repeat2, BookOpen,
   Library, Settings2, CalendarDays, BarChart2,
-  Flame, Droplets, BookMarked, Briefcase, Layers, ChevronLeft, ChevronRight, Search,
+  Flame, Droplets, BookMarked, Briefcase, Layers, ChevronLeft, ChevronRight, Search, Mail,
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import type { WeatherData } from "@/lib/weather"
@@ -17,6 +17,7 @@ const nav: NavItem[] = [
   { href: "/",          label: "ダッシュボード", icon: LayoutDashboard },
   { href: "/tasks",     label: "タスク",         icon: CheckSquare },
   { href: "/calendar",  label: "カレンダー",     icon: CalendarDays },
+  { href: "/mail",      label: "メール",         icon: Mail,          color: "#14b8a6" },
   { href: "/habits",    label: "習慣",           icon: Repeat2 },
   { href: "/diary",     label: "日記",           icon: BookOpen },
   { href: "/library",   label: "ライブラリ",     icon: Library },

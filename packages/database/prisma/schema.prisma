@@ -200,6 +200,20 @@ model Case {
   updatedAt   DateTime   @updatedAt
 }
 
+// ─── Google マルチアカウント ──────────────────────────────
+
+model GoogleAccount {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  accessToken   String
+  refreshToken  String?
+  expiresAt     BigInt?
+  useCalendar   Boolean  @default(false)
+  useGmail      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
 // ─── 百層世界 ───────────────────────────────────────────
 
 model Dream {
