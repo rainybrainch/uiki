@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { prisma } from "@/lib/db"
 
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions)
-  if (!session?.accessToken) {
-    return NextResponse.json({ error: "未ログイン" }, { status: 401 })
+  // GoogleAccount テーブルのトークンを優先（再ログイン不要）
+  const calAccount = await prisma.googleAccount.findFirst({ where: { useCalendar: true } }).catch(() => null)
+  const session = calAccount ? null : await getServerSession(authOptions)
+  const accessToken = calAccount?.accessToken ?? (session as any)?.accessToken
+  if (!accessToken) {
+    return NextResponse.json({ error: "Googleカレンダー未連携" }, { status: 401 })
   }
 
   const { title, date, endDate, allDay, description } = await req.json()
@@ -31,7 +35,7 @@ export async function POST(req: NextRequest) {
     {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${session.accessToken}`,
+        Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(event),

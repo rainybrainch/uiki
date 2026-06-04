@@ -22,12 +22,19 @@ export default async function CalendarPage({
     format(endOfMonth(monthDate), "yyyy-MM-dd"),
   ]
 
-  // Google Calendar イベント取得
+  // Google Calendar イベント取得 — GoogleAccount テーブルのトークンを優先使用
   let googleEvents: any[] = []
   try {
-    const session = await getServerSession(authOptions)
-    if (session?.accessToken) {
-      googleEvents = await fetchCalendarEvents(session.accessToken, 60)
+    const { prisma: db } = await import("@/lib/db")
+    const calAccount = await db.googleAccount.findFirst({ where: { useCalendar: true } })
+    const token = calAccount?.accessToken
+    if (token) {
+      googleEvents = await fetchCalendarEvents(token, 60)
+    } else {
+      const session = await getServerSession(authOptions)
+      if (session?.accessToken) {
+        googleEvents = await fetchCalendarEvents(session.accessToken, 60)
+      }
     }
   } catch {}
 
