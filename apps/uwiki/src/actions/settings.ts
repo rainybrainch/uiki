@@ -52,5 +52,17 @@ export async function savePomojikanSettings(data: {
 }
 
 export async function getSettings() {
-  return prisma.settings.findUnique({ where: { id: "singleton" } })
+  const existing = await prisma.settings.findUnique({ where: { id: "singleton" } })
+  if (existing) return existing
+  // 初回アクセス時にデフォルト設定を自動作成
+  return prisma.settings.create({
+    data: {
+      id: "singleton",
+      city: "Bunkyo, Tokyo",
+      lat: 35.7081,
+      lon: 139.7527,
+      pomojikanUrl: "https://rainybrainch.github.io/pomojikan/",
+      pomojikanActive: true,
+    },
+  })
 }
