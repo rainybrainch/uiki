@@ -4,15 +4,18 @@ import { PomojikanForm } from "@/components/settings/PomojikanForm"
 import { ApiKeySection } from "@/components/settings/ApiKeySection"
 import { GoogleAuthSection } from "@/components/settings/GoogleAuthSection"
 import { GoogleAccountsSection } from "@/components/settings/GoogleAccountsSection"
+import { GeminiSection } from "@/components/settings/GeminiSection"
 import { getWeatherFromSettings } from "@/lib/weather"
+import { getGeminiKeyCount } from "@/lib/ai"
 import { prisma } from "@/lib/db"
-import { Settings2, CloudRain, MapPin, Timer, Key, Chrome, Mail } from "lucide-react"
+import { Settings2, CloudRain, MapPin, Timer, Key, Chrome, Mail, Sparkles } from "lucide-react"
 
 export const dynamic = "force-dynamic"
 
 export default async function SettingsPage() {
   let settings: any = null
   let googleAccounts: any[] = []
+  const geminiKeyCount = getGeminiKeyCount()
   try {
     settings = await getSettings()
     googleAccounts = await prisma.googleAccount.findMany({ orderBy: { createdAt: "asc" } })
@@ -112,6 +115,18 @@ export default async function SettingsPage() {
             ぽもじかんと雨域を接続します。タスクからタイマーを起動できるようになります。
           </p>
           <PomojikanForm currentUrl={settings?.pomojikanUrl ?? null} active={settings?.pomojikanActive ?? false} />
+        </section>
+
+        <hr className="divider" />
+
+        {/* Gemini AI */}
+        <section className="animate-fade-in delay-200">
+          <div className="flex items-center gap-2 mb-1">
+            <Sparkles size={13} style={{ color: "#a78bfa" }} />
+            <p className="section-label mb-0">Gemini AI</p>
+          </div>
+          <p className="text-xs text-dim mb-4">雨域/Uwiki 全体で使用する AI エンジン。</p>
+          <GeminiSection keyCount={geminiKeyCount} />
         </section>
 
         <hr className="divider" />

@@ -7,23 +7,29 @@
 
 import { GoogleGenerativeAI } from "@google/generative-ai"
 
+// GEMINI_API_KEY_* または GEMINI_KEY_* の両方に対応
 const KEY_ENV_NAMES = [
-  "GEMINI_API_KEY",
-  "GEMINI_API_KEY_2",
-  "GEMINI_API_KEY_3",
-  "GEMINI_API_KEY_4",
-  "GEMINI_API_KEY_5",
-]
+  ["GEMINI_API_KEY",   "GEMINI_KEY_1"],
+  ["GEMINI_API_KEY_2", "GEMINI_KEY_2"],
+  ["GEMINI_API_KEY_3", "GEMINI_KEY_3"],
+  ["GEMINI_API_KEY_4", "GEMINI_KEY_4"],
+  ["GEMINI_API_KEY_5", "GEMINI_KEY_5"],
+].map(([a, b]) => process.env[a] || process.env[b] || "").filter(Boolean)
 
 // サーバーサイドのみ: キーごとの冷却タイムスタンプ
 const cooldownUntil: Record<number, number> = {}
 let lastKeyIndex = 0
 
+/** 設定済みキー数を返す（設定ページ用） */
+export function getGeminiKeyCount(): number {
+  return KEY_ENV_NAMES.length
+}
+
 function getAvailableKey(): { key: string; index: number } | null {
-  const now = Date.now()
-  const keys = KEY_ENV_NAMES.map((name) => process.env[name]).filter(Boolean) as string[]
+  const keys = KEY_ENV_NAMES
   if (keys.length === 0) return null
 
+  const now = Date.now()
   // ラウンドロビン + 冷却スキップ
   for (let i = 0; i < keys.length; i++) {
     const idx = (lastKeyIndex + i) % keys.length

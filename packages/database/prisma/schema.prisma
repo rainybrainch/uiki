@@ -343,5 +343,7 @@ model PersonaYoutubeSource {
   streamGenres  String    @default("")  // 対象ストリームジャンル（カンマ区切り）
   lastGenerated DateTime?
   personaCount  Int       @default(0)
+  genStatus     String    @default("idle")  // idle / pending / failed / done
+  genError      String?
   createdAt     DateTime  @default(now())
 }
