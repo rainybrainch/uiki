@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
+import { ai } from "@/lib/ai"
 
 async function authenticate(req: NextRequest): Promise<boolean> {
   const authHeader = req.headers.get("authorization")
@@ -62,11 +63,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "title is required" }, { status: 400 })
   }
 
+  // メールタグがある場合はGeminiで自動要約
+  let memo = body.memo ?? null
+  if (body.tags?.includes("メール") && body.memo) {
+    try {
+      const summary = await ai.flash(
+        `以下のメール内容を日本語で2〜3文に要約してください。要約のみ出力してください。\n\n${body.memo}`
+      )
+      if (summary) memo = summary
+    } catch {
+      // 要約失敗時はそのまま保存
+    }
+  }
+
   try {
     const task = await prisma.task.create({
       data: {
         title:     String(body.title),
-        memo:      body.memo ?? null,
+        memo:      memo,
         priority:  body.priority ?? "MEDIUM",
         dueDate:   body.dueDate ? new Date(body.dueDate) : null,
         column:    body.column ?? "todo",

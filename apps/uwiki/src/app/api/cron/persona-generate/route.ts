@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
-import { runGeneration } from "@/app/personas/actions"
+import { runGeneration } from "@/lib/persona-generate"
 
 export const runtime = "nodejs"
 export const maxDuration = 60
@@ -49,7 +49,6 @@ export async function GET(req: NextRequest) {
       results.push({ id: source.id, url: source.url, result: `ok: ${res.created}人生成` })
     }
 
-    // レート制限対策: ソース間に1秒待つ
     await new Promise(r => setTimeout(r, 1000))
   }
 
