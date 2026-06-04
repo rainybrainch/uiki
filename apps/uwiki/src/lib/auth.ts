@@ -77,7 +77,7 @@ export async function getValidToken(email: string): Promise<string | null> {
   if (!expired) return account.accessToken
 
   // リフレッシュ
-  if (!account.refreshToken) return account.accessToken
+  if (!account.refreshToken) return null
   try {
     const res = await fetch("https://oauth2.googleapis.com/token", {
       method: "POST",
@@ -89,7 +89,10 @@ export async function getValidToken(email: string): Promise<string | null> {
         grant_type:    "refresh_token",
       }),
     })
-    if (!res.ok) return account.accessToken
+    if (!res.ok) {
+      console.error("[getValidToken] refresh failed:", res.status)
+      return null
+    }
     const data = await res.json()
     const newToken = data.access_token as string
     await prisma.googleAccount.update({
@@ -100,8 +103,9 @@ export async function getValidToken(email: string): Promise<string | null> {
       },
     })
     return newToken
-  } catch {
-    return account.accessToken
+  } catch (e) {
+    console.error("[getValidToken] exception:", e)
+    return null
   }
 }
 

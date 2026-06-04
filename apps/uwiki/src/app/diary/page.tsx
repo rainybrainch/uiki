@@ -42,7 +42,6 @@ export default async function DiaryPage({
       prisma.diaryEntry.findMany({
         select: { date: true },
         orderBy: { date: "desc" },
-        take: 400,
       }).then((es) => es.map((e) => e.date)),
     ])
   } catch {

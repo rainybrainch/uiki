@@ -24,22 +24,26 @@ export default async function CasesPage({
 }) {
   const { filter } = await searchParams
   let cases: any[] = []
+  let allCases: any[] = []
   try {
-    cases = await prisma.case.findMany({
-      where: filter && filter !== "all" ? { status: filter as any } : {},
-      orderBy: { createdAt: "desc" },
-    })
+    ;[cases, allCases] = await Promise.all([
+      prisma.case.findMany({
+        where: filter && filter !== "all" ? { status: filter as any } : {},
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.case.findMany({ orderBy: { createdAt: "desc" } }),
+    ])
   } catch {}
 
-  const earned = cases
+  const earned = allCases
     .filter((c) => c.status === "DONE")
     .reduce((s, c) => s + (c.paidAmount || c.reward), 0)
 
-  const pending = cases
+  const pending = allCases
     .filter((c) => c.status === "WAITING_PAY")
     .reduce((s, c) => s + c.reward, 0)
 
-  const pct = Math.min(100, Math.round((earned / GOAL) * 100))
+  const pct = Math.round((earned / GOAL) * 100)
 
   const byCat = STATUS_ORDER.map((s) => ({
     status: s,
@@ -80,7 +84,7 @@ export default async function CasesPage({
             <div
               className="h-full rounded-full animate-bar-grow"
               style={{
-                width: `${pct}%`,
+                width: `${Math.min(100, pct)}%`,
                 background: pct >= 100
                   ? "var(--green)"
                   : "linear-gradient(90deg, #c9a84c, #f0c060)",
@@ -91,7 +95,9 @@ export default async function CasesPage({
           <div className="flex justify-between mt-2 text-xs font-mono">
             <span style={{ color: "var(--amber)" }}>{pct}%</span>
             <span className="text-dim">
-              あと ¥{Math.max(0, GOAL - earned).toLocaleString()}
+              {earned >= GOAL
+                ? `目標達成！+¥${(earned - GOAL).toLocaleString()}超過`
+                : `あと ¥${(GOAL - earned).toLocaleString()}`}
             </span>
             {pending > 0 && (
               <span className="text-dim">
