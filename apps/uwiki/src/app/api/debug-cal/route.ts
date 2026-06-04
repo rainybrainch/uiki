@@ -10,12 +10,25 @@ export async function GET() {
     const token = await getValidToken(account.email)
     if (!token) return NextResponse.json({ error: "no valid token" })
 
-    const events = await fetchCalendarEvents(token, 90)
+    // 直接 API を叩いてレスポンスを確認
+    const now = new Date()
+    const end = new Date(); end.setDate(end.getDate() + 90)
+    const url = new URL("https://www.googleapis.com/calendar/v3/calendars/primary/events")
+    url.searchParams.set("timeMin", now.toISOString())
+    url.searchParams.set("timeMax", end.toISOString())
+    url.searchParams.set("singleEvents", "true")
+    url.searchParams.set("maxResults", "10")
+
+    const res = await fetch(url.toString(), { headers: { Authorization: `Bearer ${token}` } })
+    const body = await res.json()
+
     return NextResponse.json({
       email: account.email,
-      tokenRefreshed: token !== account.accessToken,
-      eventCount: events.length,
-      events: events.slice(0, 5).map((e) => ({ summary: e.summary, start: e.start })),
+      expiresAt: account.expiresAt?.toString(),
+      httpStatus: res.status,
+      error: body.error,
+      eventCount: body.items?.length ?? 0,
+      events: (body.items ?? []).slice(0, 3).map((e: any) => ({ summary: e.summary, start: e.start })),
     })
   } catch (e: any) {
     return NextResponse.json({ error: e?.message ?? String(e) })
