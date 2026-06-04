@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache"
 import { prisma } from "@/lib/db"
-import { ItemType, ItemStatus } from "@uwiki/database"
+import { ItemType, ItemStatus } from "@/generated/client"
 
 export async function createLibraryItem(data: {
   type: ItemType

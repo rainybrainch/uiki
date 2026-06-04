@@ -1,6 +1,6 @@
 {
   "installCommand": "npm install",
-  "buildCommand": "cd packages/database && npx prisma generate && npx prisma db push --accept-data-loss && cd ../../apps/uwiki && npx next build",
+  "buildCommand": "cd packages/database && npx prisma generate && npx prisma db push --accept-data-loss && cp -r src/generated/client ../../apps/uwiki/src/generated/ && cd ../../apps/uwiki && npx next build",
   "outputDirectory": "apps/uwiki/.next",
   "framework": "nextjs"
 }
