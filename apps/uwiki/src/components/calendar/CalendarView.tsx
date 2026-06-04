@@ -217,18 +217,32 @@ export function CalendarView({
               )}
 
               {/* Google Calendar イベント */}
-              {gEvents.slice(0, 2).map((ev) => (
-                <a
-                  key={ev.id}
-                  href={ev.htmlLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] mb-0.5 truncate block hover:opacity-80 transition-opacity"
-                  style={{ background: "rgba(66,200,120,0.12)", borderLeft: "2px solid #4ade80", color: "var(--text)" }}
-                >
-                  {ev.summary}
-                </a>
-              ))}
+              {gEvents
+                .sort((a, b) => {
+                  const ta = a.start.dateTime ? new Date(a.start.dateTime).getTime() : 0
+                  const tb = b.start.dateTime ? new Date(b.start.dateTime).getTime() : 0
+                  return ta - tb
+                })
+                .slice(0, 3)
+                .map((ev) => {
+                  const timeStr = ev.start.dateTime
+                    ? (() => { const d = new Date(ev.start.dateTime); return `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")} ` })()
+                    : ""
+                  return (
+                    <a
+                      key={ev.id}
+                      href={ev.htmlLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] mb-0.5 hover:opacity-80 transition-opacity"
+                      style={{ background: "rgba(66,200,120,0.12)", borderLeft: "2px solid #4ade80", color: "var(--text)" }}
+                    >
+                      {timeStr && <span className="text-[9px] font-mono shrink-0" style={{ color: "#4ade80" }}>{timeStr}</span>}
+                      <span className="truncate">{ev.summary}</span>
+                    </a>
+                  )
+                })
+              }
 
               {/* 案件期限 */}
               {casesOnDay.slice(0, 1).map((c) => (

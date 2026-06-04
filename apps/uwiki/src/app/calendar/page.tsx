@@ -29,11 +29,12 @@ export default async function CalendarPage({
     const calAccount = await db.googleAccount.findFirst({ where: { useCalendar: true } })
     if (calAccount) {
       const token = await getValidToken(calAccount.email)
-      if (token) googleEvents = await fetchCalendarEvents(token, 90)
+      // 当月を中心に前後60日取得（過去月も表示できるように）
+      if (token) googleEvents = await fetchCalendarEvents(token, 120, 60)
     } else {
       const session = await getServerSession(authOptions)
       if (session?.accessToken) {
-        googleEvents = await fetchCalendarEvents(session.accessToken, 90)
+        googleEvents = await fetchCalendarEvents(session.accessToken, 120, 60)
       }
     }
   } catch {}

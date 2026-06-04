@@ -2,7 +2,7 @@ import { prisma } from "@/lib/db"
 import { today, calcStreak, formatDisplay } from "@/lib/date"
 import { format, startOfDay } from "date-fns"
 import { ja } from "date-fns/locale"
-import { CheckSquare, Repeat2, BookOpen, ArrowRight, AlertCircle, Briefcase, Layers, Clock, CloudRain, Thermometer } from "lucide-react"
+import { CheckSquare, Repeat2, BookOpen, ArrowRight, AlertCircle, Briefcase, Layers, Clock, CloudRain, CalendarDays } from "lucide-react"
 import { isToday, isPast } from "date-fns"
 import Link from "next/link"
 import { TaskCheckbox } from "@/components/tasks/TaskCheckbox"
@@ -10,6 +10,7 @@ import { HabitCheckButton } from "@/components/habits/HabitCheckButton"
 import { QuickAddTask } from "@/components/dashboard/QuickAddTask"
 import { OnboardingCard } from "@/components/dashboard/OnboardingCard"
 import { getWeatherFromSettings } from "@/lib/weather"
+import { getValidToken, fetchCalendarEvents } from "@/lib/auth"
 
 export const dynamic = "force-dynamic"
 
@@ -37,10 +38,30 @@ export default async function DashboardPage() {
   let dreams: any[] = []
   let projects: any[] = []
   let weather: any = null
+  let todayGEvents: any[] = []
 
   try {
     const settings = await prisma.settings.findUnique({ where: { id: "singleton" } })
     weather = settings ? await getWeatherFromSettings(settings) : null
+  } catch {}
+
+  try {
+    const calAccount = await prisma.googleAccount.findFirst({ where: { useCalendar: true } })
+    if (calAccount) {
+      const token = await getValidToken(calAccount.email)
+      if (token) {
+        const all = await fetchCalendarEvents(token, 1, 0)
+        const td = format(new Date(), "yyyy-MM-dd")
+        todayGEvents = all.filter((e: any) => {
+          const d = e.start.dateTime ? format(new Date(e.start.dateTime), "yyyy-MM-dd") : e.start.date
+          return d === td
+        }).sort((a: any, b: any) => {
+          const ta = a.start.dateTime ? new Date(a.start.dateTime).getTime() : 0
+          const tb = b.start.dateTime ? new Date(b.start.dateTime).getTime() : 0
+          return ta - tb
+        })
+      }
+    }
   } catch {}
 
   try {
@@ -209,6 +230,33 @@ export default async function DashboardPage() {
           </Link>
         </div>
       </section>
+
+      {/* 今日のGoogleカレンダー予定 */}
+      {todayGEvents.length > 0 && (
+        <div className="px-4 pb-3 md:px-8 lg:px-10 xl:px-16 animate-fade-in">
+          <div className="rounded-xl px-4 py-3" style={{ background: "rgba(74,222,128,0.04)", border: "1px solid rgba(74,222,128,0.15)" }}>
+            <div className="flex items-center gap-2 mb-2">
+              <CalendarDays size={11} style={{ color: "#4ade80" }} />
+              <span className="text-[10px] font-mono tracking-widest" style={{ color: "#4ade80" }}>TODAY'S SCHEDULE</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {todayGEvents.map((ev: any) => {
+                const timeStr = ev.start.dateTime
+                  ? (() => { const d = new Date(ev.start.dateTime); return `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}` })()
+                  : "終日"
+                return (
+                  <a key={ev.id} href={ev.htmlLink} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-lg hover:opacity-80 transition-opacity"
+                    style={{ background: "rgba(74,222,128,0.1)", border: "1px solid rgba(74,222,128,0.2)", color: "var(--text)" }}>
+                    <span className="font-mono text-[10px]" style={{ color: "#4ade80" }}>{timeStr}</span>
+                    <span>{ev.summary}</span>
+                  </a>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 今日のフォーカス — タスクと大目標の接続 */}
       {totalActiveTasks > 0 && (() => {

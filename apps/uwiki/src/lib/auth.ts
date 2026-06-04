@@ -106,13 +106,13 @@ export async function getValidToken(email: string): Promise<string | null> {
 }
 
 // Google Calendar イベント取得
-export async function fetchCalendarEvents(accessToken: string, days = 14) {
+export async function fetchCalendarEvents(accessToken: string, days = 14, pastDays = 0) {
   const now = new Date()
-  const end = new Date(now)
-  end.setDate(end.getDate() + days)
+  const start = new Date(now); start.setDate(start.getDate() - pastDays)
+  const end = new Date(now); end.setDate(end.getDate() + days)
 
   const url = new URL("https://www.googleapis.com/calendar/v3/calendars/primary/events")
-  url.searchParams.set("timeMin", now.toISOString())
+  url.searchParams.set("timeMin", start.toISOString())
   url.searchParams.set("timeMax", end.toISOString())
   url.searchParams.set("singleEvents", "true")
   url.searchParams.set("orderBy", "startTime")
