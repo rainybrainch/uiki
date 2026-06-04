@@ -138,7 +138,7 @@ export default async function DashboardPage() {
           {greeting.sub}
         </p>
 
-        {/* クイックタ��ク追加 — greeting 直下でいつでも��力できる */}
+        {/* クイックタスク追加 */}
         <div className="mt-5 relative max-w-xl">
           <QuickAddTask projects={projects} />
         </div>
