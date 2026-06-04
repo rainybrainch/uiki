@@ -4,6 +4,7 @@ import { classifyMails, CATEGORY_COLORS } from "@/lib/mail-classify"
 import type { MailCategory } from "@/lib/mail-classify"
 import { Mail, AlertCircle } from "lucide-react"
 import Link from "next/link"
+import { MailItem } from "@/components/mail/MailItem"
 
 export const dynamic = "force-dynamic"
 
@@ -124,50 +125,21 @@ export default async function MailPage() {
               const { name } = parseFrom(m.from)
               const acColor = ACCOUNT_COLORS[m.account] ?? "#888"
               const catColor = info ? (CATEGORY_COLORS[info.category] ?? "#888") : "#888"
-              const isHigh = info?.priority === 1
 
               return (
-                <div key={`${m.account}:${m.id}`}
-                  className="rounded-xl p-3 transition-colors"
-                  style={{
-                    background: isHigh ? "rgba(248,113,113,0.06)" : m.unread ? `${acColor}08` : "transparent",
-                    border: `1px solid ${isHigh ? "rgba(248,113,113,0.25)" : m.unread ? `${acColor}20` : "var(--border)"}`,
-                  }}>
-                  <div className="flex items-start gap-2.5">
-                    {/* アカウントカラードット */}
-                    <div className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0"
-                      style={{ background: acColor, opacity: m.unread ? 1 : 0.35 }} />
-
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2 mb-0.5 flex-wrap">
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          {isHigh && <span className="text-[9px] font-bold shrink-0" style={{ color: "#f87171" }}>!!!</span>}
-                          <span className={`text-xs truncate ${m.unread ? "font-medium" : "text-dim"}`}>{name}</span>
-                          {info && (
-                            <span className="text-[9px] px-1.5 py-0.5 rounded-full shrink-0"
-                              style={{ background: `${catColor}18`, color: catColor }}>
-                              {info.category}
-                            </span>
-                          )}
-                        </div>
-                        <span className="text-[10px] text-faint shrink-0">{relativeTime(m.date)}</span>
-                      </div>
-
-                      <p className={`text-sm mb-0.5 truncate ${m.unread ? "font-medium" : "text-dim"}`}>
-                        {m.subject}
-                      </p>
-
-                      {/* AI要約（ある場合） */}
-                      {info?.summary ? (
-                        <p className="text-[11px] leading-relaxed" style={{ color: "rgba(255,255,255,0.45)" }}>
-                          {info.summary}
-                        </p>
-                      ) : (
-                        <p className="text-[11px] text-faint line-clamp-1">{m.snippet}</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                <MailItem
+                  key={`${m.account}:${m.id}`}
+                  name={name}
+                  subject={m.subject}
+                  summary={info?.summary ?? null}
+                  snippet={m.snippet}
+                  relativeTime={relativeTime(m.date)}
+                  acColor={acColor}
+                  catColor={catColor}
+                  catLabel={info?.category ?? null}
+                  isHigh={info?.priority === 1}
+                  isUnread={m.unread}
+                />
               )
             })}
           </div>
