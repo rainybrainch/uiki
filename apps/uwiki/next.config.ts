@@ -1,7 +1,7 @@
 import type { NextConfig } from "next"
 
 const nextConfig: NextConfig = {
-  transpilePackages: ["@uwiki/database"],
+  serverExternalPackages: ["@prisma/client", "@uwiki/database"],
   experimental: {
     serverActions: {
       bodySizeLimit: "2mb",
