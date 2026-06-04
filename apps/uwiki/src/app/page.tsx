@@ -2,13 +2,14 @@ import { prisma } from "@/lib/db"
 import { today, calcStreak, formatDisplay } from "@/lib/date"
 import { format, startOfDay } from "date-fns"
 import { ja } from "date-fns/locale"
-import { CheckSquare, Repeat2, BookOpen, ArrowRight, AlertCircle, Briefcase, Layers, Clock } from "lucide-react"
+import { CheckSquare, Repeat2, BookOpen, ArrowRight, AlertCircle, Briefcase, Layers, Clock, CloudRain, Thermometer } from "lucide-react"
 import { isToday, isPast } from "date-fns"
 import Link from "next/link"
 import { TaskCheckbox } from "@/components/tasks/TaskCheckbox"
 import { HabitCheckButton } from "@/components/habits/HabitCheckButton"
 import { QuickAddTask } from "@/components/dashboard/QuickAddTask"
 import { OnboardingCard } from "@/components/dashboard/OnboardingCard"
+import { getWeatherFromSettings } from "@/lib/weather"
 
 export const dynamic = "force-dynamic"
 
@@ -35,6 +36,12 @@ export default async function DashboardPage() {
   let cases: any[] = []
   let dreams: any[] = []
   let projects: any[] = []
+  let weather: any = null
+
+  try {
+    const settings = await prisma.settings.findUnique({ where: { id: "singleton" } })
+    weather = settings ? await getWeatherFromSettings(settings) : null
+  } catch {}
 
   try {
     ;[tasks, habits, recentDiaries, doneTasks, totalActiveTasks, overdueCount, cases, dreams, projects] = await Promise.all([
@@ -90,9 +97,19 @@ export default async function DashboardPage() {
         <div className="absolute inset-0 pointer-events-none" style={{
           background: "radial-gradient(ellipse 60% 40% at 30% 0%, rgba(58,111,201,0.07) 0%, transparent 70%)",
         }} />
-        <p className="text-xs font-mono tracking-widest mb-3 text-dim relative">
-          {format(new Date(), "yyyy / MM / dd  E", { locale: ja })}
-        </p>
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-xs font-mono tracking-widest text-dim relative">
+            {format(new Date(), "yyyy / MM / dd  E", { locale: ja })}
+          </p>
+          {weather && (
+            <Link href="/settings" className="flex items-center gap-2 text-xs text-dim hover:text-white transition-colors relative">
+              <CloudRain size={11} style={{ color: "var(--accent)" }} />
+              <span>{weather.city}</span>
+              <span className="font-mono">{weather.temperature}°C</span>
+              <span className="text-faint">{weather.description}</span>
+            </Link>
+          )}
+        </div>
         <h1 className="font-serif text-2xl md:text-3xl lg:text-4xl font-light tracking-wider leading-none mb-1 relative">
           {greeting.text}
         </h1>

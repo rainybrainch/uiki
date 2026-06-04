@@ -1,5 +1,6 @@
 import type { NextAuthOptions } from "next-auth"
 import GoogleProvider from "next-auth/providers/google"
+import { prisma } from "@/lib/db"
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -22,11 +23,35 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, account }) {
+    async jwt({ token, account, profile }) {
       if (account) {
         token.accessToken  = account.access_token
         token.refreshToken = account.refresh_token
         token.expiresAt    = account.expires_at
+        // メイン Google アカウントを GoogleAccount テーブルにも保存
+        const email = (profile as any)?.email
+        if (email && account.access_token) {
+          try {
+            await prisma.googleAccount.upsert({
+              where: { email },
+              update: {
+                accessToken:  account.access_token,
+                refreshToken: account.refresh_token ?? null,
+                expiresAt:    account.expires_at ? BigInt(account.expires_at * 1000) : null,
+                useCalendar:  true,
+                useGmail:     true,
+              },
+              create: {
+                email,
+                accessToken:  account.access_token,
+                refreshToken: account.refresh_token ?? null,
+                expiresAt:    account.expires_at ? BigInt(account.expires_at * 1000) : null,
+                useCalendar:  true,
+                useGmail:     true,
+              },
+            })
+          } catch {}
+        }
       }
       return token
     },
