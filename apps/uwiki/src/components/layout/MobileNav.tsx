@@ -15,13 +15,13 @@ const PRIMARY = [
   { href: "/",         label: "ホーム",      icon: LayoutDashboard },
   { href: "/tasks",    label: "タスク",      icon: CheckSquare },
   { href: "/calendar", label: "カレンダー",  icon: CalendarDays },
-  { href: "/habits",   label: "習慣",        icon: Repeat2 },
+  { href: "/mail",     label: "メール",      icon: Mail,          color: "#14b8a6" },
 ]
 
 /* ─── もっとメニュー内の全ナビ ─── */
 const MORE_NAV = [
   { href: "/diary",                  label: "日記",       icon: BookOpen },
-  { href: "/mail",                   label: "メール",     icon: Mail,        color: "#14b8a6" },
+  { href: "/habits",                 label: "習慣",       icon: Repeat2 },
   { href: "/library",               label: "ライブラリ", icon: Library },
   { href: "/yomu",                  label: "読雨",       icon: BookMarked,  color: "#3a6fc9" },
   { href: "/report",                label: "レポート",   icon: BarChart2 },
