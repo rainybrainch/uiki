@@ -4,7 +4,7 @@ import { useState, useTransition, useRef } from "react"
 import { format } from "date-fns"
 import { createLibraryItem } from "@/actions/library"
 import { Plus, ChevronDown, ChevronUp } from "lucide-react"
-import type { ItemType, ItemStatus } from "@/generated/client"
+import type { ItemType, ItemStatus } from "@uwiki/database"
 
 export function LibraryAddForm({ typeLabels }: { typeLabels: Record<string, string> }) {
   const [open, setOpen] = useState(false)

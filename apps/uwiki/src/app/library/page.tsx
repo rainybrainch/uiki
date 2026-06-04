@@ -3,7 +3,7 @@ import { LibraryList } from "@/components/library/LibraryList"
 import { LibraryAddForm } from "@/components/library/LibraryAddForm"
 import { LibraryFilter } from "@/components/library/LibraryFilter"
 import { Library } from "lucide-react"
-import type { ItemType, ItemStatus } from "@/generated/client"
+import type { ItemType, ItemStatus } from "@uwiki/database"
 
 export const dynamic = "force-dynamic"
 

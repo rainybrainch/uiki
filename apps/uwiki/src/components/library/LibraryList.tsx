@@ -5,7 +5,7 @@ import { updateLibraryItem, deleteLibraryItem } from "@/actions/library"
 import { ExternalLink, Star, Trash2, Search, X, ArrowUpDown } from "lucide-react"
 import { ConfirmButton } from "@/components/ui/ConfirmButton"
 import clsx from "clsx"
-import type { ItemStatus } from "@/generated/client"
+import type { ItemStatus } from "@uwiki/database"
 
 type SortKey = "newest" | "oldest" | "rating" | "title"
 const SORT_LABELS: Record<SortKey, string> = {

@@ -1,4 +1,4 @@
-import { PrismaClient } from "../generated/client"
+import { PrismaClient } from "@uwiki/database"
 import { PrismaNeon } from "@prisma/adapter-neon"
 import { neon } from "@neondatabase/serverless"
 
