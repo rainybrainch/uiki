@@ -42,7 +42,9 @@ export async function syncAllToGist() {
       headers: { Authorization: `token ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify({ files: { "rainybrain-personas.json": { content } } }),
     })
-  } catch {}
+  } catch (e) {
+    console.error("[persona-generate] Gist sync failed:", e)
+  }
 }
 
 export async function runGeneration(source: {

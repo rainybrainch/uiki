@@ -60,7 +60,8 @@ export async function geocodeCity(city: string): Promise<{ lat: number; lon: num
     const r = data.results?.[0]
     if (!r) return null
     return { lat: r.latitude, lon: r.longitude, name: r.name }
-  } catch {
+  } catch (e) {
+    console.error("[weather] geocode failed:", e)
     return null
   }
 }
@@ -101,7 +102,8 @@ export async function getWeatherFromSettings(settings: {
   if (!settings.city || !settings.lat || !settings.lon) return null
   try {
     return await fetchWeather(settings.lat, settings.lon, settings.city)
-  } catch {
+  } catch (e) {
+    console.error("[weather] fetch failed:", e)
     return null
   }
 }
