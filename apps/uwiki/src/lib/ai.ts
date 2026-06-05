@@ -60,7 +60,10 @@ export async function geminiGenerate(
 
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     const keyInfo = getAvailableKey()
-    if (!keyInfo) return ""
+    if (!keyInfo) {
+      console.error("[ai] No Gemini API keys configured")
+      return ""
+    }
 
     try {
       const genAI = new GoogleGenerativeAI(keyInfo.key)
@@ -70,8 +73,11 @@ export async function geminiGenerate(
     } catch (err: any) {
       const status = err?.status ?? err?.response?.status
       if (status === 429 || err?.message?.includes("429") || err?.message?.includes("RESOURCE_EXHAUSTED")) {
-        // 60秒冷却
         cooldownUntil[keyInfo.index] = Date.now() + 60_000
+        // 全キーが冷却中なら即終了
+        const now = Date.now()
+        const allCooling = KEY_ENV_NAMES.every((_, i) => cooldownUntil[i] && cooldownUntil[i] > now)
+        if (allCooling) { console.warn("[ai] All Gemini keys cooling down"); return "" }
         continue
       }
       if (status === 503 || status === 500) {
