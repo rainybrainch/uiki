@@ -19,7 +19,7 @@ export async function createAdjustment(data: {
     data: { ...data, month },
   })
   revalidatePath("/report")
-  revalidatePath("/adjust")
+  revalidatePath("/")
 }
 
 export async function updateAdjustmentResult(id: string, result: string) {
@@ -28,11 +28,11 @@ export async function updateAdjustmentResult(id: string, result: string) {
     data: { result },
   })
   revalidatePath("/report")
-  revalidatePath("/adjust")
+  revalidatePath("/")
 }
 
 export async function deleteAdjustment(id: string) {
   await prisma.adjustmentLog.delete({ where: { id } })
   revalidatePath("/report")
-  revalidatePath("/adjust")
+  revalidatePath("/")
 }
