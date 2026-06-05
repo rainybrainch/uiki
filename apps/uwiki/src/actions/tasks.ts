@@ -74,14 +74,14 @@ export async function completeRecurringTask(id: string) {
       recurrence: task.recurrence,
       recNextDate: nextRecurrence(nextDate, task.recurrence as Recurrence),
       projectId: task.projectId,
-      dreamId: (task as any).dreamId ?? null, // 百層世界リンクを引き継ぐ
+      dreamId: task.dreamId ?? null,
       completed: false,
     },
   })
 
   // 繰り返し完了時も dream 進捗を同期
   try {
-    const dreamId = (task as any).dreamId
+    const dreamId = task.dreamId
       ?? (task.projectId ? await getDreamIdFromProject(task.projectId) : null)
     if (dreamId) await syncDreamProgress(dreamId)
   } catch (e) { console.error("[completeRecurringTask/dreamSync]", e) }
