@@ -44,7 +44,9 @@ export default async function ReportPage() {
       prisma.adjustmentLog.findMany({ orderBy: { createdAt: "desc" }, take: 10 }),
       prisma.case.findMany({ where: { status: { not: "DONE" } }, orderBy: { createdAt: "desc" } }),
     ])
-  } catch {}
+  } catch (e) {
+    console.error("[report] DB query failed:", e)
+  }
 
   try {
     doneTasksList = await prisma.task.findMany({
@@ -53,7 +55,9 @@ export default async function ReportPage() {
       take: 6,
       select: { id: true, title: true, priority: true },
     })
-  } catch {}
+  } catch (e) {
+    console.error("[report] doneTasksList query failed:", e)
+  }
 
   try {
     past4Weeks = await Promise.all(
@@ -64,7 +68,9 @@ export default async function ReportPage() {
         return { label: format(s, "M/d"), rate: habits.length > 0 ? count / (habits.length * 7) : 0 }
       })
     )
-  } catch {}
+  } catch (e) {
+    console.error("[report] past4Weeks query failed:", e)
+  }
 
   const weekDays = 7
   const maxHabits = habits.length * weekDays

@@ -12,7 +12,8 @@ export function YomuHealthChart({ label, unit, dates, values }: {
 
   const latest = values[values.length - 1]
   const prev   = values[values.length - 2]
-  const trend  = prev !== undefined ? latest - prev : 0
+  const diff   = prev !== undefined ? latest - prev : 0
+  const trend  = isNaN(diff) ? 0 : diff
 
   const min = Math.min(...values)
   const max = Math.max(...values)

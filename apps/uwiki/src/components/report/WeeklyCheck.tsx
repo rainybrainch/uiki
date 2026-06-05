@@ -14,7 +14,12 @@ export function WeeklyCheck({ dreams, adjustments }: { dreams: any[]; adjustment
   const [dream, setDream] = useState("")
   const [isPending, startTransition] = useTransition()
 
-  const weekChecks = adjustments.filter((a) => a.type === "WEEKLY").slice(0, 3)
+  const now = new Date()
+  const weekStart = new Date(now); weekStart.setDate(now.getDate() - now.getDay())
+  weekStart.setHours(0, 0, 0, 0)
+  const weekChecks = adjustments
+    .filter((a) => a.type === "WEEKLY" && new Date(a.createdAt) >= weekStart)
+    .slice(0, 3)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()

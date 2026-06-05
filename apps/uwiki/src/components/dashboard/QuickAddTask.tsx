@@ -37,6 +37,7 @@ function getHint(value: string): string | null {
 export function QuickAddTask({ projects = [] }: { projects?: Project[] }) {
   const [value, setValue] = useState("")
   const [done, setDone] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -46,7 +47,11 @@ export function QuickAddTask({ projects = [] }: { projects?: Project[] }) {
     e.preventDefault()
     if (!value.trim()) return
     const parsed = parseInput(value, projects)
-    if (!parsed.title) return
+    if (!parsed.title) {
+      setError("タイトルが空です")
+      return
+    }
+    setError(null)
     startTransition(async () => {
       await createTask({ title: parsed.title, priority: parsed.priority, projectId: parsed.projectId })
       setValue("")
@@ -98,7 +103,10 @@ export function QuickAddTask({ projects = [] }: { projects?: Project[] }) {
           </button>
         )}
       </form>
-      {hint && !done && (
+      {error && !done && (
+        <p className="text-[10px] mt-1.5 px-1" style={{ color: "var(--red)" }}>{error}</p>
+      )}
+      {hint && !done && !error && (
         <p className="text-[10px] mt-1.5 px-1" style={{ color: "var(--dim)" }}>{hint}</p>
       )}
     </div>
