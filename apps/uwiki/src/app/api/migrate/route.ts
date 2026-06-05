@@ -7,6 +7,10 @@ function today8() {
 }
 
 export async function POST(req: NextRequest) {
+  const secret = req.headers.get("authorization")?.replace("Bearer ", "")
+  if (secret !== process.env.CRON_SECRET) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 })
+  }
   try {
     const body = await req.json()
     const results: Record<string, number> = {}
