@@ -1,19 +1,5 @@
 import { prisma } from "@/lib/db"
-
-const GEMINI_KEYS = [
-  process.env.GEMINI_KEY_1 || process.env.GEMINI_API_KEY,
-  process.env.GEMINI_KEY_2 || process.env.GEMINI_API_KEY_2,
-  process.env.GEMINI_KEY_3 || process.env.GEMINI_API_KEY_3,
-  process.env.GEMINI_KEY_4 || process.env.GEMINI_API_KEY_4,
-  process.env.GEMINI_KEY_5 || process.env.GEMINI_API_KEY_5,
-].filter(Boolean) as string[]
-
-let geminiKeyIndex = 0
-function nextGeminiKey() {
-  const key = GEMINI_KEYS[geminiKeyIndex % GEMINI_KEYS.length]
-  geminiKeyIndex++
-  return key
-}
+import { ai } from "@/lib/ai"
 
 export async function syncAllToGist() {
   const gistId = process.env.PERSONA_GIST_ID || ""
@@ -50,9 +36,6 @@ export async function syncAllToGist() {
 export async function runGeneration(source: {
   id: string; url: string; description: string; streamGenres: string
 }): Promise<{ ok?: boolean; created?: number; error?: string }> {
-  const key = nextGeminiKey()
-  if (!key) return { error: "Gemini APIキーが設定されていません" }
-
   const streamGenres = source.streamGenres || "配信,エンタメ"
   const prompt = `You create YouTube live chat personas for a Japanese streaming simulator.
 
@@ -68,20 +51,8 @@ roleType: 共感勢|知識勢|質問勢|懐疑勢|応援勢|初心者勢|ネタ�
 genresには${streamGenres}を2-3個含めること。日本語で。`
 
   try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.92, maxOutputTokens: 2000 }
-        })
-      }
-    )
-    if (!res.ok) throw new Error(`API ${res.status}`)
-    const data = await res.json()
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || ""
+    const text = await ai.flash(prompt)
+    if (!text) return { error: "AI生成に失敗しました" }
     const match = text.match(/\[[\s\S]*?\]/)
     if (!match) throw new Error("JSONが見つかりません")
 
