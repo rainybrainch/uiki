@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
   // GoogleAccount テーブルのトークンを優先（再ログイン不要）
   const calAccount = await prisma.googleAccount.findFirst({ where: { useCalendar: true } }).catch(() => null)
   const session = calAccount ? null : await getServerSession(authOptions)
-  const accessToken = calAccount?.accessToken ?? (session as any)?.accessToken
+  const accessToken = calAccount?.accessToken ?? (session as { accessToken?: string } | null)?.accessToken
   if (!accessToken) {
     return NextResponse.json({ error: "Googleカレンダー未連携" }, { status: 401 })
   }

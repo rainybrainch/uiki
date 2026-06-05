@@ -41,7 +41,7 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
 
   if (!task) notFound()
 
-  const ancestors = await fetchAncestors((task as any).parentTaskId ?? null)
+  const ancestors = await fetchAncestors((task as { parentTaskId?: string | null }).parentTaskId ?? null)
 
   return <TaskDetailClient task={task} projects={projects} ancestors={ancestors} dreams={dreams} />
 }
