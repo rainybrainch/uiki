@@ -8,6 +8,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 })
   }
 
+  // No.5（RB-Tree 配信フロー）を削除
+  const deleteTarget = await prisma.dream.findFirst({ where: { layer: 5 } })
+  let deleted = null
+  if (deleteTarget) {
+    await prisma.dream.delete({ where: { id: deleteTarget.id } })
+    deleted = deleteTarget.title
+  }
+
+  // No.1・No.2 を upsert
   const dreams = [
     {
       id: "dream-no1-hyakuso",
@@ -43,14 +52,19 @@ export async function POST(req: Request) {
 
   const results = []
   for (const dream of dreams) {
-    const existing = await prisma.dream.findUnique({ where: { id: dream.id } })
-    if (!existing) {
-      await prisma.dream.create({ data: dream })
-      results.push({ created: dream.title })
-    } else {
-      results.push({ skipped: dream.title })
-    }
+    await prisma.dream.upsert({
+      where: { id: dream.id },
+      create: dream,
+      update: dream,
+    })
+    results.push({ upserted: dream.title })
   }
 
-  return NextResponse.json({ ok: true, results })
+  // 現在の全データを返す
+  const all = await prisma.dream.findMany({
+    orderBy: { layer: "asc" },
+    select: { layer: true, title: true, category: true, progress: true },
+  })
+
+  return NextResponse.json({ ok: true, deleted, results, all })
 }
