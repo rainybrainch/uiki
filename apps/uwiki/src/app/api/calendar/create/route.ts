@@ -12,14 +12,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Googleカレンダー未連携" }, { status: 401 })
   }
 
-  const { title, date, endDate, allDay, description } = await req.json()
+  const body = await req.json() as {
+    title?: string; date?: string; endDate?: string; allDay?: boolean; description?: string
+  }
+  const { title, date, endDate, allDay, description } = body
   if (!title || !date) {
     return NextResponse.json({ error: "タイトルと日付は必須" }, { status: 400 })
   }
 
-  const event: any = {
+  const event: {
+    summary: string; description: string
+    start: { date?: string; dateTime?: string; timeZone?: string }
+    end:   { date?: string; dateTime?: string; timeZone?: string }
+  } = {
     summary: title,
     description: description ?? "",
+    start: {},
+    end: {},
   }
 
   if (allDay) {
@@ -29,6 +38,7 @@ export async function POST(req: NextRequest) {
     event.start = { dateTime: `${date}T09:00:00`, timeZone: "Asia/Tokyo" }
     event.end   = { dateTime: `${date}T10:00:00`, timeZone: "Asia/Tokyo" }
   }
+
 
   const res = await fetch(
     "https://www.googleapis.com/calendar/v3/calendars/primary/events",
@@ -43,10 +53,11 @@ export async function POST(req: NextRequest) {
   )
 
   if (!res.ok) {
-    const err = await res.json()
+    const err = await res.json() as { error?: { message?: string } }
+    console.error("[calendar/create] Google API error:", err)
     return NextResponse.json({ error: err?.error?.message ?? "作成失敗" }, { status: 500 })
   }
 
-  const created = await res.json()
+  const created = await res.json() as { id: string; htmlLink: string }
   return NextResponse.json({ ok: true, id: created.id, htmlLink: created.htmlLink })
 }
