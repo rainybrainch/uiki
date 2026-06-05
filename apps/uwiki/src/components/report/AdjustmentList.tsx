@@ -49,7 +49,9 @@ export function AdjustmentList({ adjustments, dreams }: { adjustments: any[]; dr
             {dreams.length > 0 && (
               <select value={dream} onChange={(e) => setDream(e.target.value)} className="input-base text-xs">
                 <option value="">関連する世界（任意）</option>
-                {dreams.map((d) => <option key={d.id} value={d.title}>{d.title}</option>)}
+                {dreams.filter((d) => d.id && d.title).map((d) => (
+                  <option key={d.id} value={d.title}>{d.title}</option>
+                ))}
               </select>
             )}
           </div>

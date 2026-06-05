@@ -43,9 +43,10 @@ export default async function LibraryPage({
   } catch {
     // DB未接続時はデフォルト値
   }
-  const typeCounts = Object.fromEntries(
-    Object.keys(TYPE_LABELS).map((t) => [t, all.filter((i) => i.type === t).length])
-  )
+  const typeCounts: Record<string, number> = {}
+  for (const item of all) {
+    typeCounts[item.type] = (typeCounts[item.type] ?? 0) + 1
+  }
 
   return (
     <div className="h-full flex flex-col max-w-5xl mx-auto w-full">

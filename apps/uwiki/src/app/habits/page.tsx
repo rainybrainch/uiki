@@ -19,8 +19,8 @@ export default async function HabitsPage() {
       include: { logs: { orderBy: { date: "desc" } } },
       orderBy: { createdAt: "asc" },
     })
-  } catch {
-    // DB未接続時はデフォルト値
+  } catch (e) {
+    console.error("[habits] DB query failed:", e)
   }
 
   const last7 = Array.from({ length: 7 }, (_, i) => {
