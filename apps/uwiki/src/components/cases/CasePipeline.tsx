@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react"
 import { updateCaseStatus, updateCasePaid, deleteCase, updateCase } from "@/actions/cases"
+import { CaseStatus } from "@uwiki/database"
 import { format, differenceInCalendarDays, startOfDay } from "date-fns"
 import { ja } from "date-fns/locale"
 import { ChevronRight, Check, Trash2, Clock, Pencil, X } from "lucide-react"
@@ -97,7 +98,7 @@ function CaseCard({ c }: { c: any }) {
   const handleNext = () => {
     if (!next) return
     if (next === "DONE") { setShowPay(true); return }
-    startTransition(() => updateCaseStatus(c.id, next))
+    startTransition(() => updateCaseStatus(c.id, next as CaseStatus))
   }
 
   const handlePaid = () => {

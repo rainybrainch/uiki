@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
+import { CaseStatus } from "@uwiki/database"
 
 export async function createCase(data: {
   name: string
@@ -48,10 +49,10 @@ export async function updateCase(id: string, data: {
   revalidatePath("/")
 }
 
-export async function updateCaseStatus(id: string, status: string) {
+export async function updateCaseStatus(id: string, status: CaseStatus) {
   await prisma.case.update({
     where: { id },
-    data: { status: status as any },
+    data: { status },
   })
   revalidatePath("/cases")
   revalidatePath("/")
@@ -60,7 +61,7 @@ export async function updateCaseStatus(id: string, status: string) {
 export async function updateCasePaid(id: string, paidAmount: number) {
   await prisma.case.update({
     where: { id },
-    data: { paidAmount, status: "DONE" as any },
+    data: { paidAmount, status: CaseStatus.DONE },
   })
   revalidatePath("/cases")
   revalidatePath("/")
