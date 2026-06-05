@@ -49,9 +49,10 @@ JSON形式で返してください:
     enrichPersonasFromContent({
       title: params.title, type: params.type,
       impression: output.text, tags: output.tags,
-    }).catch(() => {})
+    }).catch((e) => console.error("[ai-write] persona enrich failed:", e))
     return output
-  } catch {
+  } catch (e) {
+    console.error("[ai-write] generation failed:", e)
     return { text: params.rawImpression, stars: 3, tags: "" }
   }
 }

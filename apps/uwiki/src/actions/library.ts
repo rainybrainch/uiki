@@ -24,7 +24,7 @@ export async function createLibraryItem(data: {
       creator: item.creator ?? undefined,
       tags: item.tags ?? undefined,
       impression: item.note ?? undefined,
-    }).catch(() => {})
+    }).catch((e) => console.error("[library] persona enrich failed:", e))
   }
   revalidatePath("/library")
   revalidatePath("/")
@@ -49,7 +49,7 @@ export async function updateLibraryItem(
       creator: item.creator ?? undefined,
       tags: item.tags ?? undefined,
       impression: item.note ?? undefined,
-    }).catch(() => {})
+    }).catch((e) => console.error("[library] persona enrich failed:", e))
   }
   revalidatePath("/library")
 }
