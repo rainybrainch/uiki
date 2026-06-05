@@ -41,7 +41,15 @@ export default async function TasksPage({
   let flowTaskCount = 0
   const projectWhere = {
     ...(projectFilter !== "all" ? { projectId: projectFilter } : {}),
-    ...(tagFilter ? { tags: { contains: tagFilter } } : {}),
+    // CSVタグの正確なマッチ（"重要" が "超重要" にマッチしないよう前後のカンマも考慮）
+    ...(tagFilter ? {
+      OR: [
+        { tags: { equals: tagFilter } },
+        { tags: { startsWith: `${tagFilter},` } },
+        { tags: { endsWith: `,${tagFilter}` } },
+        { tags: { contains: `,${tagFilter},` } },
+      ]
+    } : {}),
   }
 
   try {
