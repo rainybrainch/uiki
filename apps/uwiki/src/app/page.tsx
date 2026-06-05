@@ -43,7 +43,7 @@ export default async function DashboardPage() {
   try {
     const settings = await prisma.settings.findUnique({ where: { id: "singleton" } })
     weather = settings ? await getWeatherFromSettings(settings) : null
-  } catch {}
+  } catch (e) { console.error("[dashboard] error:", e) }
 
   try {
     const calAccount = await prisma.googleAccount.findFirst({ where: { useCalendar: true } })
@@ -62,7 +62,7 @@ export default async function DashboardPage() {
         })
       }
     }
-  } catch {}
+  } catch (e) { console.error("[dashboard] error:", e) }
 
   try {
     ;[tasks, habits, recentDiaries, doneTasks, totalActiveTasks, overdueCount, cases, dreams, projects] = await Promise.all([

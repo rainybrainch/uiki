@@ -37,7 +37,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     const settings = await prisma.settings.findUnique({ where: { id: "singleton" } })
     weather = settings ? await getWeatherFromSettings(settings) : null
     rainIntensity = weather?.rainIntensity ?? 0.35
-  } catch {}
+  } catch (e) { console.error("[layout] error:", e) }
 
   return (
     <html lang="ja">

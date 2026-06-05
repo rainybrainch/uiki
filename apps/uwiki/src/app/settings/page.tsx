@@ -19,7 +19,7 @@ export default async function SettingsPage() {
   try {
     settings = await getSettings()
     googleAccounts = await prisma.googleAccount.findMany({ orderBy: { createdAt: "asc" } })
-  } catch {}
+  } catch (e) { console.error("[page] error:", e) }
   const weather = settings ? await getWeatherFromSettings(settings) : null
 
   return (
