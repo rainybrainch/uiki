@@ -33,7 +33,7 @@ export default async function CasesPage({
       }),
       prisma.case.findMany({ orderBy: { createdAt: "desc" } }),
     ])
-  } catch {}
+  } catch (e) { console.error("[page] DB query failed:", e) }
 
   const earned = allCases
     .filter((c) => c.status === "DONE")

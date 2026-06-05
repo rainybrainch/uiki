@@ -13,13 +13,13 @@ export default async function PersonasPage() {
     personas = await prisma.commentPersona.findMany({
       orderBy: { createdAt: "desc" },
     })
-  } catch {}
+  } catch (e) { console.error("[page] DB query failed:", e) }
 
   try {
     youtubeSources = await prisma.personaYoutubeSource.findMany({
       orderBy: { createdAt: "desc" },
     })
-  } catch {}
+  } catch (e) { console.error("[page] DB query failed:", e) }
 
   const enabledCount = personas.filter((p) => p.enabled).length
 

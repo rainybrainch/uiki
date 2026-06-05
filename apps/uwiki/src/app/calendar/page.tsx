@@ -37,7 +37,7 @@ export default async function CalendarPage({
         googleEvents = await fetchCalendarEvents(session.accessToken, 120, 60)
       }
     }
-  } catch {}
+  } catch (e) { console.error("[page] DB query failed:", e) }
 
   let tasks: any[] = []
   let diaryEntries: any[] = []

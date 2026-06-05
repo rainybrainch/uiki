@@ -29,7 +29,7 @@ export default async function DreamsPage() {
   let dreams: any[] = []
   try {
     dreams = await prisma.dream.findMany({ orderBy: [{ achieved: "asc" }, { layer: "asc" }, { order: "asc" }] })
-  } catch {}
+  } catch (e) { console.error("[page] DB query failed:", e) }
 
   // ルート定義（百層世界自体）を分離
   const rootDream = dreams.find((d) => d.id === "hyakuso-root")

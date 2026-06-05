@@ -24,7 +24,7 @@ export default async function Page({
         orderBy: { order: "asc" },
       }),
     ])
-  } catch {}
+  } catch (e) { console.error("[page] DB query failed:", e) }
 
   const last14Days = Array.from({ length: 14 }, (_, i) =>
     format(subDays(new Date(), 13 - i), "yyyy-MM-dd")
