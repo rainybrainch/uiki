@@ -1,8 +1,11 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 
-// 一時的なシードエンドポイント — 使用後削除
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const secret = req.headers.get("authorization")?.replace("Bearer ", "")
+  if (secret !== process.env.CRON_SECRET) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 })
+  }
   const all = await prisma.dream.findMany({
     orderBy: { layer: "asc" },
     select: { layer: true, title: true, category: true, progress: true, achieved: true },
