@@ -137,7 +137,8 @@ export function GravityInternal({ logs }: { logs: any[] }) {
             まだ、砂は降っていない
           </p>
         ) : logs.map((log) => {
-          const w = WEIGHTS.find((w) => w.val === log.intensity) ?? WEIGHTS[0]
+          const validVals = WEIGHTS.map((w) => w.val)
+          const w = WEIGHTS.find((w) => w.val === log.intensity) ?? WEIGHTS[validVals.indexOf(Math.min(...validVals.filter(v => v <= (log.intensity ?? 1)))) ?? 0] ?? WEIGHTS[0]
           return (
             <div
               key={log.id}
