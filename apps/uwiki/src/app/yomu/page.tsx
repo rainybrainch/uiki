@@ -30,7 +30,7 @@ function Stars({ n }: { n?: number }) {
 
 function formatDate(d: string) {
   if (d.length === 8) d = `${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)}`
-  try { return format(new Date(d), "yyyy/MM/dd", { locale: ja }) } catch { return d }
+  try { return format(new Date(d), "yyyy/MM/dd", { locale: ja }) } catch (e) { console.error("[yomu] date parse failed:", d, e); return d }
 }
 
 export default async function YomuPage() {
@@ -78,7 +78,7 @@ export default async function YomuPage() {
                   )}
                 </div>
                 <div className="flex flex-col items-end gap-1 shrink-0">
-                  <Stars n={Number((b as any).stars) || undefined} />
+                  <Stars n={b.stars ? Number(b.stars) : undefined} />
                   <span className="text-[10px] text-faint">{formatDate(b.date)}</span>
                 </div>
               </div>
