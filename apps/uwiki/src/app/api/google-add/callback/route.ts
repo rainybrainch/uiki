@@ -2,8 +2,16 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 
 export async function GET(req: NextRequest) {
+  const clientId     = process.env.GOOGLE_CLIENT_ID
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET
+  const nextAuthUrl  = process.env.NEXTAUTH_URL
+  if (!clientId || !clientSecret || !nextAuthUrl) {
+    console.error("[google-add/callback] Missing env vars")
+    return NextResponse.json({ error: "Server misconfigured" }, { status: 500 })
+  }
+
   const code = req.nextUrl.searchParams.get("code")
-  if (!code) return NextResponse.redirect(`${process.env.NEXTAUTH_URL}/settings?error=no_code`)
+  if (!code) return NextResponse.redirect(`${nextAuthUrl}/settings?error=no_code`)
 
   // code → tokens
   let tokens: any
@@ -13,16 +21,16 @@ export async function GET(req: NextRequest) {
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
         code,
-        client_id:     process.env.GOOGLE_CLIENT_ID!,
-        client_secret: process.env.GOOGLE_CLIENT_SECRET!,
-        redirect_uri:  `${process.env.NEXTAUTH_URL}/api/google-add/callback`,
+        client_id:     clientId,
+        client_secret: clientSecret,
+        redirect_uri:  `${nextAuthUrl}/api/google-add/callback`,
         grant_type:    "authorization_code",
       }),
     })
     tokens = await tokenRes.json()
   } catch (e) {
     console.error("[google-add/callback] token fetch failed:", e)
-    return NextResponse.redirect(`${process.env.NEXTAUTH_URL}/settings?error=token_failed`)
+    return NextResponse.redirect(`${nextAuthUrl}/settings?error=token_failed`)
   }
   if (!tokens.access_token) return NextResponse.redirect(`${process.env.NEXTAUTH_URL}/settings?error=token_failed`)
 
@@ -35,7 +43,7 @@ export async function GET(req: NextRequest) {
     user = await userRes.json()
   } catch (e) {
     console.error("[google-add/callback] userinfo fetch failed:", e)
-    return NextResponse.redirect(`${process.env.NEXTAUTH_URL}/settings?error=no_email`)
+    return NextResponse.redirect(`${nextAuthUrl}/settings?error=no_email`)
   }
   if (!user.email) return NextResponse.redirect(`${process.env.NEXTAUTH_URL}/settings?error=no_email`)
 
@@ -56,5 +64,5 @@ export async function GET(req: NextRequest) {
     },
   })
 
-  return NextResponse.redirect(`${process.env.NEXTAUTH_URL}/settings?added=${user.email}`)
+  return NextResponse.redirect(`${nextAuthUrl}/settings?added=${user.email}`)
 }
