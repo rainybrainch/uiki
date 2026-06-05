@@ -37,6 +37,13 @@ export function DiaryEditor({ date, entry }: { date: string; entry: Entry }) {
     setStatus("idle")
   }, [date, entry?.id])
 
+  // アンマウント時にオートセーブタイマーをクリア（メモリリーク防止）
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current)
+    }
+  }, [])
+
   const save = useCallback((t?: string, c?: string, m?: number | null, tg?: string) => {
     const s = stateRef.current
     const rt = t ?? s.title; const rc = c ?? s.content
