@@ -3,8 +3,17 @@ node_modules
 dist
 *.db
 *.db-journal
+
+# 環境変数（絶対にcommit禁止）
 .env
 .env.local
+.env.production
+.env.development
+.env.*.local
+**/.env
+**/.env.local
+**/.env.production
+
 .turbo
 packages/database/src/generated/
 packages/database/*.dll.node
