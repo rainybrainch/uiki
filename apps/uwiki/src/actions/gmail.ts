@@ -19,19 +19,24 @@ async function fetchMessages(accessToken: string, email: string, maxResults = 20
       { headers: { Authorization: `Bearer ${accessToken}` }, next: { revalidate: 300 } }
     )
     if (!listRes.ok) return []
-    const list = await listRes.json()
+    const list = await listRes.json() as { messages?: { id: string }[] }
     if (!list.messages) return []
 
     const messages = await Promise.all(
-      list.messages.slice(0, 15).map(async (m: { id: string }) => {
+      list.messages.slice(0, 15).map(async (m) => {
         const msgRes = await fetch(
           `https://gmail.googleapis.com/gmail/v1/users/me/messages/${m.id}?format=metadata&metadataHeaders=Subject&metadataHeaders=From&metadataHeaders=Date`,
           { headers: { Authorization: `Bearer ${accessToken}` }, next: { revalidate: 300 } }
         )
         if (!msgRes.ok) return null
-        const msg = await msgRes.json()
+        const msg = await msgRes.json() as {
+          id: string
+          snippet?: string
+          labelIds?: string[]
+          payload?: { headers?: { name: string; value: string }[] }
+        }
         const headers = msg.payload?.headers ?? []
-        const get = (name: string) => headers.find((h: any) => h.name === name)?.value ?? ""
+        const get = (name: string) => headers.find((h) => h.name === name)?.value ?? ""
         return {
           id:      msg.id,
           account: email,
@@ -43,8 +48,9 @@ async function fetchMessages(accessToken: string, email: string, maxResults = 20
         } satisfies GmailMessage
       })
     )
-    return messages.filter(Boolean) as GmailMessage[]
-  } catch {
+    return messages.filter((m): m is GmailMessage => m !== null)
+  } catch (e) {
+    console.error("[fetchMessages] failed:", e)
     return []
   }
 }
