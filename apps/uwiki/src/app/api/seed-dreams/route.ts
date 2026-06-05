@@ -2,6 +2,14 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 
 // 一時的なシードエンドポイント — 使用後削除
+export async function GET() {
+  const all = await prisma.dream.findMany({
+    orderBy: { layer: "asc" },
+    select: { layer: true, title: true, category: true, progress: true, achieved: true },
+  })
+  return NextResponse.json(all)
+}
+
 export async function POST(req: Request) {
   const { secret } = await req.json()
   if (secret !== process.env.CRON_SECRET) {
