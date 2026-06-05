@@ -16,13 +16,24 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 })
   }
 
-  // No.5（RB-Tree 配信フロー）→ No.10 に移動
-  const no5 = await prisma.dream.findFirst({ where: { layer: 5 } })
-  let moved = null
-  if (no5) {
-    await prisma.dream.update({ where: { id: no5.id }, data: { layer: 10, category: "BUSINESS" } })
-    moved = `${no5.title}: No.5 → No.10`
+  // 重複クリーンアップ: layer が同じ複数エントリを古い方（id が dream-no*でないもの）を削除
+  const dupes1 = await prisma.dream.findMany({ where: { layer: 1 } })
+  if (dupes1.length > 1) {
+    const toDelete = dupes1.filter(d => d.id !== "dream-no1-hyakuso")
+    for (const d of toDelete) await prisma.dream.delete({ where: { id: d.id } })
   }
+  const dupes2 = await prisma.dream.findMany({ where: { layer: 2 } })
+  if (dupes2.length > 1) {
+    const toDelete = dupes2.filter(d => d.id !== "dream-no2-uwiki")
+    for (const d of toDelete) await prisma.dream.delete({ where: { id: d.id } })
+  }
+  // No.10 衝突: RB-Tree 配信フロー を No.20 に退避（後で正式番号を割り当てる）
+  const no10list = await prisma.dream.findMany({ where: { layer: 10 } })
+  if (no10list.length > 1) {
+    const rbtree = no10list.find(d => d.title.includes("RB-Tree"))
+    if (rbtree) await prisma.dream.update({ where: { id: rbtree.id }, data: { layer: 20 } })
+  }
+  let moved = "cleanup done"
 
   // No.1・No.2 を upsert
   const dreams = [
