@@ -8,12 +8,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 })
   }
 
-  // No.5（RB-Tree 配信フロー）を削除
-  const deleteTarget = await prisma.dream.findFirst({ where: { layer: 5 } })
-  let deleted = null
-  if (deleteTarget) {
-    await prisma.dream.delete({ where: { id: deleteTarget.id } })
-    deleted = deleteTarget.title
+  // No.5（RB-Tree 配信フロー）→ No.10 に移動
+  const no5 = await prisma.dream.findFirst({ where: { layer: 5 } })
+  let moved = null
+  if (no5) {
+    await prisma.dream.update({ where: { id: no5.id }, data: { layer: 10, category: "BUSINESS" } })
+    moved = `${no5.title}: No.5 → No.10`
   }
 
   // No.1・No.2 を upsert
@@ -66,5 +66,5 @@ export async function POST(req: Request) {
     select: { layer: true, title: true, category: true, progress: true },
   })
 
-  return NextResponse.json({ ok: true, deleted, results, all })
+  return NextResponse.json({ ok: true, moved, results, all })
 }
