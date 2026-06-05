@@ -72,7 +72,7 @@ export function OnboardingCard() {
         <button onClick={() => setOpen((v) => !v)}
           className="flex items-center gap-2 flex-1 text-left">
           <Zap size={13} style={{ color: "var(--accent)" }} />
-          <span className="text-xs font-medium">毎日の使い方 — 3ステップ</span>
+          <span className="text-xs font-medium">毎日の使い方 — 4ステップ</span>
           {open ? <ChevronUp size={12} className="text-dim ml-1" /> : <ChevronDown size={12} className="text-dim ml-1" />}
         </button>
         <button onClick={dismiss}

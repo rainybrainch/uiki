@@ -183,7 +183,7 @@ function MetricCard({ metric }: { metric: any }) {
 
   const handleRecord = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!value) return
+    if (value === "") return
     startTransition(async () => {
       await recordAttractionValue({ metricId: metric.id, value: Number(value) })
       setValue("")
@@ -230,7 +230,7 @@ function MetricCard({ metric }: { metric: any }) {
           placeholder="値を入力"
           className="input-base text-sm flex-1"
         />
-        <button type="submit" disabled={!value || isPending}
+        <button type="submit" disabled={value === "" || isPending}
           className="px-3 py-1.5 rounded-lg text-xs font-medium transition-opacity disabled:opacity-40"
           style={{ background: "rgba(58,111,201,0.15)", border: "1px solid rgba(58,111,201,0.4)", color: "#3a6fc9", minHeight: 36 }}>
           記録

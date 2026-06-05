@@ -14,7 +14,9 @@ export function GravityMain({ graphData, onNav, gravityLogs, metrics }: {
   const W = 600; const H = 180; const PAD = 20
 
   const toPoint = (i: number, val: number, max: number) => {
-    const x = PAD + (i / (graphData.length - 1)) * (W - PAD * 2)
+    const x = graphData.length > 1
+      ? PAD + (i / (graphData.length - 1)) * (W - PAD * 2)
+      : W / 2
     const y = (H - PAD) - (val / max) * (H - PAD * 2)
     return `${x},${y}`
   }
