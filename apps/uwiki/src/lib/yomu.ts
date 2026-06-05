@@ -19,6 +19,7 @@ export type YomuEntry = {
   text?: string
   author?: string
   tags?: string
+  stars?: number | string
 }
 
 export type YomuData = {
