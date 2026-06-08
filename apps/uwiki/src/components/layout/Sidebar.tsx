@@ -10,7 +10,7 @@ import {
 import { useState, useEffect } from "react"
 import type { WeatherData } from "@/lib/weather"
 
-type NavItem = { href: string; label: string; icon: any; color?: string } | null | { section: string }
+type NavItem = { href: string; label: string; icon: React.ElementType; color?: string } | null | { section: string }
 
 const nav: NavItem[] = [
   // ─── OS

@@ -8,18 +8,28 @@ import { GeminiSection } from "@/components/settings/GeminiSection"
 import { getWeatherFromSettings } from "@/lib/weather"
 import { getGeminiKeyCount } from "@/lib/ai"
 import { prisma } from "@/lib/db"
+import type { Settings, GoogleAccount } from "@uwiki/database"
 import { Settings2, CloudRain, MapPin, Timer, Key, Chrome, Mail, Sparkles } from "lucide-react"
 
 export const dynamic = "force-dynamic"
 
 export default async function SettingsPage() {
-  let settings: any = null
-  let googleAccounts: any[] = []
+  let settings: Settings | null = null
+  let googleAccounts: GoogleAccount[] = []
   const geminiKeyCount = getGeminiKeyCount()
   try {
     settings = await getSettings()
     googleAccounts = await prisma.googleAccount.findMany({ orderBy: { createdAt: "asc" } })
   } catch (e) { console.error("[page] error:", e) }
+
+  const now = BigInt(Date.now())
+  const accountsWithStatus = googleAccounts.map((a) => ({
+    email:       a.email,
+    useGmail:    a.useGmail,
+    useCalendar: a.useCalendar,
+    // リフレッシュトークンなし、かつトークン期限切れ → 再認証が必要
+    needsReauth: !a.refreshToken && (!a.expiresAt || a.expiresAt < now + BigInt(60_000)),
+  }))
   const weather = settings ? await getWeatherFromSettings(settings) : null
 
   return (
@@ -64,7 +74,7 @@ export default async function SettingsPage() {
             <p className="section-label mb-0">メールアカウント管理</p>
           </div>
           <p className="text-xs text-dim mb-4">複数のGoogleアカウントのメールを統合表示します。</p>
-          <GoogleAccountsSection accounts={googleAccounts} />
+          <GoogleAccountsSection accounts={accountsWithStatus} />
         </section>
 
         <hr className="divider" />

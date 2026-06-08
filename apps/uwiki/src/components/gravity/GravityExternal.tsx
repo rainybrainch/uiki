@@ -1,5 +1,6 @@
 "use client"
 
+import type { AttractionMetric, AttractionLog } from "@uwiki/database"
 import { useState, useTransition } from "react"
 import { Trash2 } from "lucide-react"
 import { ConfirmButton } from "@/components/ui/ConfirmButton"
@@ -11,7 +12,7 @@ const SELF_METRICS = [
   { key: "hunger",  label: "🍽 空腹",  opts: ["満腹 1","普通 2","小腹 3","空腹 4","激空 5"] },
 ]
 
-export function GravityExternal({ metrics }: { metrics: any[] }) {
+export function GravityExternal({ metrics }: { metrics: (AttractionMetric & { logs: AttractionLog[] })[] }) {
   const [showAdd, setShowAdd]     = useState(false)
   const [name, setName]           = useState("")
   const [target, setTarget]       = useState("")
@@ -171,7 +172,7 @@ export function GravityExternal({ metrics }: { metrics: any[] }) {
   )
 }
 
-function MetricCard({ metric }: { metric: any }) {
+function MetricCard({ metric }: { metric: AttractionMetric & { logs: AttractionLog[] } }) {
   const [value, setValue] = useState("")
   const [isPending, startTransition] = useTransition()
   const [isDeleting, startDeleteTransition] = useTransition()

@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db"
+import type { Habit, HabitLog } from "@uwiki/database"
 import { today, calcStreak } from "@/lib/date"
 import { HabitGrid } from "@/components/habits/HabitGrid"
 import { HabitHeatmap } from "@/components/habits/HabitHeatmap"
@@ -12,7 +13,7 @@ export const dynamic = "force-dynamic"
 export default async function HabitsPage() {
   const todayStr = today()
 
-  let habits: any[] = []
+  let habits: (Habit & { logs: HabitLog[] })[] = []
   try {
     habits = await prisma.habit.findMany({
       // ヒートマップ用に8週(56日)+バッファ分取得
@@ -32,11 +33,11 @@ export default async function HabitsPage() {
     }
   })
 
-  const habitsWithStats = habits.map((h: any) => ({
+  const habitsWithStats = habits.map((h) => ({
     ...h,
-    streak: calcStreak(h.logs.map((l: any) => l.date)),
-    doneToday: h.logs.some((l: any) => l.date === todayStr),
-    logDates: h.logs.map((l: any) => l.date),
+    streak: calcStreak(h.logs.map((l) => l.date)),
+    doneToday: h.logs.some((l) => l.date === todayStr),
+    logDates: h.logs.map((l) => l.date),
   }))
 
   const doneCount = habitsWithStats.filter((h) => h.doneToday).length

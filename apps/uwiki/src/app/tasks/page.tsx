@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db"
+import type { Task, SubTask, Project } from "@uwiki/database"
 import { TaskForm } from "@/components/tasks/TaskForm"
 import { TaskList } from "@/components/tasks/TaskList"
 import { KanbanBoard } from "@/components/tasks/KanbanBoard"
@@ -24,6 +25,13 @@ type View = "all" | "today" | "upcoming" | "overdue" | "board" | "flow"
 type Filter = "all" | string
 export type SmartViewDef = { id: string; label: string; count: number | null }
 
+type TaskWithRelations = Task & {
+  subtasks: SubTask[]
+  project: { id: string; name: string; color: string } | null
+}
+type ProjectWithCount = Project & { _count: { tasks: number } }
+type TaskNode = Task & { children: TaskNode[] }
+
 export default async function TasksPage({
   searchParams,
 }: {
@@ -34,9 +42,9 @@ export default async function TasksPage({
   const projectFilter = params.project ?? "all"
   const tagFilter = params.tag ?? ""
 
-  let allTasks: any[] = []
-  let projects: any[] = []
-  let flowRoots: any[] = []
+  let allTasks: TaskWithRelations[] = []
+  let projects: ProjectWithCount[] = []
+  let flowRoots: TaskNode[] = []
   let flowDreamTitle: string | undefined
   let flowTaskCount = 0
   const projectWhere = {
@@ -67,10 +75,10 @@ export default async function TasksPage({
         }),
       ])
       projects = projs
-      flowRoots = buildTree(allFlowTasks.filter((t: any) => t.parentTaskId === null), allFlowTasks)
+      flowRoots = buildTree(allFlowTasks.filter((t) => t.parentTaskId === null), allFlowTasks)
       flowTaskCount = allFlowTasks.length
 
-      const anyDreamId = allFlowTasks.find((t: any) => t.dreamId)?.dreamId
+      const anyDreamId = allFlowTasks.find((t) => t.dreamId)?.dreamId
       if (anyDreamId) {
         const dream = await prisma.dream.findUnique({ where: { id: anyDreamId }, select: { title: true } })
         flowDreamTitle = dream?.title
@@ -106,8 +114,8 @@ export default async function TasksPage({
 
   // フロービュー以外では allTasks は既に parentTaskId=null 済み
   const flatTasks = allTasks
-  const active = flatTasks.filter((t: any) => !t.completed)
-  const done   = flatTasks.filter((t: any) => t.completed)
+  const active = flatTasks.filter((t) => !t.completed)
+  const done   = flatTasks.filter((t) => t.completed)
 
   // スマートリスト（startOfDay でタイムゾーン境界を正規化）
   const todayTasks    = active.filter((t) => t.dueDate && isToday(startOfDay(new Date(t.dueDate))))
@@ -348,10 +356,10 @@ export default async function TasksPage({
 }
 
 function groupByProject(
-  tasks: any[],
-  projects: any[]
-) {
-  const groups: { project: any; tasks: any[] }[] = []
+  tasks: TaskWithRelations[],
+  projects: ProjectWithCount[]
+): { project: ProjectWithCount | null; tasks: TaskWithRelations[] }[] {
+  const groups: { project: ProjectWithCount | null; tasks: TaskWithRelations[] }[] = []
 
   // プロジェクトあり
   for (const project of projects) {
@@ -366,7 +374,7 @@ function groupByProject(
   return groups
 }
 
-function buildTree(roots: any[], all: any[]): any[] {
+function buildTree(roots: Task[], all: Task[]): TaskNode[] {
   return roots.map((node) => ({
     ...node,
     children: buildTree(

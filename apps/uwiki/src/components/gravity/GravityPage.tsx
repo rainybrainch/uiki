@@ -1,5 +1,6 @@
 "use client"
 
+import type { GravityLog, AttractionMetric, AttractionLog } from "@uwiki/database"
 import { useState } from "react"
 import { GravityMain } from "./GravityMain"
 import { GravityInternal } from "./GravityInternal"
@@ -8,8 +9,8 @@ import { GravityExternal } from "./GravityExternal"
 type Tab = "main" | "internal" | "external"
 
 export function GravityPage({ gravityLogs, metrics, graphData, initialTab = "main" }: {
-  gravityLogs: any[]
-  metrics: any[]
+  gravityLogs: GravityLog[]
+  metrics: (AttractionMetric & { logs: AttractionLog[] })[]
   graphData: { date: string; gravityScore: number; attractionScore: number }[]
   initialTab?: Tab
 }) {

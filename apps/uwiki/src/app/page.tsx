@@ -10,7 +10,12 @@ import { HabitCheckButton } from "@/components/habits/HabitCheckButton"
 import { QuickAddTask } from "@/components/dashboard/QuickAddTask"
 import { OnboardingCard } from "@/components/dashboard/OnboardingCard"
 import { getWeatherFromSettings } from "@/lib/weather"
+import type { GoogleCalendarEvent } from "@/lib/auth"
 import { getValidToken, fetchCalendarEvents } from "@/lib/auth"
+import type { Task, Habit, HabitLog, Case, Dream } from "@uwiki/database"
+
+type TaskWithProject = Task & { project: { id: string; name: string; color: string } | null }
+type HabitWithLogs = Habit & { logs: Pick<HabitLog, "date" | "id">[] }
 
 export const dynamic = "force-dynamic"
 
@@ -28,17 +33,17 @@ export default async function DashboardPage() {
   const todayStr = today()
   const greeting = getGreeting(new Date().getHours())
 
-  let tasks: any[] = []
-  let habits: any[] = []
-  let recentDiaries: any[] = []
+  let tasks: TaskWithProject[] = []
+  let habits: HabitWithLogs[] = []
+  let recentDiaries: { id: string; date: string; title: string | null; content: string | null; mood: number | null }[] = []
   let doneTasks = 0
   let totalActiveTasks = 0
   let overdueCount = 0
-  let cases: any[] = []
-  let dreams: any[] = []
-  let projects: any[] = []
-  let weather: any = null
-  let todayGEvents: any[] = []
+  let cases: Case[] = []
+  let dreams: Dream[] = []
+  let projects: { id: string; name: string; color: string }[] = []
+  let weather: { city: string; temperature: number; description: string } | null = null
+  let todayGEvents: GoogleCalendarEvent[] = []
 
   try {
     const settings = await prisma.settings.findUnique({ where: { id: "singleton" } })
@@ -52,10 +57,10 @@ export default async function DashboardPage() {
       if (token) {
         const all = await fetchCalendarEvents(token, 1, 0)
         const td = format(new Date(), "yyyy-MM-dd")
-        todayGEvents = all.filter((e: any) => {
+        todayGEvents = all.filter((e) => {
           const d = e.start.dateTime ? format(new Date(e.start.dateTime), "yyyy-MM-dd") : e.start.date
           return d === td
-        }).sort((a: any, b: any) => {
+        }).sort((a, b) => {
           const ta = a.start.dateTime ? new Date(a.start.dateTime).getTime() : 0
           const tb = b.start.dateTime ? new Date(b.start.dateTime).getTime() : 0
           return ta - tb
@@ -95,15 +100,15 @@ export default async function DashboardPage() {
     // DB未接続時はダッシュボードを空で表示
   }
 
-  const doneHabitsToday = habits.filter((h: any) => h.logs.some((l: any) => l.date === todayStr)).length
+  const doneHabitsToday = habits.filter((h) => h.logs.some((l) => l.date === todayStr)).length
 
   // 100万円カウンター
-  const earned = cases.filter((c: any) => c.status === "DONE").reduce((s: number, c: any) => s + (c.paidAmount || c.reward), 0)
-  const pending = cases.filter((c: any) => c.status === "WAITING_PAY").reduce((s: number, c: any) => s + c.reward, 0)
+  const earned = cases.filter((c) => c.status === "DONE").reduce((s, c) => s + (c.paidAmount ?? c.reward), 0)
+  const pending = cases.filter((c) => c.status === "WAITING_PAY").reduce((s, c) => s + c.reward, 0)
   const earningPct = Math.min(100, Math.round((earned / GOAL_100MAN) * 100))
 
   // 百層世界
-  const dreamAchieved = dreams.filter((d: any) => d.achieved).length
+  const dreamAchieved = dreams.filter((d) => d.achieved).length
   const dreamTotal = dreams.length
   const dreamPct = Math.round((dreamAchieved / Math.max(dreamTotal, 1)) * 100)
 
@@ -243,7 +248,7 @@ export default async function DashboardPage() {
               <span className="text-[10px] font-mono tracking-widest" style={{ color: "#4ade80" }}>TODAY'S SCHEDULE</span>
             </div>
             <div className="flex flex-wrap gap-2">
-              {todayGEvents.map((ev: any) => {
+              {todayGEvents.map((ev) => {
                 const timeStr = ev.start.dateTime
                   ? (() => { const d = new Date(ev.start.dateTime); return `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}` })()
                   : "終日"
@@ -338,7 +343,7 @@ export default async function DashboardPage() {
             <EmptySlate text="今日のタスクはありません" href="/tasks" cta="+ タスクを追加" />
           ) : (
             <ul className="space-y-px">
-              {tasks.map((task: any) => {
+              {tasks.map((task) => {
                 const due = task.dueDate ? startOfDay(new Date(task.dueDate)) : null
                 const overdue = due && !task.completed && isPast(due) && !isToday(due)
                 const dueToday = due && !task.completed && isToday(due)
@@ -376,9 +381,9 @@ export default async function DashboardPage() {
             <EmptySlate text="習慣を追加しましょう" href="/habits" cta="+ 習慣を設定" />
           ) : (
             <ul className="space-y-px">
-              {habits.map((habit: any) => {
-                const doneToday = habit.logs.some((l: any) => l.date === todayStr)
-                const streak = calcStreak(habit.logs.map((l: any) => l.date))
+              {habits.map((habit) => {
+                const doneToday = habit.logs.some((l) => l.date === todayStr)
+                const streak = calcStreak(habit.logs.map((l) => l.date))
                 return (
                   <li key={habit.id}
                     className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[var(--faint)] transition-all"
@@ -394,12 +399,11 @@ export default async function DashboardPage() {
         </DashCard>
 
         {/* 進行中の案件 */}
-        {cases.filter((c: any) => ["DEVELOPING", "DELIVERED", "WAITING_PAY"].includes(c.status)).length > 0 && (
+        {cases.filter((c) => ["DEVELOPING", "DELIVERED", "WAITING_PAY"].includes(c.status)).length > 0 && (
           <DashCard icon={<Briefcase size={14} strokeWidth={1.5} />} title="進行中の案件" href="/cases" delay="delay-200">
             <ul className="space-y-px">
-              {cases.filter((c: any) => ["DEVELOPING", "DELIVERED", "WAITING_PAY"].includes(c.status)).slice(0, 4).map((c: any) => {
+              {cases.filter((c) => ["DEVELOPING", "DELIVERED", "WAITING_PAY"].includes(c.status)).slice(0, 4).map((c) => {
                 const statusColor: Record<string, string> = { DEVELOPING: "#3a6fc9", DELIVERED: "#8b5cf6", WAITING_PAY: "#f59e0b" }
-                const statusLabel: Record<string, string> = { DEVELOPING: "開発中", DELIVERED: "納品済", WAITING_PAY: "支払待" }
                 return (
                   <li key={c.id} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[var(--faint)] transition-colors">
                     <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: statusColor[c.status] }} />
@@ -424,7 +428,7 @@ export default async function DashboardPage() {
               <span className="text-xs font-medium">日記</span>
               {/* 今日の記録状況インジケーター */}
               {(() => {
-                const todayEntry = recentDiaries.find((e: any) => e.date === todayStr)
+                const todayEntry = recentDiaries.find((e) => e.date === todayStr)
                 if (todayEntry) {
                   return (
                     <Link href={`/diary?date=${todayStr}`}
@@ -459,8 +463,7 @@ export default async function DashboardPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {recentDiaries.map((entry: any) => {
-                const moodColors: Record<number, string> = { 1: "#f87171", 2: "#fb923c", 3: "#94a3b8", 4: "#34d399", 5: "#3a6fc9" }
+              {recentDiaries.map((entry) => {
                 return (
                   <Link key={entry.id} href={`/diary?date=${entry.date}`}
                     className="surface-hover block p-4 rounded-xl relative"

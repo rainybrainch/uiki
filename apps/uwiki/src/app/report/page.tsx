@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db"
+import type { Habit, HabitLog, Dream, AdjustmentLog, Case } from "@uwiki/database"
 import { BarChart2, CheckSquare, Repeat2, BookOpen, Briefcase, Layers, TrendingUp } from "lucide-react"
 import Link from "next/link"
 import { format, startOfWeek, endOfWeek, subWeeks } from "date-fns"
@@ -18,13 +19,13 @@ export default async function ReportPage() {
   const currentMonth = format(now, "yyyy-MM")
 
   let tasksThisWeek = 0, tasksDone = 0, tasksPrev = 0
-  let doneTasksList: any[] = []
-  let habits: any[] = [], habitLogsThisWeek = 0
-  let diaryThisWeek: any[] = [], diaryPrev = 0
-  let past4Weeks: any[] = []
-  let dreams: any[] = []
-  let adjustments: any[] = []
-  let cases: any[] = []
+  let doneTasksList: { id: string; title: string; priority: string }[] = []
+  let habits: (Habit & { logs: HabitLog[] })[] = [], habitLogsThisWeek = 0
+  let diaryThisWeek: { id: string; date: string; title: string | null; mood: number | null }[] = [], diaryPrev = 0
+  let past4Weeks: { label: string; rate: number }[] = []
+  let dreams: Dream[] = []
+  let adjustments: AdjustmentLog[] = []
+  let cases: Case[] = []
 
   try {
     ;[
@@ -78,8 +79,8 @@ export default async function ReportPage() {
   const weekLabel = `${format(weekStart, "M/d", { locale: ja })} 〜 ${format(weekEnd, "M/d", { locale: ja })}`
 
   const earned = cases
-    .filter((c: any) => c.status === "DONE")
-    .reduce((s: number, c: any) => s + (c.paidAmount || c.reward), 0)
+    .filter((c) => c.status === "DONE")
+    .reduce((s, c) => s + (c.paidAmount ?? c.reward), 0)
   const earningPct = Math.min(100, Math.round((earned / 1_000_000) * 100))
 
   return (
@@ -191,7 +192,7 @@ export default async function ReportPage() {
           <div className="surface rounded-xl p-5 animate-fade-in delay-200">
             <p className="section-label">今週の完了タスク</p>
             <div className="space-y-1 mt-2">
-              {doneTasksList.map((t: any) => {
+              {doneTasksList.map((t) => {
                 const pc: Record<string, string> = { HIGH: "var(--red)", MEDIUM: "var(--accent)", LOW: "var(--dim)" }
                 return (
                   <div key={t.id} className="flex items-center gap-3 py-1.5 px-2 rounded-lg hover:bg-[var(--faint)] transition-colors">

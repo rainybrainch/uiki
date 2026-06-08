@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
+import type { Prisma } from "@uwiki/database"
 
 async function authenticate(req: NextRequest): Promise<boolean> {
   const key = req.headers.get("authorization")?.slice(7)
@@ -34,9 +35,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (!await authenticate(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   const { id } = await params
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let body: any
-  try { body = await req.json() } catch {
+  type PatchTaskBody = {
+    title?: string; memo?: string; priority?: string; column?: string
+    completed?: boolean; dueDate?: string | null; tags?: string; projectId?: string | null
+  }
+  let body: PatchTaskBody
+  try { body = await req.json() as PatchTaskBody } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 })
   }
 
@@ -53,7 +57,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         ...(body.dueDate   !== undefined ? { dueDate: body.dueDate ? new Date(body.dueDate) : null } : {}),
         ...(body.tags      !== undefined ? { tags: body.tags }       : {}),
         ...(body.projectId !== undefined ? { projectId: body.projectId } : {}),
-      },
+      } as Prisma.TaskUncheckedUpdateInput,
       include: { subtasks: true },
     })
     return NextResponse.json({ task })

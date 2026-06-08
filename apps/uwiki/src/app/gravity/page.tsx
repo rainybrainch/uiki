@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db"
+import type { GravityLog, AttractionMetric, AttractionLog } from "@uwiki/database"
 import { GravityPage } from "@/components/gravity/GravityPage"
 import { format, subDays } from "date-fns"
 
@@ -12,8 +13,8 @@ export default async function Page({
   const { tab } = await searchParams
   const initialTab = (tab === "internal" || tab === "external") ? tab : "main"
 
-  let gravityLogs: any[] = []
-  let metrics: any[] = []
+  let gravityLogs: GravityLog[] = []
+  let metrics: (AttractionMetric & { logs: AttractionLog[] })[] = []
 
   try {
     const last14 = format(subDays(new Date(), 13), "yyyy-MM-dd")
@@ -33,12 +34,12 @@ export default async function Page({
     const gLogs = gravityLogs.filter((l) => l.date === date)
     const gravityScore = gLogs.reduce((s, l) => s + l.intensity, 0)
     const aVals = metrics.flatMap((m) =>
-      m.logs.filter((l: any) => l.date === date).map((l: any) =>
+      m.logs.filter((l) => l.date === date).map((l) =>
         m.target ? Math.min(1, l.value / m.target) : 0
       )
     )
     const attractionScore = aVals.length > 0
-      ? aVals.reduce((a: number, b: number) => a + b, 0) / aVals.length
+      ? aVals.reduce((a, b) => a + b, 0) / aVals.length
       : 0
     return { date, gravityScore, attractionScore }
   })

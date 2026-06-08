@@ -1,10 +1,11 @@
 "use client"
 
+import type { Dream, AdjustmentLog } from "@uwiki/database"
 import { useState, useTransition } from "react"
 import { createAdjustment } from "@/actions/adjustments"
 import { CheckCircle2, XCircle, Circle, Plus } from "lucide-react"
 
-export function WeeklyCheck({ dreams, adjustments }: { dreams: any[]; adjustments: any[] }) {
+export function WeeklyCheck({ dreams, adjustments }: { dreams: Dream[]; adjustments: AdjustmentLog[] }) {
   const [open, setOpen] = useState(false)
   const [vow, setVow]     = useState<boolean | null>(null)
   const [cons, setCons]   = useState<boolean | null>(null)
@@ -56,8 +57,8 @@ export function WeeklyCheck({ dreams, adjustments }: { dreams: any[]; adjustment
           { label: "制約の中で実行", key: "constCheck" },
           { label: "目的に向かった", key: "visionCheck" },
         ].map(({ label, key }) => {
-          const latest = weekChecks.find((a) => a[key] !== null && a[key] !== undefined)
-          const val = latest?.[key]
+          const latest = weekChecks.find((a) => (a as Record<string, unknown>)[key] !== null && (a as Record<string, unknown>)[key] !== undefined)
+          const val = latest ? (latest as Record<string, unknown>)[key] : undefined
           return (
             <div key={key} className="rounded-lg p-3 text-center"
               style={{ background: val === true ? "rgba(74,222,128,0.08)" : val === false ? "rgba(248,113,113,0.08)" : "rgba(255,255,255,0.02)", border: "1px solid var(--border)" }}>

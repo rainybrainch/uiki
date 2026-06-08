@@ -1,5 +1,6 @@
 "use client"
 
+import type { GravityLog } from "@uwiki/database"
 import { useState, useTransition } from "react"
 import { format } from "date-fns"
 import { ja } from "date-fns/locale"
@@ -14,7 +15,7 @@ const WEIGHTS = [
     glow: "inset 0 0 20px rgba(184,122,58,0.15), 0 0 16px rgba(184,122,58,0.18)" },
 ]
 
-export function GravityInternal({ logs }: { logs: any[] }) {
+export function GravityInternal({ logs }: { logs: GravityLog[] }) {
   const [text, setText] = useState("")
   const [weight, setWeight] = useState(1)
   const [isPending, startTransition] = useTransition()

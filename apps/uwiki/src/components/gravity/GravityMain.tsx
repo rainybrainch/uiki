@@ -1,5 +1,6 @@
 "use client"
 
+import type { GravityLog, AttractionMetric, AttractionLog } from "@uwiki/database"
 import { format, parseISO } from "date-fns"
 
 type Tab = "main" | "internal" | "external"
@@ -7,8 +8,8 @@ type Tab = "main" | "internal" | "external"
 export function GravityMain({ graphData, onNav, gravityLogs, metrics }: {
   graphData: { date: string; gravityScore: number; attractionScore: number }[]
   onNav: (tab: Tab) => void
-  gravityLogs: any[]
-  metrics: any[]
+  gravityLogs: GravityLog[]
+  metrics: (AttractionMetric & { logs: AttractionLog[] })[]
 }) {
   const maxG = Math.max(...graphData.map((d) => d.gravityScore), 1)
   const W = 600; const H = 180; const PAD = 20
@@ -31,7 +32,7 @@ export function GravityMain({ graphData, onNav, gravityLogs, metrics }: {
   const aLast  = toPoint(graphData.length - 1, graphData[graphData.length - 1]?.attractionScore ?? 0, 1)
 
   const todayGravity = gravityLogs.filter((l) => l.date === format(new Date(), "yyyy-MM-dd")).length
-  const todayAttraction = metrics.filter((m) => m.logs.some((l: any) => l.date === format(new Date(), "yyyy-MM-dd"))).length
+  const todayAttraction = metrics.filter((m) => m.logs.some((l) => l.date === format(new Date(), "yyyy-MM-dd"))).length
 
   return (
     <div style={{ maxWidth: "min(720px, 100%)", margin: "0 auto" }}>

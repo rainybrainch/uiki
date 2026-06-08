@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react"
 import { updateCaseStatus, updateCasePaid, deleteCase, updateCase } from "@/actions/cases"
-import { CaseStatus } from "@uwiki/database"
+import type { Case, CaseStatus } from "@uwiki/database"
 import { format, differenceInCalendarDays, startOfDay } from "date-fns"
 import { ja } from "date-fns/locale"
 import { ChevronRight, Check, Trash2, Clock, Pencil, X } from "lucide-react"
@@ -33,7 +33,7 @@ const NEXT_LABELS: Record<string, string> = {
 }
 
 export function CasePipeline({ columns }: {
-  columns: { status: string; label: string; cases: any[] }[]
+  columns: { status: string; label: string; cases: Case[] }[]
 }) {
   return (
     <div className="space-y-6">
@@ -65,7 +65,7 @@ export function CasePipeline({ columns }: {
 
 const MEMO_LIMIT = 80
 
-function CaseCard({ c }: { c: any }) {
+function CaseCard({ c }: { c: Case }) {
   const [showPay, setShowPay] = useState(false)
   const [payAmount, setPayAmount] = useState(String(c.reward))
   const [memoExpanded, setMemoExpanded] = useState(false)

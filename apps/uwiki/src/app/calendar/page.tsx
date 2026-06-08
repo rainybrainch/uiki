@@ -4,7 +4,7 @@ import { AddEventButton } from "@/components/calendar/AddEventButton"
 import { CalendarDays } from "lucide-react"
 import { format, startOfMonth, endOfMonth, addMonths, subMonths, parseISO } from "date-fns"
 import { getServerSession } from "next-auth"
-import { authOptions, fetchCalendarEvents, getValidToken } from "@/lib/auth"
+import { authOptions, fetchCalendarEvents, getValidToken, GoogleCalendarEvent } from "@/lib/auth"
 
 export const dynamic = "force-dynamic"
 
@@ -23,7 +23,7 @@ export default async function CalendarPage({
   ]
 
   // Google Calendar イベント取得 — 自動トークンリフレッシュ対応
-  let googleEvents: any[] = []
+  let googleEvents: GoogleCalendarEvent[] = []
   try {
     const { prisma: db } = await import("@/lib/db")
     const calAccount = await db.googleAccount.findFirst({ where: { useCalendar: true } })
@@ -39,11 +39,11 @@ export default async function CalendarPage({
     }
   } catch (e) { console.error("[page] DB query failed:", e) }
 
-  let tasks: any[] = []
-  let diaryEntries: any[] = []
-  let habitLogs: any[] = []
-  let habits: any[] = []
-  let cases: any[] = []
+  let tasks: { id: string; title: string; priority: string; completed: boolean; dueDate: Date | null }[] = []
+  let diaryEntries: { date: string; title: string; id: string }[] = []
+  let habitLogs: { date: string; habitId: string }[] = []
+  let habits: { id: string; color: string }[] = []
+  let cases: { id: string; name: string; dueDate: Date | null; status: string }[] = []
   try {
     ;[tasks, diaryEntries, habitLogs, habits, cases] = await Promise.all([
       prisma.task.findMany({
@@ -80,21 +80,21 @@ export default async function CalendarPage({
     // DB未接続時はデフォルト値
   }
 
-  const casesByDate: Record<string, typeof cases> = {}
+  const casesByDate: Record<string, { id: string; name: string; dueDate: Date; status: string }[]> = {}
   for (const c of cases) {
     if (!c.dueDate) continue
     const d = format(new Date(c.dueDate), "yyyy-MM-dd")
     if (!casesByDate[d]) casesByDate[d] = []
-    casesByDate[d].push(c)
+    casesByDate[d].push({ ...c, dueDate: c.dueDate })
   }
 
   // 日付 → データのマップを構築
   const tasksByDate: Record<string, typeof tasks> = {}
   for (const task of tasks) {
     if (!task.dueDate) continue
-    const d = format(new Date(task.dueDate as Date), "yyyy-MM-dd")
+    const d = format(new Date(task.dueDate), "yyyy-MM-dd")
     if (!tasksByDate[d]) tasksByDate[d] = []
-    tasksByDate[d].push({ ...task, dueDate: (task.dueDate as Date).toISOString() })
+    tasksByDate[d].push(task)
   }
 
   const diaryByDate: Record<string, { id: string; title: string }> = {}

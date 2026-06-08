@@ -11,7 +11,7 @@ const COLORS: Record<string, string> = {
   "rainybrain.ch@gmail.com": "#14b8a6",
 }
 
-export function GoogleAccountsSection({ accounts }: { accounts: { email: string; useGmail: boolean; useCalendar: boolean }[] }) {
+export function GoogleAccountsSection({ accounts }: { accounts: { email: string; useGmail: boolean; useCalendar: boolean; needsReauth?: boolean }[] }) {
   const [pending, start] = useTransition()
 
   return (
@@ -23,11 +23,13 @@ export function GoogleAccountsSection({ accounts }: { accounts: { email: string;
         const color = COLORS[a.email] ?? "var(--accent)"
         return (
           <div key={a.email} className="flex items-center gap-3">
-            <div className="w-2 h-2 rounded-full shrink-0" style={{ background: color }} />
+            <div className="w-2 h-2 rounded-full shrink-0" style={{ background: a.needsReauth ? "var(--red)" : color }} />
             <div className="flex-1 min-w-0">
               <p className="text-xs font-medium truncate">{a.email}</p>
-              <p className="text-[10px] text-faint">
-                {[a.useGmail && "Gmail", a.useCalendar && "Calendar"].filter(Boolean).join(" · ")}
+              <p className="text-[10px]" style={{ color: a.needsReauth ? "var(--red)" : "var(--faint)" }}>
+                {a.needsReauth
+                  ? "⚠ 再認証が必要（下のボタンから追加し直してください）"
+                  : [a.useGmail && "Gmail", a.useCalendar && "Calendar"].filter(Boolean).join(" · ")}
               </p>
             </div>
             <ConfirmButton

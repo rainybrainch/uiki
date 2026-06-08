@@ -58,7 +58,7 @@ genresには${streamGenres}を2-3個含めること。日本語で。`
 
     const generated = JSON.parse(match[0]).filter((p: any) => p?.name)
     const existing = await prisma.commentPersona.findMany({ select: { name: true } })
-    const existingNames = new Set(existing.map((e: any) => e.name))
+    const existingNames = new Set(existing.map((e) => e.name))
 
     let created = 0
     for (const p of generated) {

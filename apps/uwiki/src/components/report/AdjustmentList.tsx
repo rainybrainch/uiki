@@ -1,5 +1,6 @@
 "use client"
 
+import type { AdjustmentLog, Dream } from "@uwiki/database"
 import { useState, useTransition } from "react"
 import { createAdjustment, updateAdjustmentResult, deleteAdjustment } from "@/actions/adjustments"
 import { Plus, Trash2, Pencil } from "lucide-react"
@@ -7,7 +8,7 @@ import { ConfirmButton } from "@/components/ui/ConfirmButton"
 import { format } from "date-fns"
 import { ja } from "date-fns/locale"
 
-export function AdjustmentList({ adjustments, dreams }: { adjustments: any[]; dreams: any[] }) {
+export function AdjustmentList({ adjustments, dreams }: { adjustments: AdjustmentLog[]; dreams: Dream[] }) {
   const [open, setOpen] = useState(false)
   const [what, setWhat] = useState("")
   const [why, setWhy]   = useState("")
@@ -83,7 +84,7 @@ export function AdjustmentList({ adjustments, dreams }: { adjustments: any[]; dr
   )
 }
 
-function AdjCard({ adj }: { adj: any }) {
+function AdjCard({ adj }: { adj: AdjustmentLog }) {
   const [editResult, setEditResult] = useState(false)
   const [result, setResult] = useState(adj.result ?? "")
   const [isPending, startTransition] = useTransition()

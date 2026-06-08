@@ -1,9 +1,10 @@
 "use client"
 
+import type { CommentPersona } from "@uwiki/database"
 import { useState, useTransition } from "react"
 import { togglePersona, deletePersona } from "@/app/personas/actions"
 
-export function PersonaList({ personas }: { personas: any[] }) {
+export function PersonaList({ personas }: { personas: CommentPersona[] }) {
   const [isPending, startTransition] = useTransition()
 
   if (personas.length === 0) {
@@ -37,7 +38,11 @@ export function PersonaList({ personas }: { personas: any[] }) {
   )
 }
 
-function PersonaCard({ persona: p, isPending, startTransition }: any) {
+function PersonaCard({ persona: p, isPending, startTransition }: {
+  persona: CommentPersona
+  isPending: boolean
+  startTransition: (fn: () => void) => void
+}) {
   const [delConfirm, setDelConfirm] = useState(false)
 
   return (

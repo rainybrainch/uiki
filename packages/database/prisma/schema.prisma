@@ -234,6 +234,9 @@ model Dream {
   // ⑧ 相互関連性
   connections  String?     // 他の世界名のCSV
 
+  // ─── 4本軸 ─────────────────────────────────────────────
+  axis        String?     // RICE1 | RICE2 | LIFE1 | LIFE2
+
   category    DreamCat    @default(OTHER)
   layer       Int         @default(1)   // 1〜100層
   progress    Int         @default(0)   // 0〜100%

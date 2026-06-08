@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db"
+import type { CommentPersona, PersonaYoutubeSource } from "@uwiki/database"
 import { PersonaList } from "@/components/personas/PersonaList"
 import { PersonaForm } from "@/components/personas/PersonaForm"
 import { YoutubeSourceSection } from "@/components/personas/YoutubeSourceSection"
@@ -6,8 +7,8 @@ import { YoutubeSourceSection } from "@/components/personas/YoutubeSourceSection
 export const dynamic = "force-dynamic"
 
 export default async function PersonasPage() {
-  let personas: any[] = []
-  let youtubeSources: any[] = []
+  let personas: CommentPersona[] = []
+  let youtubeSources: PersonaYoutubeSource[] = []
 
   try {
     personas = await prisma.commentPersona.findMany({

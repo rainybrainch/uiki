@@ -1,5 +1,6 @@
 "use client"
 
+import type { PersonaYoutubeSource } from "@uwiki/database"
 import { useState, useTransition } from "react"
 import { addYoutubeSource, deleteYoutubeSource, generatePersonasFromSource } from "@/app/personas/actions"
 
@@ -8,7 +9,7 @@ const STREAM_GENRE_OPTIONS = [
   "漫画","映画","本","ラジオ","RAINYBRAIN",
 ]
 
-export function YoutubeSourceSection({ sources }: { sources: any[] }) {
+export function YoutubeSourceSection({ sources }: { sources: PersonaYoutubeSource[] }) {
   const [open, setOpen] = useState(false)
   const [selected, setSelected] = useState<string[]>([])
   const [genStatus, setGenStatus] = useState<Record<string, string>>({})

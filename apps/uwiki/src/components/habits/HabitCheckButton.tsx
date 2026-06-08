@@ -39,10 +39,11 @@ export function HabitCheckButton({
       aria-pressed={shown}
       className="shrink-0 flex items-center justify-center transition-opacity"
       style={{
-        width: 36, height: 36, borderRadius: "50%",
+        width: 44, height: 44, borderRadius: "50%",
         background: "transparent", border: "none", padding: 0,
         opacity: pending ? 0.5 : 1,
         cursor: "pointer",
+        margin: "-4px",
       }}
     >
       <span

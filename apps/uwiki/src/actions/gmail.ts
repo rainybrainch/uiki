@@ -1,6 +1,7 @@
 "use server"
 
 import { prisma } from "@/lib/db"
+import { getValidToken } from "@/lib/auth"
 
 export type GmailMessage = {
   id: string
@@ -58,7 +59,12 @@ async function fetchMessages(accessToken: string, email: string, maxResults = 20
 export async function getAllMail(): Promise<GmailMessage[]> {
   const accounts = await prisma.googleAccount.findMany({ where: { useGmail: true } })
   const results = await Promise.all(
-    accounts.map((a) => fetchMessages(a.accessToken, a.email))
+    accounts.map(async (a) => {
+      // getValidToken でリフレッシュ試行。失敗時は保存済みトークンでベストエフォート
+      const token = (await getValidToken(a.email)) ?? a.accessToken
+      if (!token) return []
+      return fetchMessages(token, a.email)
+    })
   )
   return results.flat().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 }

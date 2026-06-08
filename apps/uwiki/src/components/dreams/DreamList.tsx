@@ -1,12 +1,14 @@
 "use client"
 
+import type { Dream } from "@uwiki/database"
 import { useState, useTransition, useEffect } from "react"
-import { updateDreamProgress, achieveDream, deleteDream, updateDream } from "@/actions/dreams"
+import { updateDreamProgress, achieveDream, deleteDream, updateDream, updateDreamAxis } from "@/actions/dreams"
 import { polishText } from "@/actions/ai-write"
 import { AiPolishButton } from "@/components/ui/AiPolishButton"
 import { CheckCircle2, Circle, Trash2, ChevronDown, ChevronUp, Pencil, ChevronRight, ExternalLink } from "lucide-react"
 import { ConfirmButton } from "@/components/ui/ConfirmButton"
 import Link from "next/link"
+import { AXES } from "./DreamForm"
 
 const FIELD_LABELS = [
   { key: "definition",  label: "定義" },
@@ -19,7 +21,7 @@ const FIELD_LABELS = [
 ] as const
 
 function CategorySection({ cat, label, color, dreams, dreamIdByTitle }: {
-  cat: string; label: string; color: string; dreams: any[]; dreamIdByTitle: Record<string, string>
+  cat: string; label: string; color: string; dreams: Dream[]; dreamIdByTitle: Record<string, string>
 }) {
   const storageKey = `dreams-collapsed-${cat}`
   const [collapsed, setCollapsed] = useState(false)
@@ -60,14 +62,126 @@ function CategorySection({ cat, label, color, dreams, dreamIdByTitle }: {
   )
 }
 
-export function DreamList({ byCategory, done, catColors, catLabels, dreamIdByTitle = {} }: {
-  byCategory: { cat: string; label: string; color: string; dreams: any[] }[]
-  done: any[]
+function AxisSection({ axisId, dreams, dreamIdByTitle }: {
+  axisId: string; dreams: Dream[]; dreamIdByTitle: Record<string, string>
+}) {
+  const axisInfo = AXES.find((a) => a.value === axisId)
+  if (!axisInfo) return null
+  const storageKey = `dreams-axis-collapsed-${axisId}`
+  const [collapsed, setCollapsed] = useState(false)
+
+  useEffect(() => {
+    const saved = localStorage.getItem(storageKey)
+    if (saved !== null) setCollapsed(saved === "1")
+  }, [storageKey])
+
+  const toggle = () => {
+    setCollapsed((v) => {
+      const next = !v
+      localStorage.setItem(storageKey, next ? "1" : "0")
+      return next
+    })
+  }
+
+  const avgProg = dreams.length > 0
+    ? Math.round(dreams.reduce((s, d) => s + (d.progress ?? 0), 0) / dreams.length)
+    : 0
+
+  return (
+    <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${axisInfo.color}25`, background: `${axisInfo.color}05` }}>
+      <button
+        onClick={toggle}
+        className="flex items-center gap-3 w-full text-left px-4 py-3"
+        style={{ borderBottom: collapsed ? "none" : `1px solid ${axisInfo.color}18` }}
+      >
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-0.5">
+            <span className="text-xs font-medium" style={{ color: axisInfo.color }}>{axisInfo.label}</span>
+            <span className="text-[10px] text-faint">{axisInfo.sub}</span>
+            <span className="text-[10px] font-mono text-faint ml-auto">{dreams.length}世界</span>
+          </div>
+          {/* 進捗バー */}
+          {dreams.length > 0 && (
+            <div className="h-1 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
+              <div className="h-full rounded-full transition-all"
+                style={{ width: `${avgProg}%`, background: axisInfo.color, opacity: 0.7 }} />
+            </div>
+          )}
+        </div>
+        {collapsed
+          ? <ChevronRight size={13} style={{ color: "var(--faint)" }} />
+          : <ChevronDown size={13} style={{ color: "var(--faint)" }} />
+        }
+      </button>
+      {!collapsed && (
+        <div className="px-4 py-3 space-y-2">
+          {dreams.map((d) => (
+            <DreamCard key={d.id} dream={d} color={axisInfo.color} dreamIdByTitle={dreamIdByTitle} showAxisChanger />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+export function DreamList({ byCategory, done, catColors, catLabels, dreamIdByTitle = {}, byAxis }: {
+  byCategory: { cat: string; label: string; color: string; dreams: Dream[] }[]
+  done: Dream[]
   catColors: Record<string, string>
   catLabels: Record<string, string>
   dreamIdByTitle?: Record<string, string>
+  byAxis?: { axisId: string; dreams: Dream[] }[]
 }) {
   const [doneCollapsed, setDoneCollapsed] = useState(true)
+
+  if (byAxis) {
+    // 軸別表示モード
+    const unclassified = byAxis.find((a) => a.axisId === "")?.dreams ?? []
+    return (
+      <div className="space-y-4">
+        {byAxis.filter((a) => a.axisId !== "").map(({ axisId, dreams }) =>
+          dreams.length > 0 ? (
+            <AxisSection key={axisId} axisId={axisId} dreams={dreams} dreamIdByTitle={dreamIdByTitle} />
+          ) : null
+        )}
+
+        {unclassified.length > 0 && (
+          <div className="pt-2">
+            <p className="text-[10px] font-mono text-faint mb-3 tracking-wider">── 軸未分類</p>
+            <div className="space-y-2">
+              {unclassified.map((d) => (
+                <DreamCard key={d.id} dream={d} color="var(--dim)" dreamIdByTitle={dreamIdByTitle} showAxisChanger />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {done.length > 0 && (
+          <div>
+            <button
+              onClick={() => setDoneCollapsed((v) => !v)}
+              className="flex items-center gap-2 mb-3 w-full text-left"
+            >
+              <CheckCircle2 size={14} style={{ color: "#4ade80" }} />
+              <h3 className="text-sm font-medium flex-1" style={{ color: "#4ade80" }}>達成済み</h3>
+              <span className="text-xs font-mono text-faint">{done.length}世界</span>
+              {doneCollapsed
+                ? <ChevronRight size={13} style={{ color: "var(--faint)" }} />
+                : <ChevronDown size={13} style={{ color: "var(--faint)" }} />
+              }
+            </button>
+            {!doneCollapsed && (
+              <div className="space-y-2 opacity-60">
+                {done.map((d) => <DreamCard key={d.id} dream={d} color="#4ade80" achieved dreamIdByTitle={dreamIdByTitle} />)}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // フォールバック: カテゴリ別表示
   return (
     <div className="space-y-8">
       {byCategory.map(({ cat, label, color, dreams }) => (
@@ -99,13 +213,14 @@ export function DreamList({ byCategory, done, catColors, catLabels, dreamIdByTit
   )
 }
 
-function DreamCard({ dream, color, achieved = false, dreamIdByTitle = {} }: {
-  dream: any; color: string; achieved?: boolean; dreamIdByTitle?: Record<string, string>
+function DreamCard({ dream, color, achieved = false, dreamIdByTitle = {}, showAxisChanger = false }: {
+  dream: Dream; color: string; achieved?: boolean; dreamIdByTitle?: Record<string, string>; showAxisChanger?: boolean
 }) {
   const [expanded, setExpanded] = useState(false)
   const [editing, setEditing] = useState(false)
   const [prog, setProg] = useState(String(dream.progress))
   const [editFields, setEditFields] = useState<Record<string, string>>({})
+  const [axisChanging, setAxisChanging] = useState(false)
   const [isPending, startTransition] = useTransition()
 
   const filledCount = FIELD_LABELS.filter(({ key }) => dream[key]).length
@@ -127,8 +242,15 @@ function DreamCard({ dream, color, achieved = false, dreamIdByTitle = {} }: {
 
   const handleSaveField = (key: string) => {
     startTransition(async () => {
-      await updateDream(dream.id, { [key]: editFields[key] ?? dream[key] })
+      await updateDream(dream.id, { [key]: editFields[key] ?? (dream as Record<string, unknown>)[key] })
       setEditFields((prev) => { const n = { ...prev }; delete n[key]; return n })
+    })
+  }
+
+  const handleAxisChange = (newAxis: string | null) => {
+    startTransition(async () => {
+      await updateDreamAxis(dream.id, newAxis)
+      setAxisChanging(false)
     })
   }
 
@@ -249,9 +371,46 @@ function DreamCard({ dream, color, achieved = false, dreamIdByTitle = {} }: {
         </div>
       </div>
 
-      {/* 展開パネル — 8フィールド */}
+      {/* 展開パネル — 8フィールド + 軸変更 */}
       {expanded && (
         <div className="px-4 pb-4" style={{ borderTop: `1px solid ${color}15` }}>
+          {/* 軸変更UI */}
+          {showAxisChanger && !achieved && (
+            <div className="pt-3 pb-3" style={{ borderBottom: `1px solid ${color}10` }}>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] font-mono tracking-wider text-faint uppercase">4本軸</span>
+                <button onClick={() => setAxisChanging((v) => !v)}
+                  className="text-[10px] text-faint hover:text-white transition-colors">
+                  {axisChanging ? "閉じる" : "変更"}
+                </button>
+              </div>
+              {!axisChanging ? (
+                <p className="text-xs" style={{ color: AXES.find((a) => a.value === dream.axis)?.color ?? "var(--faint)" }}>
+                  {AXES.find((a) => a.value === dream.axis)?.label ?? "未分類"}
+                </p>
+              ) : (
+                <div className="grid grid-cols-2 gap-1">
+                  <button type="button" onClick={() => handleAxisChange(null)} disabled={isPending}
+                    className="px-2 py-1.5 rounded text-xs text-left transition-all"
+                    style={!dream.axis ? { background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.3)", color: "white" }
+                      : { background: "transparent", border: "1px solid var(--border)", color: "var(--dim)" }}>
+                    未分類
+                  </button>
+                  {AXES.map((a) => (
+                    <button key={a.value} type="button" onClick={() => handleAxisChange(a.value)} disabled={isPending}
+                      className="px-2 py-1.5 rounded text-xs text-left transition-all"
+                      style={dream.axis === a.value
+                        ? { background: `${a.color}20`, border: `1px solid ${a.color}60`, color: a.color }
+                        : { background: "transparent", border: "1px solid var(--border)", color: "var(--dim)" }}>
+                      <span className="block font-medium">{a.label}</span>
+                      <span className="block text-[10px] opacity-70">{a.sub}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="pt-4 space-y-4">
             {FIELD_LABELS.map(({ key, label }) => {
               const val = editFields[key] !== undefined ? editFields[key] : (dream[key] ?? "")

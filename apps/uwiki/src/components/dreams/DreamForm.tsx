@@ -6,6 +6,13 @@ import { polishText } from "@/actions/ai-write"
 import { AiPolishButton } from "@/components/ui/AiPolishButton"
 import { Plus, ChevronDown, ChevronUp } from "lucide-react"
 
+export const AXES = [
+  { value: "RICE1", label: "ライスワーク①", sub: "個人案件", color: "#f59e0b" },
+  { value: "RICE2", label: "ライスワーク②", sub: "えんだ/円舵ビジネス", color: "#3a6fc9" },
+  { value: "LIFE1", label: "ライフワーク①", sub: "個人創作", color: "#8b5cf6" },
+  { value: "LIFE2", label: "ライフワーク②", sub: "めぐ/愛プロデュース", color: "#f472b6" },
+]
+
 const CATEGORIES = [
   { value: "OATH",     label: "十二の誓い" },
   { value: "CREATIVE", label: "創作（個人）" },
@@ -28,7 +35,7 @@ const FIELDS = [
 
 type FieldKey = typeof FIELDS[number]["key"]
 
-export function DreamForm({ catLabels, usedLayers = [] }: { catLabels: Record<string, string>; usedLayers?: number[] }) {
+export function DreamForm({ catLabels, usedLayers = [], defaultAxis }: { catLabels: Record<string, string>; usedLayers?: number[]; defaultAxis?: string }) {
   const nextLayer = (() => {
     const used = new Set(usedLayers)
     for (let i = 1; i <= 100; i++) { if (!used.has(i)) return i }
@@ -40,6 +47,7 @@ export function DreamForm({ catLabels, usedLayers = [] }: { catLabels: Record<st
   const [title, setTitle] = useState("")
   const [category, setCategory] = useState("OATH")
   const [layer, setLayer] = useState(nextLayer ? String(nextLayer) : "")
+  const [axis, setAxis] = useState(defaultAxis ?? "")
   const [fields, setFields] = useState<Record<FieldKey, string>>({
     definition: "", vision: "", vow: "", constraints: "", period: "", kpi: "", connections: "",
   })
@@ -50,7 +58,7 @@ export function DreamForm({ catLabels, usedLayers = [] }: { catLabels: Record<st
     setFields((prev) => ({ ...prev, [key]: val }))
 
   const reset = () => {
-    setTitle(""); setCategory("OATH"); setLayer("")
+    setTitle(""); setCategory("OATH"); setLayer(""); setAxis(defaultAxis ?? "")
     setFields({ definition: "", vision: "", vow: "", constraints: "", period: "", kpi: "", connections: "" })
     setOpen(false); setShowAll(false)
   }
@@ -64,6 +72,7 @@ export function DreamForm({ catLabels, usedLayers = [] }: { catLabels: Record<st
         title: t,
         category,
         layer: layer ? Number(layer) : undefined,
+        axis: axis || undefined,
         ...fields,
       })
       setJustAdded(t)
@@ -100,6 +109,29 @@ export function DreamForm({ catLabels, usedLayers = [] }: { catLabels: Record<st
         <label className="text-xs text-dim block mb-1">① 世界名 *</label>
         <input value={title} onChange={(e) => setTitle(e.target.value)}
           placeholder="例: ぽもじかん" required className="input-base text-sm font-medium" />
+      </div>
+
+      {/* 4本軸 */}
+      <div className="mb-4">
+        <label className="text-xs text-dim block mb-2">4本軸</label>
+        <div className="grid grid-cols-2 gap-1.5">
+          <button type="button" onClick={() => setAxis("")}
+            className="px-2 py-1.5 rounded-lg text-xs text-left transition-all"
+            style={!axis ? { background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.3)", color: "white" }
+              : { background: "transparent", border: "1px solid var(--border)", color: "var(--dim)" }}>
+            未分類
+          </button>
+          {AXES.map((a) => (
+            <button key={a.value} type="button" onClick={() => setAxis(a.value)}
+              className="px-2 py-1.5 rounded-lg text-xs text-left transition-all"
+              style={axis === a.value
+                ? { background: `${a.color}20`, border: `1px solid ${a.color}60`, color: a.color }
+                : { background: "transparent", border: "1px solid var(--border)", color: "var(--dim)" }}>
+              <span className="block font-medium">{a.label}</span>
+              <span className="block text-[10px] opacity-70">{a.sub}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3 mb-4">

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
+import type { Priority } from "@uwiki/database"
 import { ai } from "@/lib/ai"
 
 async function authenticate(req: NextRequest): Promise<boolean> {
@@ -54,9 +55,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let body: any
-  try { body = await req.json() } catch {
+  type CreateTaskBody = {
+    title?: string; memo?: string; tags?: string; priority?: Priority
+    dueDate?: string; column?: string; projectId?: string
+  }
+  let body: CreateTaskBody
+  try { body = await req.json() as CreateTaskBody } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 })
   }
 

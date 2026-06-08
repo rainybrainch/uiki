@@ -30,8 +30,8 @@ export function TaskCheckbox({ taskId, completed }: { taskId: string; completed:
       disabled={pending}
       aria-label={shown ? "タスクを未完了にする" : "タスクを完了にする"}
       aria-pressed={shown}
-      className="mt-0.5 shrink-0 flex items-center justify-center"
-      style={{ width: 28, height: 28, background: "transparent", border: "none", padding: 0, cursor: "pointer" }}
+      className="shrink-0 flex items-center justify-center"
+      style={{ width: 44, height: 44, background: "transparent", border: "none", padding: 0, cursor: "pointer", margin: "-8px -8px -8px 0" }}
     >
       <span
         className={`rounded flex items-center justify-center transition-all duration-150 ${popping ? "animate-check-pop" : ""}`}

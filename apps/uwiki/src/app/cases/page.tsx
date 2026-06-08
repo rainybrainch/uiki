@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db"
+import type { Case, CaseStatus } from "@uwiki/database"
 import { CasePipeline } from "@/components/cases/CasePipeline"
 import { CaseForm } from "@/components/cases/CaseForm"
 import { Briefcase } from "lucide-react"
@@ -23,12 +24,12 @@ export default async function CasesPage({
   searchParams: Promise<{ filter?: string }>
 }) {
   const { filter } = await searchParams
-  let cases: any[] = []
-  let allCases: any[] = []
+  let cases: Case[] = []
+  let allCases: Case[] = []
   try {
     ;[cases, allCases] = await Promise.all([
       prisma.case.findMany({
-        where: filter && filter !== "all" ? { status: filter as any } : {},
+        where: filter && filter !== "all" ? { status: filter as CaseStatus } : {},
         orderBy: { createdAt: "desc" },
       }),
       prisma.case.findMany({ orderBy: { createdAt: "desc" } }),

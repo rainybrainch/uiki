@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db"
+import type { DiaryEntry } from "@uwiki/database"
 import { today, calcStreak } from "@/lib/date"
 import { DiaryEditor } from "@/components/diary/DiaryEditor"
 import { DiaryCalendar } from "@/components/diary/DiaryCalendar"
@@ -24,8 +25,8 @@ export default async function DiaryPage({
     endOfMonth(parseISO(monthStr + "-01")),
   ]
 
-  let currentEntry: any = null
-  let monthEntries: any[] = []
+  let currentEntry: DiaryEntry | null = null
+  let monthEntries: { date: string; mood: number | null }[] = []
   let allDates: string[] = []
   try {
     ;[currentEntry, monthEntries, allDates] = await Promise.all([

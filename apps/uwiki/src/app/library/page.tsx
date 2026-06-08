@@ -3,7 +3,7 @@ import { LibraryList } from "@/components/library/LibraryList"
 import { LibraryAddForm } from "@/components/library/LibraryAddForm"
 import { LibraryFilter } from "@/components/library/LibraryFilter"
 import { Library } from "lucide-react"
-import type { ItemType, ItemStatus } from "@uwiki/database"
+import type { ItemType, ItemStatus, LibraryItem } from "@uwiki/database"
 
 export const dynamic = "force-dynamic"
 
@@ -27,8 +27,8 @@ export default async function LibraryPage({
   const typeFilter = params.type as ItemType | undefined
   const statusFilter = params.status as ItemStatus | undefined
 
-  let items: any[] = []
-  let all: any[] = []
+  let items: LibraryItem[] = []
+  let all: { type: ItemType; status: ItemStatus }[] = []
   try {
     ;[items, all] = await Promise.all([
       prisma.libraryItem.findMany({

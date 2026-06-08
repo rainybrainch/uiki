@@ -97,6 +97,10 @@ export function MobileNav() {
                 key={href}
                 href={href}
                 onClick={() => setOpen(false)}
+                className="no-tap-feedback"
+                onTouchStart={(e) => { e.currentTarget.style.opacity = "0.65"; e.currentTarget.style.transform = "scale(0.93)" }}
+                onTouchEnd={(e) => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.transform = "scale(1)" }}
+                onTouchCancel={(e) => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.transform = "scale(1)" }}
                 style={{
                   display: "flex", flexDirection: "column",
                   alignItems: "center", justifyContent: "center",
@@ -106,7 +110,7 @@ export function MobileNav() {
                   border: `1px solid ${active ? `${c}35` : "var(--border)"}`,
                   color: active ? "white" : "var(--dim)",
                   fontSize: "0.7rem",
-                  transition: "background 0.15s",
+                  transition: "background 0.15s, opacity 0.08s, transform 0.08s",
                 }}
               >
                 <Icon size={20} strokeWidth={active ? 2 : 1.5} style={{ color: active ? c : "inherit" }} />
@@ -134,6 +138,7 @@ export function MobileNav() {
           const active = isActive(href)
           return (
             <Link key={href} href={href}
+              className="no-tap-feedback"
               style={{
                 flex: 1, display: "flex", flexDirection: "column",
                 alignItems: "center", justifyContent: "center",
@@ -141,9 +146,13 @@ export function MobileNav() {
                 textDecoration: "none",
                 color: active ? "white" : "var(--dim)",
                 fontSize: "0.62rem", minHeight: 56,
-                transition: "color 0.12s",
+                transition: "color 0.12s, opacity 0.08s, transform 0.08s",
                 position: "relative",
+                WebkitTapHighlightColor: "transparent",
               }}
+              onTouchStart={(e) => { e.currentTarget.style.opacity = "0.65"; e.currentTarget.style.transform = "scale(0.92)" }}
+              onTouchEnd={(e) => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.transform = "scale(1)" }}
+              onTouchCancel={(e) => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.transform = "scale(1)" }}
             >
               {/* アクティブ indicator */}
               {active && (
@@ -164,13 +173,17 @@ export function MobileNav() {
         {/* もっとボタン */}
         <button
           onClick={() => setOpen((v) => !v)}
+          className="no-tap-feedback"
+          onTouchStart={(e) => { e.currentTarget.style.opacity = "0.65"; e.currentTarget.style.transform = "scale(0.92)" }}
+          onTouchEnd={(e) => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.transform = "scale(1)" }}
+          onTouchCancel={(e) => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.transform = "scale(1)" }}
           style={{
             flex: 1, display: "flex", flexDirection: "column",
             alignItems: "center", justifyContent: "center",
             gap: 3, padding: "10px 0", minHeight: 56,
             background: "none", border: "none", cursor: "pointer",
             color: isMoreActive || open ? "white" : "var(--dim)",
-            fontSize: "0.62rem", transition: "color 0.12s",
+            fontSize: "0.62rem", transition: "color 0.12s, opacity 0.08s, transform 0.08s",
           }}
         >
           {open

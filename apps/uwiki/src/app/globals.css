@@ -68,6 +68,24 @@
     background: rgba(58, 111, 201, 0.5);
   }
 
+  /* ─── タッチデバイス最適化 ─── */
+
+  /* 300msタップ遅延を撲滅 */
+  a, button, input, select, textarea, label, [role="button"], summary {
+    touch-action: manipulation;
+  }
+
+  /* デフォルトのタップハイライトを除去（カスタムフィードバックに統一） */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* タップ中のテキスト選択を防ぐ */
+  button, a, [role="button"] {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
   input, select, textarea {
     color-scheme: dark;
   }
@@ -97,6 +115,13 @@
     background: var(--surface2);
     box-shadow: 0 4px 24px rgba(0,0,0,0.3), 0 0 16px rgba(36,86,184,0.1);
     transform: translateY(-1px);
+  }
+  /* タップ押し込みフィードバック（即時 → 遷移なし） */
+  .surface-hover:active {
+    border-color: var(--border-h);
+    background: var(--surface2);
+    transform: scale(0.985);
+    transition: transform 0s, background 0s, border-color 0s;
   }
 
   /* グラスカード */
@@ -168,7 +193,11 @@
     box-shadow: 0 2px 16px rgba(36,86,184,0.35), 0 0 8px rgba(58,111,201,0.2);
     transform: translateY(-1px);
   }
-  .btn-primary:active:not(:disabled) { transform: translateY(0); }
+  .btn-primary:active:not(:disabled) {
+    transform: scale(0.96);
+    background: var(--accent-3);
+    transition: transform 0s, background 0s;
+  }
   .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
 
   .btn-ghost {
@@ -178,6 +207,12 @@
     border: 1px solid transparent;
   }
   .btn-ghost:hover { color: var(--text); background: var(--faint); border-color: var(--border); }
+  .btn-ghost:active {
+    color: var(--text);
+    background: rgba(255,255,255,0.1);
+    transform: scale(0.96);
+    transition: transform 0s, background 0s;
+  }
 
   /* インプット */
   .input-field {
@@ -230,9 +265,26 @@
     animation: bar-grow 1.2s cubic-bezier(0.4, 0, 0.2, 1) 0.2s both;
   }
 
-  /* ボタンアクティブ押し込み */
-  .btn-primary:active:not(:disabled),
-  .btn-ghost:active { transform: scale(0.97); }
+  /* ─── タップフィードバック（全 a / button を共通カバー） ─── */
+
+  /* モバイルのみ: hover が効かない端末向けの汎用 active フィードバック */
+  @media (hover: none) and (pointer: coarse) {
+    a:not(.no-tap-feedback):active,
+    button:not(.no-tap-feedback):active {
+      opacity: 0.72;
+      transform: scale(0.96);
+      transition: opacity 0s, transform 0s;
+    }
+  }
+
+  /* 最小タップターゲット保証（44px） */
+  .tap-target {
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 }
 
 /* ─── アニメーション ─────────────────────────────────── */

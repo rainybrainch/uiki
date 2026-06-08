@@ -14,6 +14,7 @@ export async function createDream(data: {
   connections?: string
   category: string
   layer?: number
+  axis?: string
 }) {
   const count = await prisma.dream.count()
   await prisma.dream.create({
@@ -29,6 +30,7 @@ export async function createDream(data: {
       category:    data.category    as any,
       layer:       data.layer       ?? count + 1,
       order:       count,
+      axis:        data.axis        || null,
     },
   })
   revalidatePath("/dreams")
@@ -45,6 +47,7 @@ export async function updateDream(id: string, data: {
   connections?: string
   category?: string
   layer?: number
+  axis?: string
 }) {
   await prisma.dream.update({
     where: { id },
@@ -59,7 +62,16 @@ export async function updateDream(id: string, data: {
       ...(data.connections !== undefined ? { connections: data.connections || null }   : {}),
       ...(data.category    !== undefined ? { category:    data.category    as any }    : {}),
       ...(data.layer       !== undefined ? { layer:       data.layer }                 : {}),
+      ...(data.axis        !== undefined ? { axis:        data.axis        || null }   : {}),
     },
+  })
+  revalidatePath("/dreams")
+}
+
+export async function updateDreamAxis(id: string, axis: string | null) {
+  await prisma.dream.update({
+    where: { id },
+    data: { axis },
   })
   revalidatePath("/dreams")
 }

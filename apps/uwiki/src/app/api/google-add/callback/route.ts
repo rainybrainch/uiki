@@ -13,8 +13,11 @@ export async function GET(req: NextRequest) {
   const code = req.nextUrl.searchParams.get("code")
   if (!code) return NextResponse.redirect(`${nextAuthUrl}/settings?error=no_code`)
 
+  type TokenResponse = { access_token?: string; refresh_token?: string; expires_in?: number; error?: string }
+  type UserInfo = { email?: string; name?: string }
+
   // code → tokens
-  let tokens: any
+  let tokens: TokenResponse
   try {
     const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
       method: "POST",
@@ -35,7 +38,7 @@ export async function GET(req: NextRequest) {
   if (!tokens.access_token) return NextResponse.redirect(`${process.env.NEXTAUTH_URL}/settings?error=token_failed`)
 
   // メールアドレス取得
-  let user: any
+  let user: UserInfo
   try {
     const userRes = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
       headers: { Authorization: `Bearer ${tokens.access_token}` },
@@ -51,8 +54,10 @@ export async function GET(req: NextRequest) {
     where: { email: user.email },
     update: {
       accessToken:  tokens.access_token,
-      refreshToken: tokens.refresh_token ?? null,
+      useGmail:     true,
       expiresAt:    tokens.expires_in ? BigInt(Date.now() + tokens.expires_in * 1000) : null,
+      // 新しい refresh_token が来た時だけ更新（既存を null で上書きしない）
+      ...(tokens.refresh_token ? { refreshToken: tokens.refresh_token } : {}),
     },
     create: {
       email:        user.email,

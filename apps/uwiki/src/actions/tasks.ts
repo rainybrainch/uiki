@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache"
 import { prisma } from "@/lib/db"
-import { Priority } from "@uwiki/database"
+import { Priority, Task } from "@uwiki/database"
 export type { Priority }
 import { format, addDays, addWeeks, addMonths, parseISO } from "date-fns"
 import { today } from "@/lib/date"
@@ -92,7 +92,7 @@ export async function completeRecurringTask(id: string) {
 
 export async function moveTask(id: string, column: KanbanColumn) {
   const completed = column === "done"
-  let task: any = null
+  let task: Task | null = null
   try {
     task = await prisma.task.update({
       where: { id },

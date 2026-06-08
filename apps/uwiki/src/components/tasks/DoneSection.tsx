@@ -11,7 +11,7 @@ export function DoneSection({
   count,
   projectId,
 }: {
-  tasks: any[]
+  tasks: Parameters<typeof TaskList>[0]["tasks"]
   count: number
   projectId?: string
 }) {

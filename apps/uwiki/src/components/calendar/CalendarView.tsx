@@ -277,7 +277,7 @@ export function CalendarView({
         </div>
 
         {/* 日付グリッド */}
-        <div className="grid grid-cols-7 auto-rows-[minmax(72px,auto)] sm:auto-rows-[minmax(100px,auto)]">
+        <div className="grid grid-cols-7 auto-rows-[minmax(64px,auto)] sm:auto-rows-[minmax(100px,auto)]">
           {days.map((day, idx) => {
             const dateStr = format(day, "yyyy-MM-dd")
             const inMonth = isSameMonth(day, monthDate)
@@ -317,36 +317,64 @@ export function CalendarView({
                   )}
                 </div>
 
-                {tasks.slice(0, 2).map((task) => (
-                  <div key={task.id}
-                    className={clsx("flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] mb-0.5 truncate", task.completed && "opacity-40")}
-                    style={{ background: "rgba(58,111,201,0.1)", color: "var(--text)", borderLeft: `2px solid ${priorityDot[task.priority]}` }}>
-                    <span className="truncate">{task.title}</span>
-                  </div>
-                ))}
-                {tasks.length > 2 && <p className="text-[9px] text-faint px-1">+{tasks.length - 2}件</p>}
+                {/* ── スマホ: ドット + 件数バッジ ── */}
+                <div className="sm:hidden mt-1 flex flex-col gap-0.5">
+                  {gEvents.length > 0 && (
+                    <div className="flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "#4ade80" }} />
+                      <span className="text-[9px] font-mono leading-none" style={{ color: "#4ade80" }}>{gEvents.length}</span>
+                    </div>
+                  )}
+                  {tasks.length > 0 && (
+                    <div className="flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "var(--accent)" }} />
+                      <span className="text-[9px] font-mono leading-none" style={{ color: "var(--accent)" }}>{tasks.length}</span>
+                    </div>
+                  )}
+                  {casesOnDay.length > 0 && (
+                    <div className="flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "#c9a84c" }} />
+                      <span className="text-[9px] font-mono leading-none" style={{ color: "#c9a84c" }}>{casesOnDay.length}</span>
+                    </div>
+                  )}
+                  {diary && (
+                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "var(--amber)" }} />
+                  )}
+                </div>
 
-                {gEvents.slice(0, 2).map((ev) => (
-                  <div key={ev.id} className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] mb-0.5 truncate"
-                    style={{ background: "rgba(66,200,120,0.12)", borderLeft: "2px solid #4ade80", color: "var(--text)" }}>
-                    <span className="truncate">{ev.summary}</span>
-                  </div>
-                ))}
-                {gEvents.length > 2 && <p className="text-[9px] text-faint px-1">+{gEvents.length - 2}件</p>}
+                {/* ── PC: テキストチップ ── */}
+                <div className="hidden sm:block">
+                  {tasks.slice(0, 2).map((task) => (
+                    <div key={task.id}
+                      className={clsx("flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] mb-0.5 truncate", task.completed && "opacity-40")}
+                      style={{ background: "rgba(58,111,201,0.1)", color: "var(--text)", borderLeft: `2px solid ${priorityDot[task.priority]}` }}>
+                      <span className="truncate">{task.title}</span>
+                    </div>
+                  ))}
+                  {tasks.length > 2 && <p className="text-[9px] text-faint px-1">+{tasks.length - 2}</p>}
 
-                {casesOnDay.slice(0, 1).map((c) => (
-                  <div key={c.id} className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] mb-0.5 truncate"
-                    style={{ background: "rgba(201,168,76,0.12)", borderLeft: "2px solid #c9a84c", color: "var(--text)" }}>
-                    <span className="truncate">{c.name}</span>
-                  </div>
-                ))}
+                  {gEvents.slice(0, 2).map((ev) => (
+                    <div key={ev.id} className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] mb-0.5 truncate"
+                      style={{ background: "rgba(66,200,120,0.12)", borderLeft: "2px solid #4ade80", color: "var(--text)" }}>
+                      <span className="truncate">{ev.summary}</span>
+                    </div>
+                  ))}
+                  {gEvents.length > 2 && <p className="text-[9px] text-faint px-1">+{gEvents.length - 2}</p>}
 
-                {diary && (
-                  <div className="flex items-center gap-1 mt-0.5 text-[10px] truncate" style={{ color: "var(--amber)" }}>
-                    <BookOpen size={9} />
-                    <span className="truncate">{diary.title}</span>
-                  </div>
-                )}
+                  {casesOnDay.slice(0, 1).map((c) => (
+                    <div key={c.id} className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] mb-0.5 truncate"
+                      style={{ background: "rgba(201,168,76,0.12)", borderLeft: "2px solid #c9a84c", color: "var(--text)" }}>
+                      <span className="truncate">{c.name}</span>
+                    </div>
+                  ))}
+
+                  {diary && (
+                    <div className="flex items-center gap-1 mt-0.5 text-[10px] truncate" style={{ color: "var(--amber)" }}>
+                      <BookOpen size={9} />
+                      <span className="truncate">{diary.title}</span>
+                    </div>
+                  )}
+                </div>
               </div>
             )
           })}

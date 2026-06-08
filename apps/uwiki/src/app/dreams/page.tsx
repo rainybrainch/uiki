@@ -1,9 +1,17 @@
 import { prisma } from "@/lib/db"
+import type { Dream } from "@uwiki/database"
 import { DreamList } from "@/components/dreams/DreamList"
 import { DreamForm } from "@/components/dreams/DreamForm"
 import { Layers } from "lucide-react"
 
 export const dynamic = "force-dynamic"
+
+const AXES = [
+  { id: "RICE1", label: "ライスワーク①", sub: "個人案件", color: "#f59e0b" },
+  { id: "RICE2", label: "ライスワーク②", sub: "えんだ/円舵ビジネス", color: "#3a6fc9" },
+  { id: "LIFE1", label: "ライフワーク①", sub: "個人創作", color: "#8b5cf6" },
+  { id: "LIFE2", label: "ライフワーク②", sub: "めぐ/愛プロデュース", color: "#f472b6" },
+]
 
 const CAT_LABELS: Record<string, string> = {
   OATH:     "十二の誓い",
@@ -26,7 +34,7 @@ const CAT_COLORS: Record<string, string> = {
 }
 
 export default async function DreamsPage() {
-  let dreams: any[] = []
+  let dreams: Dream[] = []
   try {
     dreams = await prisma.dream.findMany({ orderBy: [{ achieved: "asc" }, { layer: "asc" }, { order: "asc" }] })
   } catch (e) { console.error("[page] DB query failed:", e) }
@@ -45,6 +53,22 @@ export default async function DreamsPage() {
     color: CAT_COLORS[cat],
     dreams: active.filter((d) => d.category === cat),
   })).filter((g) => g.dreams.length > 0)
+
+  // 4本軸別グループ
+  const byAxis = [
+    ...AXES.map((a) => ({ axisId: a.id, dreams: active.filter((d) => (d as any).axis === a.id) })),
+    { axisId: "", dreams: active.filter((d) => !(d as any).axis) },
+  ]
+
+  // 軸別集計（カードに表示）
+  const axisStats = AXES.map((a) => ({
+    ...a,
+    count: active.filter((d) => (d as any).axis === a.id).length,
+    avgProg: (() => {
+      const ds = active.filter((d) => (d as any).axis === a.id)
+      return ds.length > 0 ? Math.round(ds.reduce((s, d) => s + (d.progress ?? 0), 0) / ds.length) : 0
+    })(),
+  }))
 
   return (
     <div className="h-full flex flex-col max-w-3xl mx-auto w-full">
@@ -115,7 +139,7 @@ export default async function DreamsPage() {
               <div className="space-y-2">
                 {byCategory.map(({ cat, label, color, dreams: catDreams }) => {
                   const avgProgress = catDreams.length > 0
-                    ? Math.round(catDreams.reduce((s: number, d: any) => s + (d.progress ?? 0), 0) / catDreams.length)
+                    ? Math.round(catDreams.reduce((s, d) => s + (d.progress ?? 0), 0) / catDreams.length)
                     : 0
                   return (
                     <div key={cat} className="flex items-center gap-3">
@@ -136,11 +160,34 @@ export default async function DreamsPage() {
             </div>
           )}
         </div>
+
+        {/* 4本軸カード */}
+        <div className="mb-2 px-4 md:px-8">
+          <p className="text-[10px] font-mono tracking-widest text-faint mb-3">4本軸</p>
+          <div className="grid grid-cols-2 gap-2">
+            {axisStats.map((a) => (
+              <div key={a.id} className="rounded-xl p-3"
+                style={{ background: `${a.color}07`, border: `1px solid ${a.color}25` }}>
+                <p className="text-xs font-medium mb-0.5" style={{ color: a.color }}>{a.label}</p>
+                <p className="text-[10px] text-faint mb-2">{a.sub}</p>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 h-1 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
+                    <div className="h-full rounded-full transition-all"
+                      style={{ width: `${a.avgProg}%`, background: a.color, opacity: 0.8 }} />
+                  </div>
+                  <span className="text-[10px] font-mono shrink-0" style={{ color: a.count > 0 ? a.color : "var(--faint)" }}>
+                    {a.count}世界
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 pb-8 md:px-8 md:pb-12">
         <div className="mb-6">
-          <DreamForm catLabels={CAT_LABELS} usedLayers={dreams.map((d: any) => d.layer).filter(Boolean)} />
+          <DreamForm catLabels={CAT_LABELS} usedLayers={dreams.map((d) => d.layer).filter(Boolean)} />
         </div>
 
         {/* 世界が少ない時のヒント */}
@@ -152,7 +199,7 @@ export default async function DreamsPage() {
                 "RAINY BRAIN起業", "マネぼう", "RA'I'NA", "雨と世界",
                 "ぽもじかん", "電脳世界", "SASUKE完全制覇", "ボカロP活動",
                 "VTuber活動", "法人化+書店", "Blender 3D", "音楽制作",
-              ].filter((name) => !active.find((d: any) => d.title === name)).slice(0, 6).map((name) => (
+              ].filter((name) => !active.find((d) => d.title === name)).slice(0, 6).map((name) => (
                 <span key={name} className="text-xs px-2.5 py-1 rounded-full cursor-default"
                   style={{ background: "rgba(139,92,246,0.1)", color: "#a78bfa", border: "1px solid rgba(139,92,246,0.2)" }}>
                   {name}
@@ -167,7 +214,8 @@ export default async function DreamsPage() {
           done={done}
           catColors={CAT_COLORS}
           catLabels={CAT_LABELS}
-          dreamIdByTitle={Object.fromEntries(dreams.map((d: any) => [d.title, d.id]))}
+          dreamIdByTitle={Object.fromEntries(dreams.map((d) => [d.title, d.id]))}
+          byAxis={byAxis}
         />
       </div>
     </div>
