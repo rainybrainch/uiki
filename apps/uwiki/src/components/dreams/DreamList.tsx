@@ -346,6 +346,11 @@ function DreamCard({ dream, color, achieved = false, dreamIdByTitle = {}, showAx
 
           {/* アクションボタン */}
           <div className="flex items-center gap-1 shrink-0">
+            <Link href={`/dreams/${dream.id}`}
+              className="p-1.5 rounded-lg text-dim hover:text-white transition-colors"
+              title="詳細ページ">
+              <ExternalLink size={13} />
+            </Link>
             <button onClick={() => setExpanded((v) => !v)}
               className="p-1.5 rounded-lg text-dim hover:text-white transition-colors"
               title={expanded ? "閉じる" : "詳細"}>
