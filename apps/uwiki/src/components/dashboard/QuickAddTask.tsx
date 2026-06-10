@@ -12,6 +12,7 @@ function parseDueDate(token: string): string | undefined {
   const today = new Date()
   if (t === "#today" || t === "#今日") return format(today, "yyyy-MM-dd")
   if (t === "#tomorrow" || t === "#明日") return format(addDays(today, 1), "yyyy-MM-dd")
+  if (t === "#来週" || t === "#nextweek") return format(addDays(today, 7), "yyyy-MM-dd")
   const mdMatch = token.match(/^#(\d{1,2})\/(\d{1,2})$/)
   if (mdMatch) {
     const m = mdMatch[1].padStart(2, "0"), d = mdMatch[2].padStart(2, "0")
@@ -59,9 +60,10 @@ function getHint(value: string): string | null {
   if (value.includes("@")) return "@プロジェクト名で自動割り当て"
   if (value.includes("#today") || value.includes("#今日")) return "期限: 今日"
   if (value.includes("#tomorrow") || value.includes("#明日")) return "期限: 明日"
+  if (value.includes("#来週") || value.includes("#nextweek")) return "期限: 来週（7日後）"
   const mdMatch = value.match(/#(\d{1,2}\/\d{1,2})/)
   if (mdMatch) return `期限: ${mdMatch[1]}`
-  if (value.includes("#")) return "#today #tomorrow #MM/DD で期限設定"
+  if (value.includes("#")) return "#today #明日 #来週 #MM/DD で期限設定"
   return null
 }
 
@@ -118,7 +120,7 @@ export function QuickAddTask({ projects = [] }: { projects?: Project[] }) {
           ref={inputRef}
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          placeholder={done ? "追加しました" : "今日やることを追加... (!高優先 ~低優先 @project #today)"}
+          placeholder={done ? "追加しました" : "今日やることを追加... (!高優先 ~低優先 @project #today #来週)"}
           className="flex-1 bg-transparent outline-none"
           style={{
             fontSize: "0.9375rem",
