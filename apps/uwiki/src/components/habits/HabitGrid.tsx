@@ -167,8 +167,8 @@ function HabitRow({ habit, last7 }: { habit: HabitWithStats; last7: DayLabel[] }
         })}
       </div>
 
-      {/* streak */}
-      <div className="w-12 sm:w-16 text-right px-1 sm:px-2">
+      {/* streak + 週達成率 */}
+      <div className="w-12 sm:w-16 text-right px-1 sm:px-2 flex flex-col items-end gap-0.5">
         {habit.streak > 0 ? (
           <span className="text-[10px] sm:text-xs font-mono" style={{ color: habit.color }}>🌧 {habit.streak}</span>
         ) : habit.doneToday ? (
@@ -176,6 +176,16 @@ function HabitRow({ habit, last7 }: { habit: HabitWithStats; last7: DayLabel[] }
         ) : (
           <span className="text-[10px] font-mono text-faint">未</span>
         )}
+        {(() => {
+          const weekDone = last7.filter((d) => habit.logDates.includes(d.date)).length
+          const rate = Math.round((weekDone / last7.length) * 100)
+          return (
+            <span className="text-[9px] font-mono hidden sm:inline"
+              style={{ color: rate >= 70 ? habit.color : "var(--faint)", opacity: rate >= 70 ? 0.85 : 0.5 }}>
+              {rate}%
+            </span>
+          )
+        })()}
       </div>
 
       {/* 削除 */}
