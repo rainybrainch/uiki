@@ -88,12 +88,24 @@ function DayPanel({
   }
 
   const label = format(parseISO(dateStr), "M月d日（E）", { locale: ja })
+  const completedTasks = tasks.filter((t) => t.completed).length
 
   return (
     <div className="animate-fade-in-fast rounded-xl p-4 mt-3"
       style={{ background: "rgba(58,111,201,0.05)", border: "1px solid rgba(58,111,201,0.2)" }}>
       <div className="flex items-center justify-between mb-3">
-        <span className="text-sm font-medium" style={{ color: "var(--accent)" }}>{label}</span>
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium" style={{ color: "var(--accent)" }}>{label}</span>
+          {tasks.length > 0 && (
+            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded"
+              style={{
+                color: completedTasks === tasks.length ? "var(--green)" : "var(--dim)",
+                background: completedTasks === tasks.length ? "rgba(74,222,128,0.1)" : "rgba(255,255,255,0.04)",
+              }}>
+              {completedTasks}/{tasks.length}完了
+            </span>
+          )}
+        </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowAddTask((v) => !v)}
