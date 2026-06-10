@@ -101,12 +101,28 @@ export function FlowView({ roots, dreamTitle, projectId }: {
     )
   }
 
+  const totalLeaves = roots.reduce((s, r) => s + countLeaves(r), 0)
+  const doneLeaves  = roots.reduce((s, r) => s + countDoneLeaves(r), 0)
+  const overallPct  = totalLeaves > 0 ? Math.round((doneLeaves / totalLeaves) * 100) : 0
+
   return (
     <div className="space-y-4">
       {dreamTitle && (
         <div className="flex items-center gap-2 mb-2 px-1">
           <div className="w-2 h-2 rounded-full" style={{ background: "#8b5cf6" }} />
           <span className="text-xs font-mono text-dim">百層世界: {dreamTitle}</span>
+        </div>
+      )}
+      {totalLeaves > 0 && (
+        <div className="flex items-center gap-3 px-1 mb-1">
+          <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
+            <div className="h-full rounded-full transition-all duration-500"
+              style={{ width: `${overallPct}%`, background: overallPct === 100 ? "#4ade80" : "#8b5cf6" }} />
+          </div>
+          <span className="text-[10px] font-mono shrink-0"
+            style={{ color: overallPct === 100 ? "#4ade80" : "var(--dim)" }}>
+            {doneLeaves}/{totalLeaves} ({overallPct}%)
+          </span>
         </div>
       )}
       {roots.map((node) => (
