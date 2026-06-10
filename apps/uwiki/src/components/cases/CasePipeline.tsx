@@ -39,13 +39,23 @@ export function CasePipeline({ columns }: {
     <div className="space-y-6">
       {columns.filter((col) => col.cases.length > 0 || col.status === "ACQUIRED").map((col) => (
         <div key={col.status}>
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-2.5 h-2.5 rounded-full" style={{ background: STATUS_COLORS[col.status] }} />
-            <h3 className="text-sm font-medium" style={{ color: STATUS_COLORS[col.status] }}>
-              {col.label}
-            </h3>
-            <span className="text-xs font-mono text-faint">{col.cases.length}件</span>
-          </div>
+          {(() => {
+            const total = col.cases.reduce((s, c) => s + c.reward, 0)
+            return (
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-2.5 h-2.5 rounded-full" style={{ background: STATUS_COLORS[col.status] }} />
+                <h3 className="text-sm font-medium" style={{ color: STATUS_COLORS[col.status] }}>
+                  {col.label}
+                </h3>
+                <span className="text-xs font-mono text-faint">{col.cases.length}件</span>
+                {total > 0 && (
+                  <span className="text-xs font-mono ml-auto" style={{ color: STATUS_COLORS[col.status], opacity: 0.7 }}>
+                    ¥{total.toLocaleString()}
+                  </span>
+                )}
+              </div>
+            )
+          })()}
           {col.cases.length === 0 ? (
             <div className="px-3 py-4 text-center">
               <p className="text-xs text-faint">案件を追加してください</p>
