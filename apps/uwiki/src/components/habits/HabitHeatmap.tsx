@@ -2,7 +2,7 @@
 
 import { format, subDays, eachDayOfInterval, startOfWeek } from "date-fns"
 import { ja } from "date-fns/locale"
-import { calcStreak } from "@/lib/date"
+import { calcStreak, calcBestStreak } from "@/lib/date"
 
 type Props = { logDates: string[]; color: string; name: string; createdAt?: Date | string }
 
@@ -36,14 +36,32 @@ export function HabitHeatmap({ logDates, color, name, createdAt }: Props) {
   const totalDays = activeDays.length
   const doneDays = activeDays.filter((d) => dateSet.has(format(d, "yyyy-MM-dd"))).length
   const streak = calcStreak(logDates)
+  const bestStreak = calcBestStreak(logDates)
+  const pct = totalDays > 0 ? Math.round((doneDays / totalDays) * 100) : 0
 
   return (
     <div className="mt-4">
       <div className="flex items-center justify-between mb-2">
-        <p className="text-xs font-mono text-dim">{doneDays}/{totalDays} 日達成</p>
-        {streak > 0 && (
-          <p className="text-xs font-mono" style={{ color }}>🌧 {streak}日連続</p>
-        )}
+        <div className="flex items-center gap-2">
+          <p className="text-xs font-mono text-dim">{doneDays}/{totalDays} 日達成</p>
+          {totalDays > 0 && (
+            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded"
+              style={{
+                background: pct >= 80 ? `${color}18` : "rgba(255,255,255,0.04)",
+                color: pct >= 80 ? color : "var(--faint)",
+              }}>
+              {pct}%
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          {bestStreak > 1 && streak !== bestStreak && (
+            <p className="text-[10px] font-mono text-faint">最長 {bestStreak}日</p>
+          )}
+          {streak > 0 && (
+            <p className="text-xs font-mono" style={{ color }}>🌧 {streak}日連続</p>
+          )}
+        </div>
       </div>
 
       <div className="flex gap-0.5 overflow-x-auto pb-1">
