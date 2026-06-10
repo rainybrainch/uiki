@@ -21,6 +21,10 @@ export function GravityInternal({ logs }: { logs: GravityLog[] }) {
   const [isPending, startTransition] = useTransition()
   const [deleting, startDeleteTransition] = useTransition()
 
+  const lightCount  = logs.filter((l) => l.intensity === 1).length
+  const heavyCount  = logs.filter((l) => l.intensity === 3).length
+  const superCount  = logs.filter((l) => l.intensity === 5).length
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!text.trim()) return
@@ -48,13 +52,39 @@ export function GravityInternal({ logs }: { logs: GravityLog[] }) {
             fontSize: "1.2rem", fontWeight: 500,
             color: "#c9a84c", letterSpacing: "0.05em",
           }}>砂のログ</h2>
-          <span style={{ marginLeft: "auto", fontSize: "0.7rem", color: "var(--dim)", letterSpacing: "0.1em" }}>
-            メンター（重力AI）
+          <span style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            {logs.length > 0 && (
+              <span style={{ fontSize: "0.7rem", fontFamily: "monospace", color: "#c9a84c", background: "rgba(201,168,76,0.12)", padding: "2px 6px", borderRadius: 4 }}>
+                {logs.length}粒
+              </span>
+            )}
+            <span style={{ fontSize: "0.7rem", color: "var(--dim)", letterSpacing: "0.1em" }}>
+              メンター（重力AI）
+            </span>
           </span>
         </div>
         <p style={{ fontSize: "0.85rem", color: "var(--dim)", lineHeight: 1.6, margin: 0 }}>
           思考の断片を、その場で。タスクではなく、内面の「砂」として堆積させる場所。
         </p>
+        {logs.length > 0 && (
+          <div style={{ display: "flex", gap: "0.6rem", marginTop: "0.5rem" }}>
+            {lightCount > 0 && (
+              <span style={{ fontSize: "0.68rem", fontFamily: "monospace", color: "var(--dim)" }}>
+                軽 {lightCount}
+              </span>
+            )}
+            {heavyCount > 0 && (
+              <span style={{ fontSize: "0.68rem", fontFamily: "monospace", color: "#d4915c" }}>
+                🪨 {heavyCount}
+              </span>
+            )}
+            {superCount > 0 && (
+              <span style={{ fontSize: "0.68rem", fontFamily: "monospace", color: "#f0a560" }}>
+                ⚓ {superCount}
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* 入力フォーム */}
