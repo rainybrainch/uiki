@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useTransition, useRef, useEffect, useCallback } from "react"
-import { format } from "date-fns"
+import { format, differenceInCalendarDays, parseISO, startOfDay } from "date-fns"
 import { useRouter } from "next/navigation"
 import { updateTask, deleteTask, toggleTask, createSubTask, toggleSubTask, deleteSubTask } from "@/actions/tasks"
 import type { Priority, Recurrence } from "@/actions/tasks"
@@ -222,12 +222,24 @@ export function TaskDetailClient({
             <Calendar size={12} />
             <span className="text-xs">締切日</span>
           </div>
-          <input
-            type="date"
-            className="input-field text-xs sm:max-w-[180px]"
-            value={dueDate}
-            onChange={(e) => { setDueDate(e.target.value); markDirty() }}
-          />
+          <div className="flex items-center gap-2">
+            <input
+              type="date"
+              className="input-field text-xs sm:max-w-[180px]"
+              value={dueDate}
+              onChange={(e) => { setDueDate(e.target.value); markDirty() }}
+            />
+            {dueDate && !completed && (() => {
+              const days = differenceInCalendarDays(startOfDay(parseISO(dueDate)), startOfDay(new Date()))
+              const label = days < 0 ? `⚠ ${Math.abs(days)}日超過` : days === 0 ? "今日" : days === 1 ? "明日" : `${days}日後`
+              const color = days < 0 ? "var(--red)" : days === 0 ? "var(--amber)" : days <= 3 ? "#f59e0b" : "var(--dim)"
+              return (
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded" style={{ color, background: `${color}18` }}>
+                  {label}
+                </span>
+              )
+            })()}
+          </div>
         </div>
 
         {/* 繰り返し */}
