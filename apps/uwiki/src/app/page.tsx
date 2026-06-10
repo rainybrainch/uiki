@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db"
 import { today, calcStreak, formatDisplay } from "@/lib/date"
-import { format, startOfDay } from "date-fns"
+import { format, startOfDay, subDays } from "date-fns"
 import { ja } from "date-fns/locale"
 import { CheckSquare, Repeat2, BookOpen, ArrowRight, AlertCircle, Briefcase, Layers, Clock, CloudRain, CalendarDays } from "lucide-react"
 import { isToday, isPast } from "date-fns"
@@ -101,6 +101,10 @@ export default async function DashboardPage() {
   }
 
   const doneHabitsToday = habits.filter((h) => h.logs.some((l) => l.date === todayStr)).length
+
+  const past7 = Array.from({ length: 7 }, (_, i) =>
+    format(subDays(new Date(), 6 - i), "yyyy-MM-dd")
+  )
 
   // 100万円カウンター
   const earned = cases.filter((c) => c.status === "DONE").reduce((s, c) => s + (c.paidAmount ?? c.reward), 0)
@@ -384,12 +388,19 @@ export default async function DashboardPage() {
               {habits.map((habit) => {
                 const doneToday = habit.logs.some((l) => l.date === todayStr)
                 const streak = calcStreak(habit.logs.map((l) => l.date))
+                const logDates = new Set(habit.logs.map((l) => l.date))
                 return (
                   <li key={habit.id}
                     className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[var(--faint)] transition-all"
                     style={{ opacity: doneToday ? 0.5 : 1 }}>
                     <HabitCheckButton habitId={habit.id} doneToday={doneToday} color={habit.color} />
                     <span className="flex-1 text-sm" style={{ textDecoration: doneToday ? "line-through" : "none" }}>{habit.name}</span>
+                    <div className="flex gap-0.5 shrink-0">
+                      {past7.map((d) => (
+                        <span key={d} className="w-2 h-2 rounded-full"
+                          style={{ background: logDates.has(d) ? habit.color : "rgba(255,255,255,0.08)" }} />
+                      ))}
+                    </div>
                     {streak > 0 && <span className="text-xs font-mono shrink-0" style={{ color: habit.color }}>🌧{streak}</span>}
                   </li>
                 )
