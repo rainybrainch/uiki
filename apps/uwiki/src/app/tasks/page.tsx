@@ -169,7 +169,12 @@ export default async function TasksPage({
                 ? projects.find((p) => p.id === projectFilter)?.name ?? "タスク"
                 : "すべて"}
             </h1>
-            <span className="text-xs font-mono text-dim">{active.length} 件</span>
+            <span className="text-xs font-mono text-dim">
+              {view === "board" || view === "flow" ? active.length : displayTasks.length} 件
+            </span>
+            {view !== "board" && view !== "flow" && displayTasks.length !== active.length && (
+              <span className="text-[10px] font-mono text-faint">全 {active.length}</span>
+            )}
             {view === "all" && done.length > 0 && (
               <span className="text-[10px] font-mono text-faint">完了 {done.length}</span>
             )}
