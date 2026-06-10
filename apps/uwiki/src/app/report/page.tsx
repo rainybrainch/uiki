@@ -26,13 +26,14 @@ export default async function ReportPage() {
   let dreams: Dream[] = []
   let adjustments: AdjustmentLog[] = []
   let cases: Case[] = []
+  let doneCases: { paidAmount: number; reward: number }[] = []
 
   try {
     ;[
       tasksThisWeek, tasksDone, tasksPrev,
       habits, habitLogsThisWeek,
       diaryThisWeek, diaryPrev,
-      dreams, adjustments, cases,
+      dreams, adjustments, cases, doneCases,
     ] = await Promise.all([
       prisma.task.count({ where: { createdAt: { gte: weekStart, lte: weekEnd }, parentTaskId: null } }),
       prisma.task.count({ where: { completed: true, updatedAt: { gte: weekStart, lte: weekEnd }, parentTaskId: null } }),
@@ -44,6 +45,7 @@ export default async function ReportPage() {
       prisma.dream.findMany({ where: { achieved: false }, orderBy: { layer: "asc" }, take: 5 }),
       prisma.adjustmentLog.findMany({ orderBy: { createdAt: "desc" }, take: 10 }),
       prisma.case.findMany({ where: { status: { not: "DONE" } }, orderBy: { createdAt: "desc" } }),
+      prisma.case.findMany({ where: { status: "DONE" }, select: { paidAmount: true, reward: true } }),
     ])
   } catch (e) {
     console.error("[report] DB query failed:", e)
@@ -96,9 +98,7 @@ export default async function ReportPage() {
   const habitRate = maxHabits > 0 ? habitLogsThisWeek / maxHabits : 0
   const weekLabel = `${format(weekStart, "M/d", { locale: ja })} 〜 ${format(weekEnd, "M/d", { locale: ja })}`
 
-  const earned = cases
-    .filter((c) => c.status === "DONE")
-    .reduce((s, c) => s + (c.paidAmount ?? c.reward), 0)
+  const earned = doneCases.reduce((s, c) => s + (c.paidAmount || c.reward), 0)
   const earningPct = Math.min(100, Math.round((earned / 1_000_000) * 100))
 
   return (
