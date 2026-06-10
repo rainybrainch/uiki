@@ -16,7 +16,7 @@ function buildFlatItems(results: Results | null): FlatItem[] {
     ...results.diary.map((d) => ({ id: d.id, title: d.title, sub: d.date, href: `/diary?date=${d.date}` })),
     ...results.library.map((l) => ({ id: l.id, title: l.title, sub: l.creator ?? undefined, href: "/library" })),
     ...(results.cases ?? []).map((c) => ({ id: c.id, title: c.name, sub: c.client ?? undefined, href: "/cases" })),
-    ...(results.dreams ?? []).map((d) => ({ id: d.id, title: d.title, sub: `No.${(d as any).layer ?? ""} ${d.vision?.slice(0, 35) ?? ""}`.trim(), href: `/dreams#dream-${d.id}` })),
+    ...(results.dreams ?? []).map((d) => ({ id: d.id, title: d.title, sub: `No.${(d as any).layer ?? ""} ${d.vision?.slice(0, 35) ?? ""}`.trim(), href: `/dreams/${d.id}` })),
   ]
 }
 

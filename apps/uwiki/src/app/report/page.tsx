@@ -116,7 +116,8 @@ export default async function ReportPage() {
         {/* ─── サマリーカード ─── */}
         <div className="grid grid-cols-3 sm:grid-cols-3 gap-2 md:gap-3 animate-fade-in delay-100" style={{ gridTemplateColumns: "repeat(3, minmax(0, 1fr))" }}>
           <StatCard icon={<CheckSquare size={13} />} label="タスク完了"
-            value={tasksDone} sub={`先週比 ${tasksDone >= tasksPrev ? "+" : ""}${tasksDone - tasksPrev}`}
+            value={tasksDone}
+            sub={tasksThisWeek > 0 ? `完了率 ${Math.round((tasksDone / tasksThisWeek) * 100)}%` : `先週比 ${tasksDone >= tasksPrev ? "+" : ""}${tasksDone - tasksPrev}`}
             positive={tasksDone >= tasksPrev} />
           <StatCard icon={<Repeat2 size={13} />} label="習慣達成率"
             value={`${Math.round(habitRate * 100)}%`} sub={`${habitLogsThisWeek}/${maxHabits}回`}
