@@ -279,7 +279,12 @@ function CaseCard({ c }: { c: Case }) {
             </button>
           )}
           {c.status === "DONE" && (
-            <span className="text-xs font-medium" style={{ color: "#4ade80" }}>✓ 完了</span>
+            <span className="flex items-center gap-1.5 text-xs font-medium" style={{ color: "#4ade80" }}>
+              ✓ 完了
+              <span className="text-[10px] font-mono font-normal opacity-70">
+                {format(new Date(c.updatedAt), "M/d", { locale: ja })}
+              </span>
+            </span>
           )}
           <ConfirmButton onConfirm={handleDelete} disabled={isPending} className="ml-auto p-1.5 rounded-lg" />
         </div>
