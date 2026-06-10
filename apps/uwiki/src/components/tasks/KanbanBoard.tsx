@@ -13,6 +13,7 @@ type Task = {
   id: string; title: string; memo: string | null
   priority: "HIGH" | "MEDIUM" | "LOW"; dueDate: Date | null
   column: string; completed: boolean
+  project?: { id: string; name: string; color: string } | null
 }
 type Column = { id: string; label: string }
 
@@ -151,6 +152,12 @@ function KanbanCard({ task }: { task: Task }) {
       </div>
 
       {task.memo && <p className="text-xs mt-1.5 pl-7 line-clamp-2 text-dim">{task.memo}</p>}
+      {task.project && (
+        <div className="flex items-center gap-1 mt-1.5 pl-7">
+          <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: task.project.color }} />
+          <span className="text-[10px] truncate" style={{ color: task.project.color, opacity: 0.8 }}>{task.project.name}</span>
+        </div>
+      )}
       {task.dueDate && (
         <p className="text-[10px] mt-2 pl-7 font-mono" style={{ color: dueDateColor }}>
           {isOverdue && "⚠ "}{new Date(task.dueDate).toLocaleDateString("ja-JP", { month: "short", day: "numeric" })}
