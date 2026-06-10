@@ -230,7 +230,7 @@ export default async function DashboardPage() {
               <div className="absolute inset-y-0 left-0 rounded-full" style={{ width: `${dreamPct}%`, background: "#8b5cf6" }} />
             </div>
             <p className="text-xs font-mono text-dim mt-1">
-              {dreamTotal}層 · avg <span style={{ color: dreamAvgProgress >= 50 ? "#8b5cf6" : undefined }}>{dreamAvgProgress}%</span>
+              {dreamTotal}層{dreamAchieved > 0 && <span style={{ color: "#8b5cf6" }}> · {dreamAchieved}達成</span>} · avg <span style={{ color: dreamAvgProgress >= 50 ? "#8b5cf6" : undefined }}>{dreamAvgProgress}%</span>
             </p>
           </Link>
 

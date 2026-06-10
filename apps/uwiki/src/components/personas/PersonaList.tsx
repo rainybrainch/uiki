@@ -20,14 +20,21 @@ export function PersonaList({ personas }: { personas: CommentPersona[] }) {
     )
   }
 
+  const enabledCount = personas.filter((p) => p.enabled).length
+
   return (
     <div style={{ marginBottom: 32 }}>
       <div style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
         fontSize: 10, fontWeight: 900, letterSpacing: "0.14em", textTransform: "uppercase",
         color: "var(--fg-muted, #888)", marginBottom: 10, paddingBottom: 6,
         borderBottom: "1px solid rgba(255,255,255,.08)",
       }}>
-        人格一覧
+        <span>人格一覧</span>
+        <span style={{ fontWeight: 400, letterSpacing: 0, textTransform: "none" }}>
+          <span style={{ color: "#57c87c" }}>{enabledCount}</span>
+          <span style={{ color: "rgba(255,255,255,0.25)" }}> / {personas.length}</span>
+        </span>
       </div>
       <div style={{ display: "grid", gap: 8 }}>
         {personas.map(p => (
