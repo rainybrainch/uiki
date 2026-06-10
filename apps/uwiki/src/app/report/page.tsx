@@ -2,7 +2,7 @@ import { prisma } from "@/lib/db"
 import type { Habit, HabitLog, Dream, AdjustmentLog, Case } from "@uwiki/database"
 import { BarChart2, CheckSquare, Repeat2, BookOpen, Briefcase, Layers, TrendingUp } from "lucide-react"
 import Link from "next/link"
-import { format, startOfWeek, endOfWeek, subWeeks } from "date-fns"
+import { format, startOfWeek, endOfWeek, subWeeks, addDays } from "date-fns"
 import { ja } from "date-fns/locale"
 import { WeeklyCheck } from "@/components/report/WeeklyCheck"
 import { AdjustmentList } from "@/components/report/AdjustmentList"
@@ -60,6 +60,24 @@ export default async function ReportPage() {
     console.error("[report] doneTasksList query failed:", e)
   }
 
+  // 今週の日別完了タスク数
+  const weekDailyDone: { label: string; dayLabel: string; count: number; isToday: boolean }[] = []
+  try {
+    const todayStr = format(now, "yyyy-MM-dd")
+    const dailyRaw = await prisma.task.findMany({
+      where: { completed: true, updatedAt: { gte: weekStart, lte: weekEnd }, parentTaskId: null },
+      select: { updatedAt: true },
+    })
+    for (let i = 0; i < 7; i++) {
+      const d = addDays(weekStart, i)
+      const dStr = format(d, "yyyy-MM-dd")
+      const count = dailyRaw.filter((t) => format(new Date(t.updatedAt), "yyyy-MM-dd") === dStr).length
+      weekDailyDone.push({ label: format(d, "d"), dayLabel: format(d, "E", { locale: ja }), count, isToday: dStr === todayStr })
+    }
+  } catch (e) {
+    console.error("[report] weekDailyDone query failed:", e)
+  }
+
   try {
     past4Weeks = await Promise.all(
       Array.from({ length: 4 }, async (_, i) => {
@@ -107,6 +125,41 @@ export default async function ReportPage() {
             value={diaryThisWeek.length} sub={`先週比 ${diaryThisWeek.length >= diaryPrev ? "+" : ""}${diaryThisWeek.length - diaryPrev}`}
             positive={diaryThisWeek.length >= diaryPrev} />
         </div>
+
+        {/* ─── タスク日別グラフ ─── */}
+        {tasksDone > 0 && (
+          <div className="surface rounded-xl p-5 animate-fade-in delay-100">
+            <p className="section-label">今週の完了タスク（日別）</p>
+            <div className="flex items-end gap-2 h-20 mt-3">
+              {weekDailyDone.map((d) => {
+                const maxCount = Math.max(...weekDailyDone.map((x) => x.count), 1)
+                const h = Math.max(4, (d.count / maxCount) * 100)
+                return (
+                  <div key={d.label} className="flex-1 flex flex-col items-center gap-1">
+                    {d.count > 0 && (
+                      <p className="text-[9px] font-mono" style={{ color: d.isToday ? "var(--accent)" : "var(--faint)" }}>
+                        {d.count}
+                      </p>
+                    )}
+                    <div className="flex-1 w-full flex items-end">
+                      <div className="w-full rounded-t transition-all duration-500"
+                        style={{
+                          height: `${h}%`,
+                          background: d.count === 0 ? "rgba(255,255,255,0.04)"
+                            : d.isToday ? "var(--accent)"
+                            : "rgba(58,111,201,0.55)",
+                          minHeight: "4px",
+                        }} />
+                    </div>
+                    <p className="text-[9px] font-mono" style={{ color: d.isToday ? "var(--accent)" : "var(--dim)" }}>
+                      {d.dayLabel}
+                    </p>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
         {/* ─── 週次Check（誓約×実行） ─── */}
         <WeeklyCheck dreams={dreams} adjustments={adjustments} />
