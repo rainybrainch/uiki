@@ -29,7 +29,20 @@ export function AdjustmentList({ adjustments, dreams }: { adjustments: Adjustmen
   return (
     <div className="surface rounded-xl p-5 animate-fade-in delay-200">
       <div className="flex items-center justify-between mb-4">
-        <p className="section-label mb-0">月次 Act — 修正ログ</p>
+        <div className="flex items-center gap-2">
+          <p className="section-label mb-0">月次 Act — 修正ログ</p>
+          {monthly.length > 0 && (
+            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded"
+              style={{
+                background: monthly.filter((a) => a.result).length === monthly.length
+                  ? "rgba(74,222,128,0.1)" : "rgba(255,255,255,0.04)",
+                color: monthly.filter((a) => a.result).length === monthly.length
+                  ? "var(--green)" : "var(--faint)",
+              }}>
+              {monthly.filter((a) => a.result).length}/{monthly.length} 結果済み
+            </span>
+          )}
+        </div>
         <button onClick={() => setOpen((v) => !v)}
           className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg transition-opacity hover:opacity-80"
           style={{ background: "rgba(201,168,76,0.12)", color: "var(--amber)", border: "1px solid rgba(201,168,76,0.25)" }}>

@@ -42,7 +42,15 @@ export function WeeklyCheck({ dreams, adjustments }: { dreams: Dream[]; adjustme
   return (
     <div className="surface rounded-xl p-5 animate-fade-in delay-100">
       <div className="flex items-center justify-between mb-4">
-        <p className="section-label mb-0">週次 Check — 誓約 × 実行</p>
+        <div className="flex items-center gap-2">
+          <p className="section-label mb-0">週次 Check — 誓約 × 実行</p>
+          {weekChecks.length > 0 && (
+            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded"
+              style={{ background: "rgba(58,111,201,0.1)", color: "var(--accent)" }}>
+              今週 {weekChecks.length} 回
+            </span>
+          )}
+        </div>
         <button onClick={() => setOpen((v) => !v)}
           className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg transition-opacity hover:opacity-80"
           style={{ background: "rgba(58,111,201,0.12)", color: "var(--accent)", border: "1px solid rgba(58,111,201,0.25)" }}>
