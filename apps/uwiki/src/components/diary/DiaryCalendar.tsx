@@ -75,6 +75,12 @@ export function DiaryCalendar({
           <h3 className="text-sm font-serif" style={{ color: "var(--text)" }}>
             {format(monthDate, "yyyy年M月", { locale: ja })}
           </h3>
+          {entryDates.length > 0 && (
+            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full"
+              style={{ background: "rgba(58,111,201,0.08)", color: "var(--accent)" }}>
+              {entryDates.length}件
+            </span>
+          )}
           {monthStr !== format(new Date(), "yyyy-MM") && (
             <button
               onClick={() => navigate(format(new Date(), "yyyy-MM-dd"), format(new Date(), "yyyy-MM"))}
