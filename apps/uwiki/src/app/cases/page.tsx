@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db"
 import type { Case, CaseStatus } from "@uwiki/database"
 import { CasePipeline } from "@/components/cases/CasePipeline"
 import { CaseForm } from "@/components/cases/CaseForm"
+import { CaseStrategy } from "@/components/cases/CaseStrategy"
 import { Briefcase } from "lucide-react"
 import Link from "next/link"
 
@@ -43,6 +44,16 @@ export default async function CasesPage({
   const pending = allCases
     .filter((c) => c.status === "WAITING_PAY")
     .reduce((s, c) => s + c.reward, 0)
+
+  const activeTotal = allCases
+    .filter((c) => !["DONE", "WAITING_PAY"].includes(c.status))
+    .reduce((s, c) => s + c.reward, 0)
+
+  const avgReward = allCases.length > 0
+    ? Math.round(allCases.reduce((s, c) => s + c.reward, 0) / allCases.length)
+    : 0
+
+  const doneCount = allCases.filter((c) => c.status === "DONE").length
 
   const pct = Math.round((earned / GOAL) * 100)
 
@@ -100,12 +111,36 @@ export default async function CasesPage({
                 ? `目標達成！+¥${(earned - GOAL).toLocaleString()}超過`
                 : `あと ¥${(GOAL - earned).toLocaleString()}`}
             </span>
-            {pending > 0 && (
-              <span className="text-dim">
-                支払い待ち ¥{pending.toLocaleString()}
-              </span>
-            )}
           </div>
+
+          {/* ミニ統計 */}
+          <div className="grid grid-cols-3 gap-2 mt-4 pt-4" style={{ borderTop: "1px solid rgba(201,168,76,0.12)" }}>
+            <div className="text-center">
+              <p className="text-[10px] text-dim mb-0.5">進行中合計</p>
+              <p className="text-sm font-mono font-light" style={{ color: "var(--amber)" }}>
+                ¥{activeTotal.toLocaleString()}
+              </p>
+            </div>
+            <div className="text-center">
+              <p className="text-[10px] text-dim mb-0.5">平均単価</p>
+              <p className="text-sm font-mono font-light" style={{ color: "var(--amber)" }}>
+                ¥{avgReward.toLocaleString()}
+              </p>
+            </div>
+            <div className="text-center">
+              <p className="text-[10px] text-dim mb-0.5">
+                完了件数{pending > 0 ? " / 支払待" : ""}
+              </p>
+              <p className="text-sm font-mono font-light" style={{ color: "var(--amber)" }}>
+                {doneCount}件{pending > 0 ? ` / ¥${pending.toLocaleString()}` : ""}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* 軸1運営方針 */}
+        <div className="mb-3">
+          <CaseStrategy />
         </div>
 
         {/* 統計 + フィルター */}
