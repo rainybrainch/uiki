@@ -19,6 +19,7 @@ const SHORTCUTS = [
       { keys: ["!"],          desc: "高優先度 (QuickAdd: !タスク名)" },
       { keys: ["~"],          desc: "低優先度 (QuickAdd: ~タスク名)" },
       { keys: ["@"],          desc: "プロジェクト割り当て (@project名)" },
+      { keys: ["#"],          desc: "期限設定 (#today #明日 #6/20)" },
       { keys: ["⌘", "S"],    desc: "タスク詳細を保存" },
     ],
   },

@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db"
 import type { Habit, HabitLog } from "@uwiki/database"
-import { today, calcStreak } from "@/lib/date"
+import { today, calcStreak, calcBestStreak } from "@/lib/date"
 import { HabitGrid } from "@/components/habits/HabitGrid"
 import { HabitHeatmap } from "@/components/habits/HabitHeatmap"
 import { HabitForm } from "@/components/habits/HabitForm"
@@ -33,12 +33,16 @@ export default async function HabitsPage() {
     }
   })
 
-  const habitsWithStats = habits.map((h) => ({
-    ...h,
-    streak: calcStreak(h.logs.map((l) => l.date)),
-    doneToday: h.logs.some((l) => l.date === todayStr),
-    logDates: h.logs.map((l) => l.date),
-  }))
+  const habitsWithStats = habits.map((h) => {
+    const logDates = h.logs.map((l) => l.date)
+    return {
+      ...h,
+      streak: calcStreak(logDates),
+      bestStreak: calcBestStreak(logDates),
+      doneToday: h.logs.some((l) => l.date === todayStr),
+      logDates,
+    }
+  })
 
   const doneCount = habitsWithStats.filter((h) => h.doneToday).length
 

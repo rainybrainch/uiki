@@ -17,6 +17,7 @@ type HabitWithStats = {
   description: string | null
   color: string
   streak: number
+  bestStreak: number
   doneToday: boolean
   logDates: string[]
 }
@@ -175,6 +176,12 @@ function HabitRow({ habit, last7 }: { habit: HabitWithStats; last7: DayLabel[] }
           <span className="text-[10px] font-mono" style={{ color: habit.color }}>1日目</span>
         ) : (
           <span className="text-[10px] font-mono text-faint">未</span>
+        )}
+        {habit.bestStreak > 1 && habit.bestStreak > habit.streak && (
+          <span className="text-[9px] font-mono hidden sm:inline" title={`最長連続: ${habit.bestStreak}日`}
+            style={{ color: "var(--faint)", opacity: 0.6 }}>
+            max {habit.bestStreak}
+          </span>
         )}
         {(() => {
           const weekDone = last7.filter((d) => habit.logDates.includes(d.date)).length
