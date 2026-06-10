@@ -152,6 +152,11 @@ export function LibraryList({ items, typeLabels }: { items: Item[]; typeLabels: 
         </div>
       )}
 
+      {(query || activeTag) && filtered.length > 0 && (
+        <p className="text-[10px] text-faint font-mono mb-3">
+          {filtered.length}/{items.length}件
+        </p>
+      )}
       {filtered.length === 0 ? (
         <p className="text-center text-sm text-faint py-8">
           {activeTag ? `「${activeTag}」タグのアイテムがありません` : `「${query}」に一致するアイテムがありません`}
