@@ -22,17 +22,6 @@ const AXIS_LABELS: Record<string, { label: string; color: string }> = {
   LIFE2: { label: "ライフワーク②", color: "#f472b6" },
 }
 
-const FIELDS: { key: keyof typeof fieldKeys; label: string; icon: string }[] = [
-  { key: "definition",  label: "定義",         icon: "①" },
-  { key: "vision",      label: "目的/ビジョン", icon: "②" },
-  { key: "vow",         label: "誓約",         icon: "③" },
-  { key: "constraints", label: "制約",         icon: "④" },
-  { key: "period",      label: "期間",         icon: "⑤" },
-  { key: "kpi",         label: "評価軸/KPI",   icon: "⑥" },
-  { key: "connections", label: "相互関連性",    icon: "⑦" },
-]
-const fieldKeys = { definition: 1, vision: 1, vow: 1, constraints: 1, period: 1, kpi: 1, connections: 1 }
-
 export default async function DreamDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
 
@@ -83,43 +72,16 @@ export default async function DreamDetailPage({ params }: { params: Promise<{ id
           {dream.title}
         </h1>
 
-        {/* 進捗 + インタラクション */}
+        {/* 進捗 + インタラクション + フィールド編集 */}
         <DreamDetailClient
           id={dream.id}
           progress={dream.progress}
           achieved={dream.achieved}
           catColor={catColor}
+          dream={dream}
         />
       </div>
 
-      {/* 8フィールド */}
-      <div className="space-y-3 mb-8">
-        {FIELDS.map(({ key, label, icon }) => {
-          const val = dream[key as keyof typeof dream] as string | null
-          if (!val) return null
-          return (
-            <div key={key} className="rounded-xl p-4"
-              style={{ background: "rgba(255,255,255,0.025)", border: "1px solid var(--border)" }}>
-              <p className="text-[10px] font-mono tracking-wider mb-2 flex items-center gap-1.5"
-                style={{ color: catColor, opacity: 0.8 }}>
-                <span>{icon}</span>
-                {label}
-              </p>
-              <p className="text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.78)" }}>
-                {key === "connections"
-                  ? val.split(",").map((s) => s.trim()).filter(Boolean).map((name) => (
-                    <span key={name} className="inline-block mr-1.5 mb-1 text-xs px-2 py-0.5 rounded-full"
-                      style={{ background: "rgba(139,92,246,0.1)", color: "#a78bfa", border: "1px solid rgba(139,92,246,0.2)" }}>
-                      {name}
-                    </span>
-                  ))
-                  : val
-                }
-              </p>
-            </div>
-          )
-        })}
-      </div>
 
       {/* 紐づきタスク */}
       {linkedTasks.length > 0 && (
