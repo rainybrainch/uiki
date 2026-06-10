@@ -115,6 +115,10 @@ export default async function DashboardPage() {
   const dreamAchieved = dreams.filter((d) => d.achieved).length
   const dreamTotal = dreams.length
   const dreamPct = Math.round((dreamAchieved / Math.max(dreamTotal, 1)) * 100)
+  const activeDreams = dreams.filter((d) => !d.achieved)
+  const dreamAvgProgress = activeDreams.length > 0
+    ? Math.round(activeDreams.reduce((s, d) => s + (d.progress ?? 0), 0) / activeDreams.length)
+    : 0
 
   const priorityColor: Record<string, string> = {
     HIGH: "var(--red)", MEDIUM: "var(--accent)", LOW: "var(--dim)",
@@ -206,7 +210,9 @@ export default async function DashboardPage() {
               <div className="absolute inset-y-0 left-0 rounded-full" style={{ width: `${Math.min(100, dreamTotal)}%`, background: "rgba(139,92,246,0.35)" }} />
               <div className="absolute inset-y-0 left-0 rounded-full" style={{ width: `${dreamPct}%`, background: "#8b5cf6" }} />
             </div>
-            <p className="text-xs font-mono text-dim mt-1">{dreamTotal}層入力 · {dreamAchieved}層達成</p>
+            <p className="text-xs font-mono text-dim mt-1">
+              {dreamTotal}層 · avg <span style={{ color: dreamAvgProgress >= 50 ? "#8b5cf6" : undefined }}>{dreamAvgProgress}%</span>
+            </p>
           </Link>
 
           {/* 習慣達成率 */}
