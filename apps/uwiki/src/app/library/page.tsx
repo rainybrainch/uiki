@@ -44,20 +44,44 @@ export default async function LibraryPage({
     // DB未接続時はデフォルト値
   }
   const typeCounts: Record<string, number> = {}
+  const statusCounts: Record<string, number> = { DONE: 0, DOING: 0, WANT: 0 }
   for (const item of all) {
     typeCounts[item.type] = (typeCounts[item.type] ?? 0) + 1
+    statusCounts[item.status] = (statusCounts[item.status] ?? 0) + 1
   }
 
   return (
     <div className="h-full flex flex-col max-w-5xl mx-auto w-full">
       <div className="px-4 py-5 md:px-8 md:py-8 shrink-0">
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-center gap-3 mb-3">
           <Library size={20} strokeWidth={1.5} style={{ color: "var(--accent)" }} />
           <h1 className="text-2xl font-serif font-light tracking-wide">ライブラリ</h1>
           <span className="text-xs font-mono ml-2" style={{ color: "var(--dim)" }}>
             {all.length} 件
           </span>
         </div>
+        {all.length > 0 && (
+          <div className="flex items-center gap-2 mb-4 ml-9">
+            {statusCounts.DONE > 0 && (
+              <span className="text-[10px] font-mono px-2 py-1 rounded-lg"
+                style={{ background: "rgba(74,222,128,0.08)", color: "#4ade80", border: "1px solid rgba(74,222,128,0.2)" }}>
+                完了 {statusCounts.DONE}
+              </span>
+            )}
+            {statusCounts.DOING > 0 && (
+              <span className="text-[10px] font-mono px-2 py-1 rounded-lg"
+                style={{ background: "rgba(58,111,201,0.08)", color: "var(--accent)", border: "1px solid rgba(58,111,201,0.2)" }}>
+                進行中 {statusCounts.DOING}
+              </span>
+            )}
+            {statusCounts.WANT > 0 && (
+              <span className="text-[10px] font-mono px-2 py-1 rounded-lg"
+                style={{ background: "rgba(255,255,255,0.04)", color: "var(--dim)", border: "1px solid var(--border)" }}>
+                積んでる {statusCounts.WANT}
+              </span>
+            )}
+          </div>
+        )}
 
         <LibraryFilter typeLabels={TYPE_LABELS} typeCounts={typeCounts} current={{ type: typeFilter, status: statusFilter }} />
       </div>
