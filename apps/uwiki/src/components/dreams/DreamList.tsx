@@ -98,7 +98,14 @@ function AxisSection({ axisId, dreams, dreamIdByTitle }: {
           <div className="flex items-center gap-2 mb-0.5">
             <span className="text-xs font-medium" style={{ color: axisInfo.color }}>{axisInfo.label}</span>
             <span className="text-[10px] text-faint">{axisInfo.sub}</span>
-            <span className="text-[10px] font-mono text-faint ml-auto">{dreams.length}世界</span>
+            <div className="ml-auto flex items-center gap-2">
+              {dreams.length > 0 && avgProg > 0 && (
+                <span className="text-[10px] font-mono" style={{ color: avgProg >= 50 ? axisInfo.color : "var(--faint)" }}>
+                  {avgProg}%
+                </span>
+              )}
+              <span className="text-[10px] font-mono text-faint">{dreams.length}世界</span>
+            </div>
           </div>
           {/* 進捗バー */}
           {dreams.length > 0 && (
@@ -137,7 +144,8 @@ export function DreamList({ byCategory, done, catColors, catLabels, dreamIdByTit
 
   const matchesDream = (d: Dream) =>
     d.title.toLowerCase().includes(query.toLowerCase()) ||
-    (d.vision ?? "").toLowerCase().includes(query.toLowerCase())
+    (d.vision ?? "").toLowerCase().includes(query.toLowerCase()) ||
+    (d.definition ?? "").toLowerCase().includes(query.toLowerCase())
 
   const filteredByCategory = query
     ? byCategory.map((g) => ({ ...g, dreams: g.dreams.filter(matchesDream) })).filter((g) => g.dreams.length > 0)
