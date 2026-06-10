@@ -5,7 +5,7 @@ import { useState, useTransition, useEffect } from "react"
 import { updateDreamProgress, achieveDream, deleteDream, updateDream, updateDreamAxis } from "@/actions/dreams"
 import { polishText } from "@/actions/ai-write"
 import { AiPolishButton } from "@/components/ui/AiPolishButton"
-import { CheckCircle2, Circle, Trash2, ChevronDown, ChevronUp, Pencil, ChevronRight, ExternalLink } from "lucide-react"
+import { CheckCircle2, Circle, Trash2, ChevronDown, ChevronUp, Pencil, ChevronRight, ExternalLink, Search, X } from "lucide-react"
 import { ConfirmButton } from "@/components/ui/ConfirmButton"
 import Link from "next/link"
 import { AXES } from "./DreamForm"
@@ -133,13 +133,56 @@ export function DreamList({ byCategory, done, catColors, catLabels, dreamIdByTit
   byAxis?: { axisId: string; dreams: Dream[] }[]
 }) {
   const [doneCollapsed, setDoneCollapsed] = useState(true)
+  const [query, setQuery] = useState("")
+
+  const matchesDream = (d: Dream) =>
+    d.title.toLowerCase().includes(query.toLowerCase()) ||
+    (d.vision ?? "").toLowerCase().includes(query.toLowerCase())
+
+  const filteredByCategory = query
+    ? byCategory.map((g) => ({ ...g, dreams: g.dreams.filter(matchesDream) })).filter((g) => g.dreams.length > 0)
+    : byCategory
+  const filteredByAxis = query && byAxis
+    ? byAxis.map((g) => ({ ...g, dreams: g.dreams.filter(matchesDream) }))
+    : byAxis
+  const filteredDone = query ? done.filter(matchesDream) : done
+
+  const totalActive = byAxis
+    ? (byAxis.flatMap((g) => g.dreams).length)
+    : (byCategory.flatMap((g) => g.dreams).length)
+  const filteredTotal = byAxis
+    ? (filteredByAxis?.flatMap((g) => g.dreams).length ?? 0)
+    : (filteredByCategory.flatMap((g) => g.dreams).length)
+
+  const SearchBar = (
+    <div className="relative mb-4">
+      <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-dim pointer-events-none" />
+      <input
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="世界を検索..."
+        className="input-field pl-9 pr-8 text-sm w-full"
+      />
+      {query && (
+        <button onClick={() => setQuery("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-dim hover:text-white transition-colors">
+          <X size={13} />
+        </button>
+      )}
+      {query && (
+        <p className="text-[10px] text-faint mt-1.5 font-mono">
+          {filteredTotal}/{totalActive}件
+        </p>
+      )}
+    </div>
+  )
 
   if (byAxis) {
     // 軸別表示モード
-    const unclassified = byAxis.find((a) => a.axisId === "")?.dreams ?? []
+    const unclassified = (filteredByAxis ?? byAxis).find((a) => a.axisId === "")?.dreams ?? []
     return (
       <div className="space-y-4">
-        {byAxis.filter((a) => a.axisId !== "").map(({ axisId, dreams }) =>
+        {SearchBar}
+        {(filteredByAxis ?? byAxis).filter((a) => a.axisId !== "").map(({ axisId, dreams }) =>
           dreams.length > 0 ? (
             <AxisSection key={axisId} axisId={axisId} dreams={dreams} dreamIdByTitle={dreamIdByTitle} />
           ) : null
@@ -156,7 +199,7 @@ export function DreamList({ byCategory, done, catColors, catLabels, dreamIdByTit
           </div>
         )}
 
-        {done.length > 0 && (
+        {filteredDone.length > 0 && (
           <div>
             <button
               onClick={() => setDoneCollapsed((v) => !v)}
@@ -164,7 +207,7 @@ export function DreamList({ byCategory, done, catColors, catLabels, dreamIdByTit
             >
               <CheckCircle2 size={14} style={{ color: "#4ade80" }} />
               <h3 className="text-sm font-medium flex-1" style={{ color: "#4ade80" }}>達成済み</h3>
-              <span className="text-xs font-mono text-faint">{done.length}世界</span>
+              <span className="text-xs font-mono text-faint">{filteredDone.length}世界</span>
               {doneCollapsed
                 ? <ChevronRight size={13} style={{ color: "var(--faint)" }} />
                 : <ChevronDown size={13} style={{ color: "var(--faint)" }} />
@@ -172,7 +215,7 @@ export function DreamList({ byCategory, done, catColors, catLabels, dreamIdByTit
             </button>
             {!doneCollapsed && (
               <div className="space-y-2 opacity-60">
-                {done.map((d) => <DreamCard key={d.id} dream={d} color="#4ade80" achieved dreamIdByTitle={dreamIdByTitle} />)}
+                {filteredDone.map((d) => <DreamCard key={d.id} dream={d} color="#4ade80" achieved dreamIdByTitle={dreamIdByTitle} />)}
               </div>
             )}
           </div>
@@ -184,11 +227,12 @@ export function DreamList({ byCategory, done, catColors, catLabels, dreamIdByTit
   // フォールバック: カテゴリ別表示
   return (
     <div className="space-y-8">
-      {byCategory.map(({ cat, label, color, dreams }) => (
+      {SearchBar}
+      {filteredByCategory.map(({ cat, label, color, dreams }) => (
         <CategorySection key={cat} cat={cat} label={label} color={color} dreams={dreams} dreamIdByTitle={dreamIdByTitle} />
       ))}
 
-      {done.length > 0 && (
+      {filteredDone.length > 0 && (
         <div>
           <button
             onClick={() => setDoneCollapsed((v) => !v)}
@@ -196,7 +240,7 @@ export function DreamList({ byCategory, done, catColors, catLabels, dreamIdByTit
           >
             <CheckCircle2 size={14} style={{ color: "#4ade80" }} />
             <h3 className="text-sm font-medium flex-1" style={{ color: "#4ade80" }}>達成済み</h3>
-            <span className="text-xs font-mono text-faint">{done.length}世界</span>
+            <span className="text-xs font-mono text-faint">{filteredDone.length}世界</span>
             {doneCollapsed
               ? <ChevronRight size={13} style={{ color: "var(--faint)" }} />
               : <ChevronDown size={13} style={{ color: "var(--faint)" }} />
@@ -204,7 +248,7 @@ export function DreamList({ byCategory, done, catColors, catLabels, dreamIdByTit
           </button>
           {!doneCollapsed && (
             <div className="space-y-2 opacity-60">
-              {done.map((d) => <DreamCard key={d.id} dream={d} color="#4ade80" achieved dreamIdByTitle={dreamIdByTitle} />)}
+              {filteredDone.map((d) => <DreamCard key={d.id} dream={d} color="#4ade80" achieved dreamIdByTitle={dreamIdByTitle} />)}
             </div>
           )}
         </div>
