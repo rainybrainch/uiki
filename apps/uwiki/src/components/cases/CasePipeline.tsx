@@ -76,6 +76,7 @@ function CaseCard({ c }: { c: Case }) {
   const [editDueDate, setEditDueDate] = useState(
     c.dueDate ? format(new Date(c.dueDate), "yyyy-MM-dd") : ""
   )
+  const [editMemo, setEditMemo] = useState(c.memo ?? "")
   const [isPending, startTransition] = useTransition()
   const memoLong = c.memo && c.memo.length > MEMO_LIMIT
 
@@ -87,6 +88,7 @@ function CaseCard({ c }: { c: Case }) {
         client: editClient || null,
         reward: Number(editReward) || c.reward,
         dueDate: editDueDate || null,
+        memo: editMemo || null,
       })
       setEditing(false)
     })
@@ -159,6 +161,13 @@ function CaseCard({ c }: { c: Case }) {
             onChange={(e) => setEditDueDate(e.target.value)}
             type="date"
             className="input-base text-xs w-full"
+          />
+          <textarea
+            value={editMemo}
+            onChange={(e) => setEditMemo(e.target.value)}
+            placeholder="メモ（任意）"
+            rows={2}
+            className="input-base text-xs w-full resize-none"
           />
           <div className="flex gap-2">
             <button onClick={saveEdit} disabled={isPending || !editName.trim()}
