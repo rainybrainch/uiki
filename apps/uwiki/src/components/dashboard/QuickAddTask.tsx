@@ -3,12 +3,29 @@
 import { useState, useTransition, useRef } from "react"
 import { Plus, Check } from "lucide-react"
 import { createTask } from "@/actions/tasks"
+import { format, addDays } from "date-fns"
 
 type Project = { id: string; name: string; color: string }
+
+function parseDueDate(token: string): string | undefined {
+  const t = token.toLowerCase()
+  const today = new Date()
+  if (t === "#today" || t === "#今日") return format(today, "yyyy-MM-dd")
+  if (t === "#tomorrow" || t === "#明日") return format(addDays(today, 1), "yyyy-MM-dd")
+  const mdMatch = token.match(/^#(\d{1,2})\/(\d{1,2})$/)
+  if (mdMatch) {
+    const m = mdMatch[1].padStart(2, "0"), d = mdMatch[2].padStart(2, "0")
+    return `${format(today, "yyyy")}-${m}-${d}`
+  }
+  const isoMatch = token.match(/^#(\d{4}-\d{2}-\d{2})$/)
+  if (isoMatch) return isoMatch[1]
+  return undefined
+}
 
 function parseInput(value: string, projects: Project[]) {
   let priority: "HIGH" | "MEDIUM" | "LOW" = "MEDIUM"
   let projectId: string | undefined
+  let dueDate: string | undefined
   let title = value.trim()
 
   if (title.startsWith("!")) { priority = "HIGH"; title = title.slice(1).trim() }
@@ -24,13 +41,27 @@ function parseInput(value: string, projects: Project[]) {
     }
   }
 
-  return { title, priority, projectId }
+  const hashMatch = title.match(/#\S+/)
+  if (hashMatch) {
+    const parsed = parseDueDate(hashMatch[0])
+    if (parsed) {
+      dueDate = parsed
+      title = title.replace(hashMatch[0], "").trim()
+    }
+  }
+
+  return { title, priority, projectId, dueDate }
 }
 
 function getHint(value: string): string | null {
   if (value.startsWith("!")) return "高優先度"
   if (value.startsWith("~")) return "低優先度"
   if (value.includes("@")) return "@プロジェクト名で自動割り当て"
+  if (value.includes("#today") || value.includes("#今日")) return "期限: 今日"
+  if (value.includes("#tomorrow") || value.includes("#明日")) return "期限: 明日"
+  const mdMatch = value.match(/#(\d{1,2}\/\d{1,2})/)
+  if (mdMatch) return `期限: ${mdMatch[1]}`
+  if (value.includes("#")) return "#today #tomorrow #MM/DD で期限設定"
   return null
 }
 
@@ -53,7 +84,7 @@ export function QuickAddTask({ projects = [] }: { projects?: Project[] }) {
     }
     setError(null)
     startTransition(async () => {
-      await createTask({ title: parsed.title, priority: parsed.priority, projectId: parsed.projectId })
+      await createTask({ title: parsed.title, priority: parsed.priority, projectId: parsed.projectId, dueDate: parsed.dueDate })
       setValue("")
       setDone(true)
       setTimeout(() => {
@@ -87,7 +118,7 @@ export function QuickAddTask({ projects = [] }: { projects?: Project[] }) {
           ref={inputRef}
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          placeholder={done ? "追加しました" : "今日やることを追加... (!高優先 ~低優先 @project)"}
+          placeholder={done ? "追加しました" : "今日やることを追加... (!高優先 ~低優先 @project #today)"}
           className="flex-1 bg-transparent outline-none"
           style={{
             fontSize: "0.9375rem",
