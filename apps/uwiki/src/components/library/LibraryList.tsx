@@ -80,8 +80,36 @@ export function LibraryList({ items, typeLabels }: { items: Item[]; typeLabels: 
     )
   }
 
+  const wantCount  = items.filter((i) => i.status === "WANT").length
+  const doingCount = items.filter((i) => i.status === "DOING").length
+  const doneCount  = items.filter((i) => i.status === "DONE").length
+  const avgRating  = (() => {
+    const rated = items.filter((i) => i.rating !== null)
+    return rated.length > 0 ? (rated.reduce((s, i) => s + (i.rating ?? 0), 0) / rated.length).toFixed(1) : null
+  })()
+
   return (
     <div>
+      {/* ステータス集計 */}
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        {[
+          { label: "積んでる", count: wantCount,  color: "rgba(255,255,255,0.45)", bg: "rgba(255,255,255,0.06)" },
+          { label: "進行中",   count: doingCount, color: "var(--accent)",          bg: "rgba(58,111,201,0.12)" },
+          { label: "完了",     count: doneCount,  color: "#4ade80",                bg: "rgba(74,222,128,0.08)" },
+        ].map(({ label, count, color, bg }) => count > 0 && (
+          <span key={label} className="text-[10px] font-mono px-2 py-1 rounded-full"
+            style={{ background: bg, color, border: `1px solid ${color}33` }}>
+            {label} {count}
+          </span>
+        ))}
+        {avgRating && (
+          <span className="text-[10px] font-mono px-2 py-1 rounded-full ml-auto"
+            style={{ background: "rgba(245,158,11,0.08)", color: "#f59e0b", border: "1px solid rgba(245,158,11,0.2)" }}>
+            avg ★{avgRating}
+          </span>
+        )}
+      </div>
+
       {/* 検索 + ソート */}
       {items.length > 4 && (
         <div className="flex gap-2 mb-4">
