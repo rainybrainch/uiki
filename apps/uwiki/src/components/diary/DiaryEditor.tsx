@@ -193,7 +193,7 @@ export function DiaryEditor({ date, entry }: { date: string; entry: Entry }) {
             color: content.length > 800 ? "var(--amber)" : "var(--faint)",
           }}>
             {content.length.toLocaleString()}字
-            {content.length >= 200 && (
+            {content.length >= 50 && (
               <span className="ml-1.5 opacity-60">· 約{Math.ceil(content.length / 400)}分</span>
             )}
           </span>

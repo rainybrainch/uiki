@@ -85,6 +85,15 @@ export function YomuHealthChart({ label, unit, dates, values }: {
 
       <div className="flex justify-between mt-1 text-[10px] font-mono text-faint">
         <span>{dates[0] ? format(parseISO(dates[0]), "M/d") : ""}</span>
+        {values.length > 1 && (
+          <span className="text-center">
+            <span style={{ color: "var(--accent)" }}>{min}</span>
+            <span className="opacity-40 mx-0.5">–</span>
+            <span style={{ color: "var(--red)" }}>{max}</span>
+            <span className="opacity-40 mx-1">·</span>
+            avg {(values.reduce((s, v) => s + v, 0) / values.length).toFixed(1)}
+          </span>
+        )}
         <span>{dates[dates.length - 1] ? format(parseISO(dates[dates.length - 1]), "M/d") : ""}</span>
       </div>
     </div>
