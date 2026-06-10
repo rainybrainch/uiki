@@ -2,9 +2,10 @@
 
 import type { AttractionMetric, AttractionLog } from "@uwiki/database"
 import { useState, useTransition } from "react"
-import { Trash2 } from "lucide-react"
 import { ConfirmButton } from "@/components/ui/ConfirmButton"
 import { createAttractionMetric, recordAttractionValue, recordSelfReport, deleteAttractionMetric } from "@/actions/gravity"
+import { formatDistanceToNow } from "date-fns"
+import { ja } from "date-fns/locale"
 
 const SELF_METRICS = [
   { key: "mood",    label: "😊 気分",  opts: ["😞 1","😐 2","🙂 3","😄 4","🤩 5"] },
@@ -176,11 +177,15 @@ function MetricCard({ metric }: { metric: AttractionMetric & { logs: AttractionL
   const [value, setValue] = useState("")
   const [isPending, startTransition] = useTransition()
   const [isDeleting, startDeleteTransition] = useTransition()
-  const latestLog = metric.logs[metric.logs.length - 1]
-  const current   = latestLog?.value ?? metric.value ?? null
-  const pct       = metric.target && current !== null
+  const latestLog  = metric.logs[metric.logs.length - 1]
+  const prevLog    = metric.logs[metric.logs.length - 2]
+  const current    = latestLog?.value ?? metric.value ?? null
+  const prev       = prevLog?.value ?? null
+  const trend      = current !== null && prev !== null ? current - prev : null
+  const pct        = metric.target && current !== null
     ? Math.min(100, Math.round((current / metric.target) * 100))
     : null
+  const lastRecorded = latestLog ? formatDistanceToNow(new Date(latestLog.createdAt), { addSuffix: true, locale: ja }) : null
 
   const handleRecord = (e: React.FormEvent) => {
     e.preventDefault()
@@ -205,8 +210,18 @@ function MetricCard({ metric }: { metric: AttractionMetric & { logs: AttractionL
             {current !== null ? current : "—"}
           </span>
           {metric.unit && <span className="text-xs text-dim">{metric.unit}</span>}
+          {trend !== null && trend !== 0 && (
+            <span className="text-xs font-mono" style={{ color: trend > 0 ? "var(--red)" : "var(--green)" }}>
+              {trend > 0 ? "↑" : "↓"}{Math.abs(trend).toFixed(trend % 1 === 0 ? 0 : 1)}
+            </span>
+          )}
         </div>
       </div>
+      {lastRecorded && (
+        <p className="text-[10px] font-mono -mt-2 mb-3" style={{ color: "var(--faint)" }}>
+          最終: {lastRecorded}
+        </p>
+      )}
 
       {/* プログレスバー */}
       {pct !== null && (
