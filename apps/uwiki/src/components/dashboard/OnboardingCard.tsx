@@ -9,8 +9,8 @@ const STEPS = [
   {
     icon: <Zap size={14} style={{ color: "#f59e0b" }} />,
     title: "上の入力欄でタスクを追加",
-    desc: "「今日やること」を入力して Enter。! で高優先度、~ で低優先度。",
-    example: "例: !プレゼン準備  ~後で読む記事",
+    desc: "「今日やること」を入力して Enter。! で高優先度、~ で低優先度、#today / #明日 で期限。",
+    example: "例: !プレゼン準備 #today  ~後で読む記事 #6/20",
     color: "#f59e0b",
   },
   {

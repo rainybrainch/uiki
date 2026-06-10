@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db"
 import { today, calcStreak, formatDisplay } from "@/lib/date"
-import { format, startOfDay, subDays } from "date-fns"
+import { format, startOfDay, endOfDay, subDays } from "date-fns"
 import { ja } from "date-fns/locale"
 import { CheckSquare, Repeat2, BookOpen, ArrowRight, AlertCircle, Briefcase, Layers, Clock, CloudRain, CalendarDays } from "lucide-react"
 import { isToday, isPast } from "date-fns"
@@ -39,6 +39,7 @@ export default async function DashboardPage() {
   let doneTasks = 0
   let totalActiveTasks = 0
   let overdueCount = 0
+  let dueTodayCount = 0
   let cases: Case[] = []
   let dreams: Dream[] = []
   let projects: { id: string; name: string; color: string }[] = []
@@ -70,7 +71,7 @@ export default async function DashboardPage() {
   } catch (e) { console.error("[dashboard] error:", e) }
 
   try {
-    ;[tasks, habits, recentDiaries, doneTasks, totalActiveTasks, overdueCount, cases, dreams, projects] = await Promise.all([
+    ;[tasks, habits, recentDiaries, doneTasks, totalActiveTasks, overdueCount, dueTodayCount, cases, dreams, projects] = await Promise.all([
       prisma.task.findMany({
         where: { completed: false, parentTaskId: null },
         // dueDate が近い（期限切れ含む）→ 優先度高い → 作成日 の順で表示
@@ -90,6 +91,16 @@ export default async function DashboardPage() {
           completed: false,
           parentTaskId: null,
           dueDate: { lt: startOfDay(new Date()) },
+        },
+      }),
+      prisma.task.count({
+        where: {
+          completed: false,
+          parentTaskId: null,
+          dueDate: {
+            gte: startOfDay(new Date()),
+            lte: endOfDay(new Date()),
+          },
         },
       }),
       prisma.case.findMany({ orderBy: { createdAt: "desc" } }),
@@ -164,6 +175,13 @@ export default async function DashboardPage() {
           <StatPill value={totalActiveTasks} label="未完了" color="var(--accent)" href="/tasks" />
           <StatPill value={`${doneHabitsToday}/${habits.length}`} label="今日の習慣" color="var(--green)" href="/habits" />
           <StatPill value={doneTasks} label="完了済み" color="var(--dim)" href="/tasks?view=all" />
+          {dueTodayCount > 0 && (
+            <a href="/tasks?view=today" className="flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs transition-opacity hover:opacity-80" style={{ background: "rgba(58,111,201,0.08)", border: "1px solid rgba(58,111,201,0.25)" }}>
+              <Clock size={11} style={{ color: "var(--accent)" }} />
+              <span className="font-mono font-medium" style={{ color: "var(--accent)" }}>{dueTodayCount}</span>
+              <span style={{ color: "rgba(58,111,201,0.8)" }}>今日期限</span>
+            </a>
+          )}
           {overdueCount > 0 ? (
             <a href="/tasks?view=overdue" className="flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs transition-opacity hover:opacity-80" style={{ background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)" }}>
               <AlertCircle size={11} style={{ color: "var(--red)" }} />
