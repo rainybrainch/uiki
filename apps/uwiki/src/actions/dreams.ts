@@ -66,6 +66,7 @@ export async function updateDream(id: string, data: {
     },
   })
   revalidatePath("/dreams")
+  revalidatePath(`/dreams/${id}`)
 }
 
 export async function updateDreamAxis(id: string, axis: string | null) {
@@ -74,6 +75,7 @@ export async function updateDreamAxis(id: string, axis: string | null) {
     data: { axis },
   })
   revalidatePath("/dreams")
+  revalidatePath(`/dreams/${id}`)
 }
 
 export async function updateDreamProgress(id: string, progress: number) {
@@ -82,6 +84,7 @@ export async function updateDreamProgress(id: string, progress: number) {
     data: { progress: Math.min(100, Math.max(0, progress)) },
   })
   revalidatePath("/dreams")
+  revalidatePath(`/dreams/${id}`)
 }
 
 export async function achieveDream(id: string) {
@@ -90,6 +93,7 @@ export async function achieveDream(id: string) {
     data: { achieved: true, achievedAt: new Date(), progress: 100 },
   })
   revalidatePath("/dreams")
+  revalidatePath(`/dreams/${id}`)
 }
 
 export async function deleteDream(id: string) {

@@ -325,6 +325,18 @@ export async function deleteAllCompleted(projectId?: string) {
   revalidatePath("/")
 }
 
+export async function linkTaskToDream(taskId: string, dreamId: string) {
+  await prisma.task.update({ where: { id: taskId }, data: { dreamId } })
+  revalidatePath("/tasks")
+  revalidatePath(`/dreams/${dreamId}`)
+}
+
+export async function unlinkTaskFromDream(taskId: string, dreamId: string) {
+  await prisma.task.update({ where: { id: taskId }, data: { dreamId: null } })
+  revalidatePath("/tasks")
+  revalidatePath(`/dreams/${dreamId}`)
+}
+
 export async function deleteTask(id: string) {
   try {
     await prisma.task.delete({ where: { id } })

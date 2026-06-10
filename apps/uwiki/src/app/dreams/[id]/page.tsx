@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 import Link from "next/link"
 import { ArrowLeft, Layers, CheckCircle2 } from "lucide-react"
 import { DreamDetailClient } from "@/components/dreams/DreamDetailClient"
+import { LinkTaskButton, UnlinkTaskButton } from "@/components/dreams/LinkTaskButton"
 import type { Task } from "@uwiki/database"
 
 export const dynamic = "force-dynamic"
@@ -28,11 +29,19 @@ export default async function DreamDetailPage({ params }: { params: Promise<{ id
   const dream = await prisma.dream.findUnique({ where: { id } })
   if (!dream) notFound()
 
-  const linkedTasks = await prisma.task.findMany({
-    where: { dreamId: id },
-    orderBy: [{ completed: "asc" }, { createdAt: "desc" }],
-    include: { project: { select: { id: true, name: true, color: true } } },
-  }) as (Task & { project: { id: string; name: string; color: string } | null })[]
+  const [linkedTasks, availableTasks] = await Promise.all([
+    prisma.task.findMany({
+      where: { dreamId: id },
+      orderBy: [{ completed: "asc" }, { createdAt: "desc" }],
+      include: { project: { select: { id: true, name: true, color: true } } },
+    }) as Promise<(Task & { project: { id: string; name: string; color: string } | null })[]>,
+    prisma.task.findMany({
+      where: { completed: false, dreamId: null, parentTaskId: null },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, title: true },
+      take: 50,
+    }),
+  ])
 
   const axis = dream.axis ? AXIS_LABELS[dream.axis] : null
   const catColor = CAT_COLORS[dream.category] ?? "#94a3b8"
@@ -84,40 +93,38 @@ export default async function DreamDetailPage({ params }: { params: Promise<{ id
 
 
       {/* 紐づきタスク */}
-      {linkedTasks.length > 0 && (
-        <div className="mb-8">
-          <p className="text-[10px] font-mono tracking-widest text-faint mb-3">LINKED TASKS</p>
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-[10px] font-mono tracking-widest text-faint">LINKED TASKS</p>
+          <LinkTaskButton dreamId={id} availableTasks={availableTasks} />
+        </div>
+        {linkedTasks.length > 0 ? (
           <div className="space-y-1">
             {linkedTasks.map((task) => (
-              <Link key={task.id} href={`/tasks/${task.id}`}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[rgba(255,255,255,0.04)] transition-colors">
+              <div key={task.id} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[rgba(255,255,255,0.04)] transition-colors group">
                 <div className="w-1.5 h-1.5 rounded-full shrink-0"
                   style={{ background: task.completed ? "var(--faint)" : "var(--accent)" }} />
                 {task.project && (
                   <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: task.project.color }} />
                 )}
-                <span className="flex-1 text-sm truncate"
+                <Link href={`/tasks/${task.id}`} className="flex-1 text-sm truncate hover:text-accent transition-colors"
                   style={{ opacity: task.completed ? 0.4 : 1, textDecoration: task.completed ? "line-through" : "none" }}>
                   {task.title}
-                </span>
+                </Link>
                 {task.project && (
                   <span className="text-[10px] text-faint shrink-0">{task.project.name}</span>
                 )}
-              </Link>
+                <UnlinkTaskButton taskId={task.id} dreamId={id} />
+              </div>
             ))}
           </div>
-        </div>
-      )}
-
-      {linkedTasks.length === 0 && (
-        <div className="mb-8 rounded-xl p-4 text-center"
-          style={{ background: "rgba(255,255,255,0.02)", border: "1px dashed var(--border)" }}>
-          <p className="text-xs text-faint mb-2">このワールドに紐づくタスクがありません</p>
-          <Link href="/tasks" className="text-xs hover:text-accent transition-colors" style={{ color: "var(--dim)" }}>
-            タスクから「ワールドに追加」できます →
-          </Link>
-        </div>
-      )}
+        ) : (
+          <div className="rounded-xl p-4 text-center"
+            style={{ background: "rgba(255,255,255,0.02)", border: "1px dashed var(--border)" }}>
+            <p className="text-xs text-faint">紐づくタスクなし。右上の「タスクをリンク」から追加できます。</p>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
