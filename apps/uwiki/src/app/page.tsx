@@ -123,6 +123,7 @@ export default async function DashboardPage() {
   const earningPct = Math.min(100, Math.round((earned / GOAL_100MAN) * 100))
 
   // 百層世界
+  const dreamMap = Object.fromEntries(dreams.map((d) => [d.id, { layer: d.layer, title: d.title }]))
   const dreamAchieved = dreams.filter((d) => d.achieved).length
   const dreamTotal = dreams.length
   const dreamPct = Math.round((dreamAchieved / Math.max(dreamTotal, 1)) * 100)
@@ -332,6 +333,13 @@ export default async function DashboardPage() {
                               style={{ background: `${task.project.color}18`, color: task.project.color }}>
                               {task.project.name}
                             </span>
+                          )}
+                          {task.dreamId && dreamMap[task.dreamId] && (
+                            <Link href={`/dreams/${task.dreamId}`}
+                              className="text-[9px] px-1.5 py-0.5 rounded-full font-mono hover:opacity-80 transition-opacity"
+                              style={{ background: "rgba(139,92,246,0.12)", color: "#8b5cf6", border: "1px solid rgba(139,92,246,0.2)" }}>
+                              No.{dreamMap[task.dreamId].layer}
+                            </Link>
                           )}
                         </div>
                         <Link href={`/tasks/${task.id}`} className="text-sm leading-snug hover:text-accent transition-colors">
