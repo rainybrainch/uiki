@@ -2,9 +2,11 @@
 
 import { useState, useTransition } from "react"
 import { updateDreamProgress, achieveDream, deleteDream, updateDream } from "@/actions/dreams"
+import { polishText } from "@/actions/ai-write"
 import { useRouter } from "next/navigation"
 import { CheckCircle2, Pencil, Check, X } from "lucide-react"
 import { ConfirmButton } from "@/components/ui/ConfirmButton"
+import { AiPolishButton } from "@/components/ui/AiPolishButton"
 import type { Dream } from "@uwiki/database"
 
 type EditableField = "definition" | "vision" | "vow" | "constraints" | "period" | "kpi" | "connections" | "title"
@@ -151,7 +153,7 @@ export function DreamDetailClient({ id, progress: initialProgress, achieved, cat
                       onKeyDown={(e) => { if (e.key === "Enter") saveField(); if (e.key === "Escape") cancelEdit() }}
                     />
                   )}
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
                     <button onClick={saveField} disabled={isPending}
                       className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg"
                       style={{ background: `${catColor}18`, color: catColor, border: `1px solid ${catColor}35` }}>
@@ -162,6 +164,12 @@ export function DreamDetailClient({ id, progress: initialProgress, achieved, cat
                       style={{ border: "1px solid var(--border)" }}>
                       <X size={11} />キャンセル
                     </button>
+                    {fieldVal.trim() && (
+                      <AiPolishButton
+                        onPolish={() => polishText(fieldVal, `百層世界「${dream.title}」の${FIELD_META.find((f) => f.key === editingField)?.label ?? ""}フィールド`)}
+                        onResult={(text) => setFieldVal(text)}
+                      />
+                    )}
                   </div>
                 </div>
               ) : (
