@@ -11,6 +11,8 @@ export function BulkAddTasks({ projectId }: { projectId?: string }) {
   const [isPending, startTransition] = useTransition()
 
   const lines = text.split("\n").map((l) => l.trim()).filter(Boolean)
+  const highCount = lines.filter((l) => l.startsWith("!")).length
+  const lowCount  = lines.filter((l) => l.startsWith("~")).length
 
   const submit = () => {
     if (!lines.length) return
@@ -50,7 +52,11 @@ export function BulkAddTasks({ projectId }: { projectId?: string }) {
             onChange={(e) => setText(e.target.value)}
           />
           <div className="flex items-center justify-between">
-            <span className="text-[11px]" style={{ color: "var(--dim)" }}>{lines.length} 件</span>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px]" style={{ color: "var(--dim)" }}>{lines.length} 件</span>
+              {highCount > 0 && <span className="text-[10px] font-mono" style={{ color: "var(--red)" }}>!{highCount}</span>}
+              {lowCount > 0  && <span className="text-[10px] font-mono" style={{ color: "var(--faint)" }}>~{lowCount}</span>}
+            </div>
             <div className="flex gap-2">
               <button className="btn-ghost text-xs" onClick={() => setOpen(false)}>キャンセル</button>
               <button

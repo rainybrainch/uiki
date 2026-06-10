@@ -230,6 +230,11 @@ export default async function ReportPage() {
               <div>
                 <p className="text-[10px] text-dim mb-0.5">100万円達成</p>
                 <p className="text-2xl font-serif" style={{ color: "var(--amber)" }}>{earningPct}<span className="text-sm ml-0.5">%</span></p>
+                {earned > 0 && (
+                  <p className="text-[10px] font-mono mt-0.5" style={{ color: "var(--faint)" }}>
+                    ¥{earned.toLocaleString()}
+                  </p>
+                )}
               </div>
             </div>
             <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.05)" }}>
