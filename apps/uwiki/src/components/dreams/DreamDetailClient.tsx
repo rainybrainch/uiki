@@ -72,13 +72,28 @@ export function DreamDetailClient({ id, progress: initialProgress, achieved, cat
 
   const cancelEdit = () => setEditingField(null)
 
+  const filledFields = FIELD_META.filter(({ key }) => {
+    const v = (dream[key] as string | null) ?? ""
+    return v.trim().length > 0
+  }).length
+
   return (
     <div className="space-y-4">
       {/* 進捗スライダー */}
       {!achieved && (
         <div>
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-dim">進捗</span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-dim">進捗</span>
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full"
+                style={{
+                  background: filledFields === FIELD_META.length ? `${catColor}18` : "rgba(255,255,255,0.04)",
+                  color: filledFields === FIELD_META.length ? catColor : "var(--faint)",
+                  border: `1px solid ${filledFields === FIELD_META.length ? catColor + "30" : "var(--border)"}`,
+                }}>
+                {filledFields}/{FIELD_META.length} フィールド
+              </span>
+            </div>
             <span className="text-sm font-mono font-light" style={{ color: catColor }}>{progress}%</span>
           </div>
           <div className="relative h-2 rounded-full overflow-hidden mb-2" style={{ background: "rgba(255,255,255,0.06)" }}>
