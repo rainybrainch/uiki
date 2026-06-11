@@ -46,6 +46,12 @@ export default async function HabitsPage() {
 
   const doneCount = habitsWithStats.filter((h) => h.doneToday).length
 
+  const last7Dates = last7.map((d) => d.date)
+  const weekDone = habitsWithStats.reduce((total, h) =>
+    total + h.logDates.filter((d) => last7Dates.includes(d)).length, 0)
+  const weekTotal = habits.length * 7
+  const weekPct = weekTotal > 0 ? Math.round((weekDone / weekTotal) * 100) : 0
+
   return (
     <div className="page-container">
       <div className="animate-fade-in mb-10">
@@ -53,13 +59,24 @@ export default async function HabitsPage() {
           <Repeat2 size={18} strokeWidth={1.5} style={{ color: "var(--accent)" }} />
           <h1 className="text-2xl font-serif font-light tracking-wide">習慣</h1>
         </div>
-        <p className="text-sm text-dim ml-7">
-          今日{" "}
-          <span className="font-mono" style={{ color: doneCount === habits.length && habits.length > 0 ? "var(--green)" : "var(--accent)" }}>
-            {doneCount} / {habits.length}
-          </span>{" "}
-          件完了
-        </p>
+        <div className="flex items-center gap-3 ml-7 flex-wrap">
+          <p className="text-sm text-dim">
+            今日{" "}
+            <span className="font-mono" style={{ color: doneCount === habits.length && habits.length > 0 ? "var(--green)" : "var(--accent)" }}>
+              {doneCount} / {habits.length}
+            </span>{" "}
+            件完了
+          </p>
+          {weekTotal > 0 && (
+            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded"
+              style={{
+                background: weekPct >= 80 ? "rgba(74,222,128,0.1)" : weekPct >= 50 ? "rgba(58,111,201,0.08)" : "rgba(255,255,255,0.04)",
+                color: weekPct >= 80 ? "var(--green)" : weekPct >= 50 ? "var(--accent)" : "var(--faint)",
+              }}>
+              今週 {weekPct}%
+            </span>
+          )}
+        </div>
         {doneCount === habits.length && habits.length > 0 && (
           <div className="mt-4 rounded-xl px-5 py-4 animate-pop-in"
             style={{ background: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.3)" }}>
