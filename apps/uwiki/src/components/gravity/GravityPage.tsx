@@ -51,10 +51,10 @@ export function GravityPage({ gravityLogs, metrics, graphData, initialTab = "mai
         padding: "0 2rem 1.5rem",
       }}>
         {([
-          { id: "main",     label: "概観" },
-          { id: "internal", label: "重力雨域" },
-          { id: "external", label: "引力雨域" },
-        ] as { id: Tab; label: string }[]).map(({ id, label }) => (
+          { id: "main",     label: "概観",     count: null },
+          { id: "internal", label: "重力雨域", count: gravityLogs.length },
+          { id: "external", label: "引力雨域", count: metrics.length },
+        ] as { id: Tab; label: string; count: number | null }[]).map(({ id, label, count }) => (
           <button
             key={id}
             onClick={() => setTab(id)}
@@ -80,6 +80,15 @@ export function GravityPage({ gravityLogs, metrics, graphData, initialTab = "mai
             }}
           >
             {label}
+            {count !== null && count > 0 && (
+              <span style={{
+                marginLeft: "0.35rem",
+                fontSize: "0.65rem", fontFamily: "monospace",
+                opacity: tab === id ? 0.9 : 0.5,
+              }}>
+                {count}
+              </span>
+            )}
           </button>
         ))}
       </div>
