@@ -278,7 +278,23 @@ export default async function ReportPage() {
         {/* ─── 今週の日記 ─── */}
         {diaryThisWeek.length > 0 && (
           <div className="surface rounded-xl p-5 animate-fade-in delay-200">
-            <p className="section-label">今週の日記</p>
+            {(() => {
+              const moodedDiary = diaryThisWeek.filter((e) => e.mood)
+              const avgMood = moodedDiary.length > 0
+                ? moodedDiary.reduce((s, e) => s + (e.mood ?? 0), 0) / moodedDiary.length
+                : 0
+              return (
+                <div className="flex items-center gap-2 mb-2">
+                  <p className="section-label !mb-0">今週の日記</p>
+                  {moodedDiary.length > 0 && (
+                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded"
+                      style={{ background: "rgba(255,255,255,0.05)", color: "var(--dim)" }}>
+                      {["","😞","😕","😐","🙂","😄"][Math.round(avgMood)]} {avgMood.toFixed(1)}
+                    </span>
+                  )}
+                </div>
+              )
+            })()}
             <div className="space-y-2 mt-2">
               {diaryThisWeek.map((e) => (
                 <a key={e.id} href={`/diary?date=${e.date}`} className="flex items-center gap-3 py-1.5 rounded-lg px-2 hover:bg-[var(--faint)] transition-colors">
