@@ -40,6 +40,7 @@ export default async function DashboardPage() {
   let totalActiveTasks = 0
   let overdueCount = 0
   let dueTodayCount = 0
+  let todayDoneCount = 0
   let cases: Case[] = []
   let dreams: Dream[] = []
   let projects: { id: string; name: string; color: string }[] = []
@@ -71,7 +72,7 @@ export default async function DashboardPage() {
   } catch (e) { console.error("[dashboard] error:", e) }
 
   try {
-    ;[tasks, habits, recentDiaries, doneTasks, totalActiveTasks, overdueCount, dueTodayCount, cases, dreams, projects] = await Promise.all([
+    ;[tasks, habits, recentDiaries, doneTasks, totalActiveTasks, overdueCount, dueTodayCount, todayDoneCount, cases, dreams, projects] = await Promise.all([
       prisma.task.findMany({
         where: { completed: false, parentTaskId: null },
         // dueDate が近い（期限切れ含む）→ 優先度高い → 作成日 の順で表示
@@ -101,6 +102,13 @@ export default async function DashboardPage() {
             gte: startOfDay(new Date()),
             lte: endOfDay(new Date()),
           },
+        },
+      }),
+      prisma.task.count({
+        where: {
+          completed: true,
+          parentTaskId: null,
+          updatedAt: { gte: startOfDay(new Date()), lte: endOfDay(new Date()) },
         },
       }),
       prisma.case.findMany({ orderBy: { createdAt: "desc" } }),
@@ -175,6 +183,9 @@ export default async function DashboardPage() {
         <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 sm:gap-3 mt-4">
           <StatPill value={totalActiveTasks} label="未完了" color="var(--accent)" href="/tasks" />
           <StatPill value={`${doneHabitsToday}/${habits.length}`} label="今日の習慣" color="var(--green)" href="/habits" />
+          {todayDoneCount > 0 && (
+            <StatPill value={`✓${todayDoneCount}`} label="今日完了" color="var(--green)" href="/tasks?view=all" />
+          )}
           <StatPill value={doneTasks} label="完了済み" color="var(--dim)" href="/tasks?view=all" />
           {dueTodayCount > 0 && (
             <a href="/tasks?view=today" className="flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs transition-opacity hover:opacity-80" style={{ background: "rgba(58,111,201,0.08)", border: "1px solid rgba(58,111,201,0.25)" }}>
