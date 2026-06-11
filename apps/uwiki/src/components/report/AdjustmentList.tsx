@@ -16,6 +16,11 @@ export function AdjustmentList({ adjustments, dreams }: { adjustments: Adjustmen
   const [isPending, startTransition] = useTransition()
 
   const monthly = adjustments.filter((a) => a.type === "MONTHLY")
+  const now = new Date()
+  const thisMonthCount = monthly.filter((a) => {
+    const d = new Date(a.createdAt)
+    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()
+  }).length
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -31,6 +36,12 @@ export function AdjustmentList({ adjustments, dreams }: { adjustments: Adjustmen
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <p className="section-label mb-0">月次 Act — 修正ログ</p>
+          {thisMonthCount > 0 && (
+            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded"
+              style={{ background: "rgba(58,111,201,0.1)", color: "var(--accent)" }}>
+              今月 {thisMonthCount}件
+            </span>
+          )}
           {monthly.length > 0 && (
             <span className="text-[10px] font-mono px-1.5 py-0.5 rounded"
               style={{
