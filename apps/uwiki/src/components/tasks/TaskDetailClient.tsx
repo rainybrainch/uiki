@@ -348,7 +348,15 @@ export function TaskDetailClient({
 
       {/* メモ */}
       <div className="surface rounded-xl p-5 mb-6">
-        <p className="text-xs text-dim mb-3">メモ</p>
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-xs text-dim">メモ</p>
+          {memo.length > 0 && (
+            <span className="text-[10px] font-mono tabular-nums"
+              style={{ color: memo.length > 500 ? "var(--amber)" : "var(--faint)" }}>
+              {memo.length}字
+            </span>
+          )}
+        </div>
         <textarea
           className="w-full bg-transparent outline-none text-sm leading-relaxed resize-none placeholder:text-faint"
           style={{ minHeight: 120, overflow: "hidden" }}
