@@ -64,6 +64,12 @@ export function DiaryCalendar({
 
   const DOW = ["日", "月", "火", "水", "木", "金", "土"]
 
+  const MOOD_EMOJI: Record<number, string> = { 1: "😞", 2: "😕", 3: "😐", 4: "🙂", 5: "😄" }
+  const moodValues = Object.values(moodByDate).filter(Boolean)
+  const avgMood = moodValues.length > 0
+    ? Math.round(moodValues.reduce((s, v) => s + v, 0) / moodValues.length)
+    : null
+
   return (
     <div className="surface rounded-xl p-4">
       {/* ヘッダー */}
@@ -79,6 +85,13 @@ export function DiaryCalendar({
             <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full"
               style={{ background: "rgba(58,111,201,0.08)", color: "var(--accent)" }}>
               {entryDates.length}件
+            </span>
+          )}
+          {avgMood !== null && (
+            <span className="text-[11px] px-1.5 py-0.5 rounded-full"
+              style={{ background: `${MOOD_COLORS[avgMood]}18`, color: MOOD_COLORS[avgMood] }}
+              title={`今月の平均気分: ${avgMood}/5`}>
+              {MOOD_EMOJI[avgMood]}
             </span>
           )}
           {monthStr !== format(new Date(), "yyyy-MM") && (
