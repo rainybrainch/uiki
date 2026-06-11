@@ -220,6 +220,9 @@ function MetricCard({ metric }: { metric: AttractionMetric & { logs: AttractionL
       {lastRecorded && (
         <p className="text-[10px] font-mono -mt-2 mb-3" style={{ color: "var(--faint)" }}>
           最終: {lastRecorded}
+          {metric.logs.length > 1 && (
+            <span className="ml-1.5" style={{ color: "var(--dim)" }}>· {metric.logs.length}回</span>
+          )}
         </p>
       )}
 
