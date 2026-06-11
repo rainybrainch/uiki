@@ -206,6 +206,10 @@ export default async function ReportPage() {
                         <div className="h-full rounded-full" style={{ width: `${rate * 100}%`, background: h.color }} />
                       </div>
                       <span className="text-xs font-mono text-dim w-7 text-right">{done}/7</span>
+                      <span className="text-[10px] font-mono w-7 text-right"
+                        style={{ color: rate >= 1 ? "var(--green)" : rate >= 0.7 ? "var(--accent)" : "var(--faint)" }}>
+                        {Math.round(rate * 100)}%
+                      </span>
                     </div>
                   </div>
                 )
