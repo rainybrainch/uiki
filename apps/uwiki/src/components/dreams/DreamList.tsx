@@ -340,6 +340,12 @@ function DreamCard({ dream, color, achieved = false, dreamIdByTitle = {}, showAx
                   <span key={key} className="w-1.5 h-1.5 rounded-full transition-all"
                     style={{ background: dream[key] ? color : "rgba(255,255,255,0.12)" }} />
                 ))}
+                {filledCount > 0 && (
+                  <span className="text-[9px] font-mono ml-1"
+                    style={{ color: filledCount === FIELD_LABELS.length ? color : "var(--faint)" }}>
+                    {filledCount}/{FIELD_LABELS.length}
+                  </span>
+                )}
               </div>
             </div>
 
