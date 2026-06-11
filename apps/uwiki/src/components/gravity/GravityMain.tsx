@@ -5,11 +5,12 @@ import { format, parseISO } from "date-fns"
 
 type Tab = "main" | "internal" | "external"
 
-export function GravityMain({ graphData, onNav, gravityLogs, metrics }: {
+export function GravityMain({ graphData, onNav, gravityLogs, metrics, totalGravityCount }: {
   graphData: { date: string; gravityScore: number; attractionScore: number }[]
   onNav: (tab: Tab) => void
   gravityLogs: GravityLog[]
   metrics: (AttractionMetric & { logs: AttractionLog[] })[]
+  totalGravityCount?: number
 }) {
   const maxG = Math.max(...graphData.map((d) => d.gravityScore), 1)
   const W = 600; const H = 180; const PAD = 20
@@ -50,7 +51,7 @@ export function GravityMain({ graphData, onNav, gravityLogs, metrics }: {
           title="重力雨域"
           sub="Internal ── 内向き"
           desc="砂のログ・熱量・思想の堆積"
-          stat={`今日 ${todayGravity} 粒 / 累計 ${gravityLogs.length} 粒`}
+          stat={`今日 ${todayGravity} 粒 / 累計 ${totalGravityCount ?? gravityLogs.length} 粒`}
           onClick={() => onNav("internal")}
         />
         {/* 引力雨域カード */}

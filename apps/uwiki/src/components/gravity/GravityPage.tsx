@@ -95,7 +95,7 @@ export function GravityPage({ gravityLogs, metrics, graphData, totalGravityCount
       </div>
 
       <div style={{ padding: "0 clamp(1rem, 4vw, 2rem)" }}>
-        {tab === "main"     && <GravityMain graphData={graphData} onNav={setTab} gravityLogs={gravityLogs} metrics={metrics} />}
+        {tab === "main"     && <GravityMain graphData={graphData} onNav={setTab} gravityLogs={gravityLogs} metrics={metrics} totalGravityCount={totalGravityCount} />}
         {tab === "internal" && <GravityInternal logs={gravityLogs} totalCount={totalGravityCount} />}
         {tab === "external" && <GravityExternal metrics={metrics} />}
       </div>
