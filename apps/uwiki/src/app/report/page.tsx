@@ -253,11 +253,20 @@ export default async function ReportPage() {
         )}
 
         {/* ─── 案件サマリー ─── */}
-        {cases.length > 0 && (
+        {cases.length > 0 && (() => {
+          const waitingPay = cases.filter((c) => c.status === "WAITING_PAY")
+          const waitingPayAmt = waitingPay.reduce((s, c) => s + c.reward, 0)
+          return (
           <Link href="/cases" className="block surface rounded-xl p-5 animate-fade-in delay-200 hover:opacity-80 transition-opacity">
             <div className="flex items-center gap-2 mb-3">
               <TrendingUp size={13} style={{ color: "var(--amber)" }} />
               <p className="section-label" style={{ color: "var(--amber)" }}>ライスワーク</p>
+              {waitingPay.length > 0 && (
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded ml-1"
+                  style={{ background: "rgba(201,168,76,0.15)", color: "var(--amber)", border: "1px solid rgba(201,168,76,0.3)" }}>
+                  支払待 {waitingPay.length}件{waitingPayAmt > 0 ? ` ¥${waitingPayAmt.toLocaleString()}` : ""}
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-4 mb-3">
               <div>
@@ -279,7 +288,8 @@ export default async function ReportPage() {
               <div className="h-full rounded-full transition-all" style={{ width: `${earningPct}%`, background: "linear-gradient(90deg, #c9a84c, #f0c060)" }} />
             </div>
           </Link>
-        )}
+          )
+        })()}
 
         {/* ─── 修正ログ（月次Act記録） ─── */}
         <AdjustmentList adjustments={adjustments} dreams={dreams} />
