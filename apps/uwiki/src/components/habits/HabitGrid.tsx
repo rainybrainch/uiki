@@ -29,6 +29,8 @@ export function HabitGrid({ habits, last7, todayStr }: {
   last7: DayLabel[]
   todayStr: string
 }) {
+  const doneTodayCount = habits.filter((h) => h.doneToday).length
+
   return (
     <div className="surface rounded-xl overflow-hidden">
       {/* 日付ヘッダー */}
@@ -36,7 +38,16 @@ export function HabitGrid({ habits, last7, todayStr }: {
         className="flex items-center px-4 py-3"
         style={{ borderBottom: "1px solid var(--border)" }}
       >
-        <div className="flex-1" />
+        <div className="flex-1 flex items-center gap-2">
+          {habits.length > 0 && (
+            <span className="text-[10px] font-mono"
+              style={{
+                color: doneTodayCount === habits.length ? "var(--green)" : "var(--dim)",
+              }}>
+              今日 <span style={{ color: doneTodayCount === habits.length ? "var(--green)" : "var(--accent)" }}>{doneTodayCount}</span>/{habits.length}
+            </span>
+          )}
+        </div>
         <div className="flex gap-1 shrink-0">
           {last7.map((d) => (
             <div key={d.date} className="w-8 sm:w-9 text-center">
