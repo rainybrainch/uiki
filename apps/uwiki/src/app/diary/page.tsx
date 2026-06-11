@@ -67,6 +67,11 @@ export default async function DiaryPage({
     if (e.mood != null) moodByDate[e.date] = e.mood
   }
 
+  const moodedEntries = monthEntries.filter((e) => e.mood != null)
+  const avgMoodThisMonth = moodedEntries.length > 0
+    ? moodedEntries.reduce((s, e) => s + (e.mood ?? 0), 0) / moodedEntries.length
+    : null
+
   return (
     <div className="max-w-5xl mx-auto px-4 py-5 md:px-8 md:py-10">
       <div className="flex items-center justify-between mb-6 md:mb-10">
@@ -111,6 +116,15 @@ export default async function DiaryPage({
               <span className="text-xs font-mono font-medium"
                 style={{ color: streak >= 7 ? "var(--green)" : "var(--accent)" }}>
                 {streak}日連続
+              </span>
+            </div>
+          )}
+          {avgMoodThisMonth !== null && (
+            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl"
+              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)" }}>
+              <span className="text-sm">{["","😞","😕","😐","🙂","😄"][Math.round(avgMoodThisMonth)]}</span>
+              <span className="text-xs font-mono" style={{ color: "var(--dim)" }}>
+                {avgMoodThisMonth.toFixed(1)}
               </span>
             </div>
           )}
