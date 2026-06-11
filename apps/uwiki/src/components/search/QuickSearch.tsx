@@ -163,6 +163,16 @@ export function QuickSearch() {
               onSelect={(href) => navigate(href)} />
           ) : null}
         </div>
+
+        {/* キーボードヒント */}
+        {hasResults && (
+          <div className="flex items-center gap-4 px-4 py-2 text-[10px] font-mono text-faint"
+            style={{ borderTop: "1px solid var(--border)" }}>
+            <span><kbd className="px-1 py-0.5 rounded text-[9px]" style={{ background: "var(--faint)" }}>↑↓</kbd> 移動</span>
+            <span><kbd className="px-1 py-0.5 rounded text-[9px]" style={{ background: "var(--faint)" }}>Enter</kbd> 開く</span>
+            <span className="ml-auto">{flatItems.length}件</span>
+          </div>
+        )}
       </div>
     </div>
   )
