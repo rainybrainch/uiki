@@ -130,7 +130,20 @@ export default async function ReportPage() {
         {/* ─── タスク日別グラフ ─── */}
         {tasksDone > 0 && (
           <div className="surface rounded-xl p-5 animate-fade-in delay-100">
-            <p className="section-label">今週の完了タスク（日別）</p>
+            <div className="flex items-center gap-2 mb-0">
+              <p className="section-label !mb-0">今週の完了タスク（日別）</p>
+              {(() => {
+                const diff = tasksDone - tasksPrev
+                if (tasksPrev === 0 || diff === 0) return null
+                const up = diff > 0
+                return (
+                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded"
+                    style={{ background: up ? "rgba(74,222,128,0.08)" : "rgba(248,113,113,0.08)", color: up ? "var(--green)" : "var(--red)" }}>
+                    {up ? "▲" : "▼"}{Math.abs(diff)}件 vs 先週
+                  </span>
+                )
+              })()}
+            </div>
             <div className="flex items-end gap-2 h-20 mt-3">
               {weekDailyDone.map((d) => {
                 const maxCount = Math.max(...weekDailyDone.map((x) => x.count), 1)
