@@ -178,6 +178,12 @@ export default async function TasksPage({
             {view === "all" && done.length > 0 && (
               <span className="text-[10px] font-mono text-faint">完了 {done.length}</span>
             )}
+            {view === "today" && overdueTasks.length > 0 && (
+              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded"
+                style={{ background: "rgba(248,113,113,0.12)", color: "var(--red)" }}>
+                ⚠{overdueTasks.length}超過
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <BulkAddTasks projectId={projectFilter !== "all" ? projectFilter : undefined} />
