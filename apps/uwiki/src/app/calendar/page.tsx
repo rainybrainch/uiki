@@ -117,6 +117,22 @@ export default async function CalendarPage({
         <div className="flex items-center gap-3">
           <CalendarDays size={20} strokeWidth={1.5} style={{ color: "var(--accent)" }} />
           <h1 className="text-2xl font-serif font-light tracking-wide">カレンダー</h1>
+          {(tasks.length > 0 || diaryEntries.length > 0) && (
+            <div className="flex items-center gap-1.5 ml-1">
+              {tasks.length > 0 && (
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded"
+                  style={{ background: "rgba(58,111,201,0.1)", color: "var(--accent)" }}>
+                  タスク{tasks.length}
+                </span>
+              )}
+              {diaryEntries.length > 0 && (
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded"
+                  style={{ background: "rgba(255,255,255,0.05)", color: "var(--dim)" }}>
+                  日記{diaryEntries.length}
+                </span>
+              )}
+            </div>
+          )}
         </div>
         <AddEventButton defaultDate={format(new Date(), "yyyy-MM-dd")} />
       </div>
