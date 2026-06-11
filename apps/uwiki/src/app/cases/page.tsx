@@ -49,8 +49,9 @@ export default async function CasesPage({
     .filter((c) => !["DONE", "WAITING_PAY"].includes(c.status))
     .reduce((s, c) => s + c.reward, 0)
 
-  const avgReward = allCases.length > 0
-    ? Math.round(allCases.reduce((s, c) => s + c.reward, 0) / allCases.length)
+  const doneCasesForAvg = allCases.filter((c) => c.status === "DONE")
+  const avgPaid = doneCasesForAvg.length > 0
+    ? Math.round(doneCasesForAvg.reduce((s, c) => s + (c.paidAmount || c.reward), 0) / doneCasesForAvg.length)
     : 0
 
   const doneCount = allCases.filter((c) => c.status === "DONE").length
@@ -122,9 +123,9 @@ export default async function CasesPage({
               </p>
             </div>
             <div className="text-center">
-              <p className="text-[10px] text-dim mb-0.5">平均単価</p>
+              <p className="text-[10px] text-dim mb-0.5">完了平均</p>
               <p className="text-sm font-mono font-light" style={{ color: "var(--amber)" }}>
-                ¥{avgReward.toLocaleString()}
+                {avgPaid > 0 ? `¥${avgPaid.toLocaleString()}` : "—"}
               </p>
             </div>
             <div className="text-center">
