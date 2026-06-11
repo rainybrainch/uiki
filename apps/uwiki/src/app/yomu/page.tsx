@@ -54,6 +54,12 @@ export default async function YomuPage() {
           <BookMarked size={18} strokeWidth={1.5} style={{ color: "#3a6fc9" }} />
           <h1 className="text-2xl font-serif font-light tracking-wide">読雨</h1>
           <span className="text-xs font-mono text-dim ml-1">YOMU</span>
+          {books.length > 0 && (
+            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded"
+              style={{ background: "rgba(58,111,201,0.12)", color: "var(--accent)" }}>
+              {books.length}件
+            </span>
+          )}
           <a href={YOMU_URL} target="_blank" rel="noopener noreferrer"
             className="ml-auto flex items-center gap-1 text-[10px] text-dim hover:text-white transition-colors">
             <ExternalLink size={10} /> サイトを開く
