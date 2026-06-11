@@ -45,6 +45,7 @@ export default async function YomuPage() {
   const avgStars = ratedBooks.length > 0
     ? ratedBooks.reduce((s, b) => s + Number(b.stars), 0) / ratedBooks.length
     : 0
+  const topRatedCount = ratedBooks.filter((b) => Number(b.stars) === 5).length
 
   const grouped = groupHealthByMetric(entries, 30)
   const healthMetrics = ["weight", "body_fat", "meal_calories", "meal_protein"]
@@ -69,6 +70,12 @@ export default async function YomuPage() {
             <span className="text-[10px] font-mono px-1.5 py-0.5 rounded"
               style={{ background: "rgba(201,168,76,0.1)", color: "var(--amber)" }}>
               ★{avgStars.toFixed(1)}
+            </span>
+          )}
+          {topRatedCount > 0 && (
+            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded"
+              style={{ background: "rgba(201,168,76,0.18)", color: "var(--amber)", border: "1px solid rgba(201,168,76,0.3)" }}>
+              ★5 ×{topRatedCount}
             </span>
           )}
           <a href={YOMU_URL} target="_blank" rel="noopener noreferrer"
