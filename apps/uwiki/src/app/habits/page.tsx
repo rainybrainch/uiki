@@ -89,9 +89,21 @@ export default async function HabitsPage() {
             <div className="mt-8 xl:mt-0 space-y-4">
               {habitsWithStats.map((habit) => (
                 <div key={habit.id} className="surface rounded-xl p-4">
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="w-2 h-2 rounded-full" style={{ background: habit.color }} />
-                    <p className="text-sm font-medium">{habit.name}</p>
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <div className="w-2 h-2 rounded-full shrink-0" style={{ background: habit.color }} />
+                    <p className="text-sm font-medium flex-1 min-w-0 truncate">{habit.name}</p>
+                    {habit.streak > 0 && (
+                      <span className="text-[9px] font-mono px-1.5 py-0.5 rounded shrink-0"
+                        style={{ background: `${habit.color}18`, color: habit.color }}>
+                        {habit.streak}連
+                      </span>
+                    )}
+                    {habit.bestStreak > 1 && (
+                      <span className="text-[9px] font-mono px-1.5 py-0.5 rounded shrink-0"
+                        style={{ background: "rgba(255,255,255,0.05)", color: "var(--faint)" }}>
+                        最高{habit.bestStreak}
+                      </span>
+                    )}
                   </div>
                   <HabitHeatmap
                     logDates={habit.logDates}
