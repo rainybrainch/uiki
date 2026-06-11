@@ -288,7 +288,8 @@ function FlowNode({ node, projectId }: { node: TaskNode; projectId?: string }) {
   // 葉タスク（depth 3+）: コンパクト行
   return (
     <div style={{ marginLeft: `${Math.min(node.depth, 3) * 12}px` }}>
-      <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-[var(--faint)] group transition-colors">
+      <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-[var(--faint)] group transition-colors"
+        style={{ background: node.priority === "HIGH" && !node.completed ? "rgba(248,113,113,0.04)" : undefined }}>
         <div className="w-1 h-1 rounded-full shrink-0" style={{ background: color }} />
         <TaskCheckbox taskId={node.id} completed={node.completed} />
         <p className="flex-1 text-sm" style={{
@@ -296,6 +297,9 @@ function FlowNode({ node, projectId }: { node: TaskNode; projectId?: string }) {
           color: node.completed ? "var(--dim)" : "var(--text)",
           opacity: node.completed ? 0.5 : 1,
         }}>
+          {node.priority === "HIGH" && !node.completed && (
+            <span className="text-[10px] font-mono mr-1.5" style={{ color: "var(--red)" }}>!</span>
+          )}
           {node.title}
         </p>
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
