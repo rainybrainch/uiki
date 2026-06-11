@@ -176,7 +176,7 @@ export default async function DreamsPage() {
                       style={{ width: `${a.avgProg}%`, background: a.color, opacity: 0.8 }} />
                   </div>
                   <span className="text-[10px] font-mono shrink-0" style={{ color: a.count > 0 ? a.color : "var(--faint)" }}>
-                    {a.count}世界
+                    {a.count}世界{a.avgProg > 0 ? ` · ${a.avgProg}%` : ""}
                   </span>
                 </div>
               </div>
