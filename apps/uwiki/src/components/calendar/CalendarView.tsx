@@ -96,15 +96,25 @@ function DayPanel({
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium" style={{ color: "var(--accent)" }}>{label}</span>
-          {tasks.length > 0 && (
-            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded"
-              style={{
-                color: completedTasks === tasks.length ? "var(--green)" : "var(--dim)",
-                background: completedTasks === tasks.length ? "rgba(74,222,128,0.1)" : "rgba(255,255,255,0.04)",
-              }}>
-              {completedTasks}/{tasks.length}完了
-            </span>
-          )}
+          {tasks.length > 0 && (() => {
+            const pct = Math.round((completedTasks / tasks.length) * 100)
+            const allDone = completedTasks === tasks.length
+            return (
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded"
+                  style={{
+                    color: allDone ? "var(--green)" : "var(--dim)",
+                    background: allDone ? "rgba(74,222,128,0.1)" : "rgba(255,255,255,0.04)",
+                  }}>
+                  {completedTasks}/{tasks.length}完了
+                </span>
+                <div className="w-16 rounded-full overflow-hidden" style={{ height: 3, background: "rgba(255,255,255,0.06)" }}>
+                  <div className="h-full rounded-full transition-all"
+                    style={{ width: `${pct}%`, background: allDone ? "var(--green)" : "var(--accent)" }} />
+                </div>
+              </div>
+            )
+          })()}
         </div>
         <div className="flex items-center gap-2">
           <button
