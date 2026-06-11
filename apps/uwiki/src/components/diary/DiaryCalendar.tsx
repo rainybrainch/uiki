@@ -153,10 +153,10 @@ export function DiaryCalendar({
               }}
             >
               {format(day, "d")}
-              {hasEntry && !isSelected && (
+              {hasEntry && (
                 <span
                   className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full"
-                  style={{ background: mood ? MOOD_COLORS[mood] : "var(--accent)" }}
+                  style={{ background: isSelected ? "rgba(255,255,255,0.55)" : (mood ? MOOD_COLORS[mood] : "var(--accent)") }}
                 />
               )}
             </button>
