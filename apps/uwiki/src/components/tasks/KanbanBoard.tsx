@@ -47,6 +47,12 @@ function KanbanCol({ column, tasks }: { column: Column; tasks: Task[] }) {
     if (taskId) startTransition(() => moveTask(taskId, column.id as KanbanColumn))
   }
 
+  const highCount    = tasks.filter((t) => t.priority === "HIGH" && !t.completed).length
+  const overdueCount = tasks.filter((t) => {
+    const d = t.dueDate ? startOfDay(new Date(t.dueDate)) : null
+    return d && !t.completed && isPast(d) && !isToday(d)
+  }).length
+
   return (
     <div
       className="flex flex-col shrink-0 w-72 xl:w-80 rounded-xl transition-colors duration-150"
@@ -62,6 +68,18 @@ function KanbanCol({ column, tasks }: { column: Column; tasks: Task[] }) {
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full" style={{ background: columnAccent[column.id] }} />
           <span className="text-xs font-medium">{column.label}</span>
+          {overdueCount > 0 && (
+            <span className="text-[9px] font-mono px-1 py-0.5 rounded"
+              style={{ background: "rgba(248,113,113,0.15)", color: "var(--red)" }}>
+              ⚠{overdueCount}
+            </span>
+          )}
+          {highCount > 0 && overdueCount === 0 && (
+            <span className="text-[9px] font-mono px-1 py-0.5 rounded"
+              style={{ background: "rgba(248,113,113,0.08)", color: "var(--red)", opacity: 0.75 }}>
+              !{highCount}
+            </span>
+          )}
         </div>
         <span className="badge">{tasks.length}</span>
       </div>
