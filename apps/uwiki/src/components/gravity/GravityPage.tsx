@@ -8,10 +8,11 @@ import { GravityExternal } from "./GravityExternal"
 
 type Tab = "main" | "internal" | "external"
 
-export function GravityPage({ gravityLogs, metrics, graphData, initialTab = "main" }: {
+export function GravityPage({ gravityLogs, metrics, graphData, totalGravityCount, initialTab = "main" }: {
   gravityLogs: GravityLog[]
   metrics: (AttractionMetric & { logs: AttractionLog[] })[]
   graphData: { date: string; gravityScore: number; attractionScore: number }[]
+  totalGravityCount?: number
   initialTab?: Tab
 }) {
   const [tab, setTab] = useState<Tab>(initialTab)
@@ -52,7 +53,7 @@ export function GravityPage({ gravityLogs, metrics, graphData, initialTab = "mai
       }}>
         {([
           { id: "main",     label: "概観",     count: null },
-          { id: "internal", label: "重力雨域", count: gravityLogs.length },
+          { id: "internal", label: "重力雨域", count: totalGravityCount ?? gravityLogs.length },
           { id: "external", label: "引力雨域", count: metrics.length },
         ] as { id: Tab; label: string; count: number | null }[]).map(({ id, label, count }) => (
           <button

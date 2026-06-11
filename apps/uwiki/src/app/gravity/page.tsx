@@ -15,15 +15,17 @@ export default async function Page({
 
   let gravityLogs: GravityLog[] = []
   let metrics: (AttractionMetric & { logs: AttractionLog[] })[] = []
+  let totalGravityCount = 0
 
   try {
     const last14 = format(subDays(new Date(), 13), "yyyy-MM-dd")
-    ;[gravityLogs, metrics] = await Promise.all([
+    ;[gravityLogs, metrics, totalGravityCount] = await Promise.all([
       prisma.gravityLog.findMany({ orderBy: { createdAt: "desc" }, take: 50 }),
       prisma.attractionMetric.findMany({
         include: { logs: { where: { date: { gte: last14 } }, orderBy: { date: "asc" } } },
         orderBy: { order: "asc" },
       }),
+      prisma.gravityLog.count(),
     ])
   } catch (e) { console.error("[page] DB query failed:", e) }
 
@@ -49,6 +51,7 @@ export default async function Page({
       gravityLogs={gravityLogs}
       metrics={metrics}
       graphData={graphData}
+      totalGravityCount={totalGravityCount}
       initialTab={initialTab as "main" | "internal" | "external"}
     />
   )
