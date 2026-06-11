@@ -97,20 +97,35 @@ export default async function DreamDetailPage({ params }: { params: Promise<{ id
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <p className="text-[10px] font-mono tracking-widest text-faint">LINKED TASKS</p>
-            {linkedTasks.length > 0 && (
-              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded"
-                style={{
-                  background: linkedTasks.filter((t) => t.completed).length === linkedTasks.length
-                    ? "rgba(74,222,128,0.1)" : "rgba(58,111,201,0.1)",
-                  color: linkedTasks.filter((t) => t.completed).length === linkedTasks.length
-                    ? "var(--green)" : "var(--accent)",
-                }}>
-                {linkedTasks.filter((t) => t.completed).length}/{linkedTasks.length}
-              </span>
-            )}
+            {linkedTasks.length > 0 && (() => {
+              const doneLinked = linkedTasks.filter((t) => t.completed).length
+              const allDone = doneLinked === linkedTasks.length
+              return (
+                <span className="text-[9px] font-mono px-1.5 py-0.5 rounded"
+                  style={{
+                    background: allDone ? "rgba(74,222,128,0.1)" : "rgba(58,111,201,0.1)",
+                    color: allDone ? "var(--green)" : "var(--accent)",
+                  }}>
+                  {doneLinked}/{linkedTasks.length}
+                </span>
+              )
+            })()}
           </div>
           <LinkTaskButton dreamId={id} availableTasks={availableTasks} />
         </div>
+        {linkedTasks.length > 0 && (() => {
+          const doneLinked = linkedTasks.filter((t) => t.completed).length
+          const pct = Math.round((doneLinked / linkedTasks.length) * 100)
+          return (
+            <div className="mb-2 rounded-full overflow-hidden" style={{ height: 2, background: "rgba(255,255,255,0.06)" }}>
+              <div className="h-full rounded-full transition-all duration-300"
+                style={{
+                  width: `${pct}%`,
+                  background: pct === 100 ? "var(--green)" : "var(--accent)",
+                }} />
+            </div>
+          )
+        })()}
         {linkedTasks.length > 0 ? (
           <div className="space-y-1">
             {linkedTasks.map((task) => (
