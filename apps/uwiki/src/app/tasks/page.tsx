@@ -338,10 +338,22 @@ export default async function TasksPage({
                     `${differenceInCalendarDays(new Date(dateKey), new Date())}日後（${format(new Date(dateKey), "M/d")}）`
                   return (
                     <section key={dateKey} className="mb-6">
-                      <p className="text-xs font-mono mb-2 px-1"
-                        style={{ color: isToday(new Date(dateKey)) ? "var(--accent)" : "var(--dim)" }}>
-                        {label}
-                      </p>
+                      <div className="flex items-center gap-2 mb-2 px-1">
+                        <p className="text-xs font-mono"
+                          style={{ color: isToday(new Date(dateKey)) ? "var(--accent)" : "var(--dim)" }}>
+                          {label}
+                        </p>
+                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded"
+                          style={{ background: "rgba(255,255,255,0.04)", color: "var(--faint)" }}>
+                          {tasks.length}
+                        </span>
+                        {tasks.some((t) => t.priority === "HIGH") && (
+                          <span className="text-[9px] font-mono px-1 py-0.5 rounded"
+                            style={{ background: "rgba(248,113,113,0.1)", color: "var(--red)" }}>
+                            ⚠HIGH
+                          </span>
+                        )}
+                      </div>
                       <TaskList tasks={tasks} />
                     </section>
                   )
