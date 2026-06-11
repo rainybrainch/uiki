@@ -2,7 +2,7 @@
 
 import type { GravityLog } from "@uwiki/database"
 import { useState, useTransition } from "react"
-import { format } from "date-fns"
+import { format, isToday, isYesterday, parseISO } from "date-fns"
 import { ja } from "date-fns/locale"
 import { Trash2 } from "lucide-react"
 import { createGravityLog, deleteGravityLog } from "@/actions/gravity"
@@ -167,7 +167,29 @@ export function GravityInternal({ logs }: { logs: GravityLog[] }) {
           <p style={{ textAlign: "center", padding: "2rem", color: "var(--dim)", fontStyle: "italic", fontSize: "0.85rem" }}>
             まだ、砂は降っていない
           </p>
-        ) : logs.map((log) => {
+        ) : (() => {
+          const grouped: { date: string; items: GravityLog[] }[] = []
+          for (const log of logs) {
+            const d = log.date ?? format(new Date(log.createdAt), "yyyy-MM-dd")
+            const last = grouped[grouped.length - 1]
+            if (last && last.date === d) { last.items.push(log) }
+            else grouped.push({ date: d, items: [log] })
+          }
+          const dateLabel = (d: string) => {
+            try {
+              const parsed = parseISO(d)
+              if (isToday(parsed)) return "今日"
+              if (isYesterday(parsed)) return "昨日"
+              return format(parsed, "M月d日 (E)", { locale: ja })
+            } catch { return d }
+          }
+          return grouped.map(({ date, items }) => (
+            <div key={date}>
+              <p style={{ fontSize: "0.68rem", fontFamily: "monospace", color: "var(--faint)", letterSpacing: "0.08em", marginBottom: "0.4rem", paddingLeft: "0.2rem" }}>
+                {dateLabel(date)} · {items.length}粒
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem", marginBottom: "0.8rem" }}>
+                {items.map((log) => {
           const validVals = WEIGHTS.map((w) => w.val)
           const w = WEIGHTS.find((w) => w.val === log.intensity) ?? WEIGHTS[validVals.indexOf(Math.min(...validVals.filter(v => v <= (log.intensity ?? 1)))) ?? 0] ?? WEIGHTS[0]
           return (
@@ -193,7 +215,7 @@ export function GravityInternal({ logs }: { logs: GravityLog[] }) {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "0.4rem", fontSize: "0.7rem", color: "var(--dim)" }}>
                 <span>{w.label}</span>
                 <span style={{ fontFamily: "monospace" }}>
-                  {format(new Date(log.createdAt), "M月d日 HH:mm", { locale: ja })}
+                  {format(new Date(log.createdAt), "HH:mm", { locale: ja })}
                 </span>
               </div>
               <div style={{ position: "absolute", top: 4, right: 4 }}>
@@ -207,6 +229,10 @@ export function GravityInternal({ logs }: { logs: GravityLog[] }) {
             </div>
           )
         })}
+              </div>
+            </div>
+          ))
+        })()}
       </div>
     </div>
   )
