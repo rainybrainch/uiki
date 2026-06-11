@@ -168,7 +168,22 @@ export default async function ReportPage() {
         {/* ─── 習慣グラフ ─── */}
         {past4Weeks.length > 0 && (
           <div className="surface rounded-xl p-5 animate-fade-in delay-150">
-            <p className="section-label">習慣達成率（過去4週）</p>
+            <div className="flex items-center gap-2 mb-0">
+              <p className="section-label !mb-0">習慣達成率（過去4週）</p>
+              {past4Weeks.length === 4 && (() => {
+                const prevAvg = (past4Weeks[0].rate + past4Weeks[1].rate + past4Weeks[2].rate) / 3
+                const curr = past4Weeks[3].rate
+                const diff = Math.round((curr - prevAvg) * 100)
+                if (Math.abs(diff) < 2) return null
+                const up = diff > 0
+                return (
+                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded"
+                    style={{ background: up ? "rgba(74,222,128,0.08)" : "rgba(248,113,113,0.08)", color: up ? "var(--green)" : "var(--red)" }}>
+                    {up ? "▲" : "▼"}{Math.abs(diff)}%
+                  </span>
+                )
+              })()}
+            </div>
             <div className="flex items-end gap-3 h-24 mt-3">
               {past4Weeks.map((w) => (
                 <div key={w.label} className="flex-1 flex flex-col items-center gap-1">
