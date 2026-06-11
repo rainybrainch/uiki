@@ -253,7 +253,13 @@ export default async function ReportPage() {
         {/* ─── 今週の完了タスク ─── */}
         {doneTasksList.length > 0 && (
           <div className="surface rounded-xl p-5 animate-fade-in delay-200">
-            <p className="section-label">今週の完了タスク</p>
+            <div className="flex items-center gap-2 mb-0">
+              <p className="section-label mb-0">今週の完了タスク</p>
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded"
+                style={{ background: "rgba(74,222,128,0.08)", color: "var(--green)" }}>
+                {tasksDone}件
+              </span>
+            </div>
             <div className="space-y-1 mt-2">
               {doneTasksList.map((t) => {
                 const pc: Record<string, string> = { HIGH: "var(--red)", MEDIUM: "var(--accent)", LOW: "var(--dim)" }
