@@ -113,6 +113,9 @@ export function DreamDetailClient({ id, progress: initialProgress, achieved, cat
           <div className="relative h-2 rounded-full overflow-hidden mb-2" style={{ background: "rgba(255,255,255,0.06)" }}>
             <div className="absolute inset-y-0 left-0 rounded-full transition-all"
               style={{ width: `${progress}%`, background: `linear-gradient(90deg, ${catColor}99, ${catColor})` }} />
+            {[20, 50, 80].map((t) => (
+              <div key={t} className="absolute inset-y-0 w-px" style={{ left: `${t}%`, background: "rgba(255,255,255,0.18)", zIndex: 1 }} />
+            ))}
           </div>
           <input
             type="range" min="0" max="100" step="5" value={progress}
