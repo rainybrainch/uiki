@@ -34,7 +34,7 @@ const nav: NavItem[] = [
   { href: "/personas",             label: "コメント人格", icon: Users, color: "#a0b4ff" },
 ]
 
-export function Sidebar({ weather, overdueCount = 0 }: { weather: WeatherData | null; overdueCount?: number }) {
+export function Sidebar({ weather, overdueCount = 0, waitingPayCount = 0 }: { weather: WeatherData | null; overdueCount?: number; waitingPayCount?: number }) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const [collapsed, setCollapsed] = useState(false)
@@ -197,6 +197,17 @@ export function Sidebar({ weather, overdueCount = 0 }: { weather: WeatherData | 
                   flexShrink: 0,
                 }}>
                   {overdueCount}
+                </span>
+              )}
+              {!collapsed && href === "/cases" && waitingPayCount > 0 && (
+                <span style={{
+                  fontSize: "0.6rem", fontFamily: "monospace", fontWeight: 700,
+                  padding: "1px 5px", borderRadius: 999,
+                  background: "rgba(201,168,76,0.18)", color: "var(--amber)",
+                  border: "1px solid rgba(201,168,76,0.3)",
+                  flexShrink: 0,
+                }}>
+                  {waitingPayCount}
                 </span>
               )}
             </Link>
