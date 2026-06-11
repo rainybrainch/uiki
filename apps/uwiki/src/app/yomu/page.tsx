@@ -41,6 +41,11 @@ export default async function YomuPage() {
     .filter((e) => e.type === "book" || e.type === "quote")
     .sort((a, b) => b.date.localeCompare(a.date))
 
+  const ratedBooks = books.filter((b) => b.stars)
+  const avgStars = ratedBooks.length > 0
+    ? ratedBooks.reduce((s, b) => s + Number(b.stars), 0) / ratedBooks.length
+    : 0
+
   const grouped = groupHealthByMetric(entries, 30)
   const healthMetrics = ["weight", "body_fat", "meal_calories", "meal_protein"]
     .filter((m) => grouped[m]?.values.length > 0)
@@ -58,6 +63,12 @@ export default async function YomuPage() {
             <span className="text-[10px] font-mono px-1.5 py-0.5 rounded"
               style={{ background: "rgba(58,111,201,0.12)", color: "var(--accent)" }}>
               {books.length}件
+            </span>
+          )}
+          {ratedBooks.length > 0 && (
+            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded"
+              style={{ background: "rgba(201,168,76,0.1)", color: "var(--amber)" }}>
+              ★{avgStars.toFixed(1)}
             </span>
           )}
           <a href={YOMU_URL} target="_blank" rel="noopener noreferrer"
