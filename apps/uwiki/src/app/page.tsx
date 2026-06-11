@@ -12,7 +12,7 @@ import { OnboardingCard } from "@/components/dashboard/OnboardingCard"
 import { getWeatherFromSettings } from "@/lib/weather"
 import type { GoogleCalendarEvent } from "@/lib/auth"
 import { getValidToken, fetchCalendarEvents } from "@/lib/auth"
-import type { Task, Habit, HabitLog, Case, Dream } from "@uwiki/database"
+import type { Task, Habit, HabitLog, Case, Dream, LibraryItem } from "@uwiki/database"
 
 type TaskWithProject = Task & { project: { id: string; name: string; color: string } | null }
 type HabitWithLogs = Habit & { logs: Pick<HabitLog, "date" | "id">[] }
@@ -44,6 +44,7 @@ export default async function DashboardPage() {
   let cases: Case[] = []
   let dreams: Dream[] = []
   let projects: { id: string; name: string; color: string }[] = []
+  let currentlyReading: Pick<LibraryItem, "id" | "title" | "creator" | "type"> | null = null
   let weather: { city: string; temperature: number; description: string } | null = null
   let todayGEvents: GoogleCalendarEvent[] = []
 
@@ -115,6 +116,11 @@ export default async function DashboardPage() {
       prisma.dream.findMany({ orderBy: [{ achieved: "asc" }, { layer: "asc" }] }),
       prisma.project.findMany({ where: { archived: false }, orderBy: { order: "asc" }, select: { id: true, name: true, color: true } }),
     ])
+    currentlyReading = await prisma.libraryItem.findFirst({
+      where: { status: "DOING" },
+      select: { id: true, title: true, creator: true, type: true },
+      orderBy: { updatedAt: "desc" },
+    })
   } catch {
     // DB未接続時はダッシュボードを空で表示
   }
@@ -278,6 +284,21 @@ export default async function DashboardPage() {
           </Link>
         </div>
       </section>
+
+      {/* 現在読んでいる本 */}
+      {currentlyReading && (
+        <div className="px-4 pb-3 md:px-8 lg:px-10 xl:px-16 animate-fade-in">
+          <Link href="/library" className="flex items-center gap-3 rounded-xl px-4 py-3 hover:opacity-80 transition-opacity"
+            style={{ background: "rgba(58,111,201,0.04)", border: "1px solid rgba(58,111,201,0.15)" }}>
+            <BookOpen size={13} strokeWidth={1.5} style={{ color: "var(--accent)", shrink: 0 } as React.CSSProperties} />
+            <span className="text-[10px] font-mono text-dim tracking-widest shrink-0">NOW READING</span>
+            <span className="text-sm truncate flex-1">{currentlyReading.title}</span>
+            {currentlyReading.creator && (
+              <span className="text-xs text-dim shrink-0 hidden sm:block">{currentlyReading.creator}</span>
+            )}
+          </Link>
+        </div>
+      )}
 
       {/* 今日のGoogleカレンダー予定 */}
       {todayGEvents.length > 0 && (
