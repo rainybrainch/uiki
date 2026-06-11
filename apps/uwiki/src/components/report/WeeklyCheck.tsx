@@ -67,6 +67,13 @@ export function WeeklyCheck({ dreams, adjustments }: { dreams: Dream[]; adjustme
         ].map(({ label, key }) => {
           const latest = weekChecks.find((a) => (a as Record<string, unknown>)[key] !== null && (a as Record<string, unknown>)[key] !== undefined)
           const val = latest ? (latest as Record<string, unknown>)[key] : undefined
+          const allVals = adjustments
+            .filter((a) => a.type === "WEEKLY")
+            .map((a) => (a as Record<string, unknown>)[key])
+            .filter((v) => v !== null && v !== undefined)
+          const passRate = allVals.length > 0
+            ? Math.round((allVals.filter((v) => v === true).length / allVals.length) * 100)
+            : null
           return (
             <div key={key} className="rounded-lg p-3 text-center"
               style={{ background: val === true ? "rgba(74,222,128,0.08)" : val === false ? "rgba(248,113,113,0.08)" : "rgba(255,255,255,0.02)", border: "1px solid var(--border)" }}>
@@ -79,6 +86,11 @@ export function WeeklyCheck({ dreams, adjustments }: { dreams: Dream[]; adjustme
                 }
               </div>
               <p className="text-[10px] leading-tight" style={{ color: val === true ? "var(--green)" : val === false ? "var(--red)" : "var(--dim)" }}>{label}</p>
+              {passRate !== null && (
+                <p className="text-[9px] font-mono mt-1" style={{ color: "var(--faint)" }}>
+                  全体 {passRate}%
+                </p>
+              )}
             </div>
           )
         })}
