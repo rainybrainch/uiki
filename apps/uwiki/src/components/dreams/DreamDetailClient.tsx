@@ -29,6 +29,15 @@ const FIELD_META: { key: EditableField; label: string; icon: string; multiline?:
   { key: "connections", label: "相互関連性（カンマ区切り）", icon: "⑦" },
 ]
 
+function getPhaseLabel(pct: number): string {
+  if (pct === 0)   return "未着手"
+  if (pct <= 20)   return "萌芽期"
+  if (pct <= 50)   return "成長期"
+  if (pct <= 80)   return "実行期"
+  if (pct < 100)   return "完成期"
+  return "達成"
+}
+
 export function DreamDetailClient({ id, progress: initialProgress, achieved, catColor, dream }: Props) {
   const [progress, setProgress] = useState(initialProgress)
   const [isPending, startTransition] = useTransition()
@@ -94,7 +103,12 @@ export function DreamDetailClient({ id, progress: initialProgress, achieved, cat
                 {filledFields}/{FIELD_META.length} フィールド
               </span>
             </div>
-            <span className="text-sm font-mono font-light" style={{ color: catColor }}>{progress}%</span>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded" style={{ color: catColor, background: `${catColor}12`, opacity: 0.85 }}>
+                {getPhaseLabel(progress)}
+              </span>
+              <span className="text-sm font-mono font-light" style={{ color: catColor }}>{progress}%</span>
+            </div>
           </div>
           <div className="relative h-2 rounded-full overflow-hidden mb-2" style={{ background: "rgba(255,255,255,0.06)" }}>
             <div className="absolute inset-y-0 left-0 rounded-full transition-all"
