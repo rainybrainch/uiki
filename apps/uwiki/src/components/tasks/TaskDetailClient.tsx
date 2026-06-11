@@ -394,6 +394,19 @@ export function TaskDetailClient({
             )
           })()}
         </div>
+        {task.subtasks.length > 0 && (() => {
+          const done = task.subtasks.filter((s) => s.completed).length
+          const pct = Math.round((done / task.subtasks.length) * 100)
+          return (
+            <div className="mb-3 rounded-full overflow-hidden" style={{ height: 3, background: "var(--faint)" }}>
+              <div className="h-full rounded-full transition-all duration-300"
+                style={{
+                  width: `${pct}%`,
+                  background: pct === 100 ? "var(--green)" : "var(--accent)",
+                }} />
+            </div>
+          )
+        })()}
         <SubTaskList taskId={task.id} subtasks={task.subtasks} />
       </div>
 
