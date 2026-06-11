@@ -179,6 +179,10 @@ function ResultSection({ icon, label, color, items, selectedIndex, indexOffset, 
       <div className="flex items-center gap-1.5 px-4 py-2" style={{ borderBottom: "1px solid var(--border)" }}>
         <span style={{ color }}>{icon}</span>
         <span className="text-[10px] font-mono tracking-wider text-faint uppercase">{label}</span>
+        <span className="text-[9px] font-mono px-1 py-0.5 rounded ml-0.5"
+          style={{ background: `${color}18`, color }}>
+          {items.length}
+        </span>
       </div>
       {items.map((item, i) => {
         const idx = indexOffset + i
