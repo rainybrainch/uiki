@@ -95,7 +95,20 @@ export default async function DreamDetailPage({ params }: { params: Promise<{ id
       {/* 紐づきタスク */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-3">
-          <p className="text-[10px] font-mono tracking-widest text-faint">LINKED TASKS</p>
+          <div className="flex items-center gap-2">
+            <p className="text-[10px] font-mono tracking-widest text-faint">LINKED TASKS</p>
+            {linkedTasks.length > 0 && (
+              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded"
+                style={{
+                  background: linkedTasks.filter((t) => t.completed).length === linkedTasks.length
+                    ? "rgba(74,222,128,0.1)" : "rgba(58,111,201,0.1)",
+                  color: linkedTasks.filter((t) => t.completed).length === linkedTasks.length
+                    ? "var(--green)" : "var(--accent)",
+                }}>
+                {linkedTasks.filter((t) => t.completed).length}/{linkedTasks.length}
+              </span>
+            )}
+          </div>
           <LinkTaskButton dreamId={id} availableTasks={availableTasks} />
         </div>
         {linkedTasks.length > 0 ? (
