@@ -134,7 +134,10 @@ export function GravityInternal({ logs }: { logs: GravityLog[] }) {
               </button>
             ))}
           </div>
-          <span style={{ fontSize: "0.72rem", color: "var(--dim)", fontFamily: "monospace" }}>
+          <span style={{
+            fontSize: "0.72rem", fontFamily: "monospace", transition: "color 0.2s",
+            color: text.length >= 261 ? "var(--red)" : text.length >= 201 ? "var(--amber)" : "var(--dim)",
+          }}>
             {text.length}/280
           </span>
           <button
