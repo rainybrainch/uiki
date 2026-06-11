@@ -40,7 +40,10 @@ export function CasePipeline({ columns }: {
       {columns.filter((col) => col.cases.length > 0 || col.status === "ACQUIRED").map((col) => (
         <div key={col.status}>
           {(() => {
-            const total = col.cases.reduce((s, c) => s + c.reward, 0)
+            const isDone = col.status === "DONE"
+            const total = isDone
+              ? col.cases.reduce((s, c) => s + (c.paidAmount ?? c.reward), 0)
+              : col.cases.reduce((s, c) => s + c.reward, 0)
             return (
               <div className="flex items-center gap-2 mb-3">
                 <div className="w-2.5 h-2.5 rounded-full" style={{ background: STATUS_COLORS[col.status] }} />
@@ -50,7 +53,7 @@ export function CasePipeline({ columns }: {
                 <span className="text-xs font-mono text-faint">{col.cases.length}件</span>
                 {total > 0 && (
                   <span className="text-xs font-mono ml-auto" style={{ color: STATUS_COLORS[col.status], opacity: 0.7 }}>
-                    ¥{total.toLocaleString()}
+                    {isDone && <span className="text-[10px] mr-0.5 opacity-60">実</span>}¥{total.toLocaleString()}
                   </span>
                 )}
               </div>
