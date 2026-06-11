@@ -39,20 +39,35 @@ function CategorySection({ cat, label, color, dreams, dreamIdByTitle }: {
     })
   }
 
+  const avgProg = dreams.length > 0
+    ? Math.round(dreams.reduce((s, d) => s + (d.progress ?? 0), 0) / dreams.length)
+    : 0
+
   return (
     <div>
       <button
         onClick={toggle}
-        className="flex items-center gap-2 mb-3 w-full text-left group"
+        className="flex items-center gap-2 w-full text-left group"
+        style={{ marginBottom: avgProg > 0 ? "0.4rem" : "0.75rem" }}
       >
         <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: color }} />
         <h3 className="text-sm font-medium flex-1" style={{ color }}>{label}</h3>
+        {avgProg > 0 && (
+          <span className="text-[10px] font-mono" style={{ color: avgProg >= 50 ? color : "var(--faint)" }}>
+            {avgProg}%
+          </span>
+        )}
         <span className="text-xs font-mono text-faint">{dreams.length}世界</span>
         {collapsed
           ? <ChevronRight size={13} style={{ color: "var(--faint)" }} />
           : <ChevronDown size={13} style={{ color: "var(--faint)" }} />
         }
       </button>
+      {avgProg > 0 && (
+        <div className="h-0.5 rounded-full overflow-hidden mb-3" style={{ background: "rgba(255,255,255,0.06)" }}>
+          <div className="h-full rounded-full" style={{ width: `${avgProg}%`, background: color, opacity: 0.6 }} />
+        </div>
+      )}
       {!collapsed && (
         <div className="space-y-2">
           {dreams.map((d) => <DreamCard key={d.id} dream={d} color={color} dreamIdByTitle={dreamIdByTitle} />)}
