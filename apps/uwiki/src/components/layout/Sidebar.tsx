@@ -34,7 +34,7 @@ const nav: NavItem[] = [
   { href: "/personas",             label: "コメント人格", icon: Users, color: "#a0b4ff" },
 ]
 
-export function Sidebar({ weather }: { weather: WeatherData | null }) {
+export function Sidebar({ weather, overdueCount = 0 }: { weather: WeatherData | null; overdueCount?: number }) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const [collapsed, setCollapsed] = useState(false)
@@ -187,7 +187,18 @@ export function Sidebar({ weather }: { weather: WeatherData | null }) {
               onMouseLeave={(e) => { if (!active) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--dim)" } }}
             >
               <Icon size={15} strokeWidth={active ? 2 : 1.5} style={{ color: active ? accentColor : "inherit", flexShrink: 0 }} />
-              {!collapsed && <span style={{ overflow: "hidden", textOverflow: "ellipsis", opacity: mounted ? 1 : 1 }}>{label}</span>}
+              {!collapsed && <span style={{ overflow: "hidden", textOverflow: "ellipsis", flex: 1, opacity: mounted ? 1 : 1 }}>{label}</span>}
+              {!collapsed && href === "/tasks" && overdueCount > 0 && (
+                <span style={{
+                  fontSize: "0.6rem", fontFamily: "monospace", fontWeight: 700,
+                  padding: "1px 5px", borderRadius: 999,
+                  background: "rgba(248,113,113,0.18)", color: "var(--red)",
+                  border: "1px solid rgba(248,113,113,0.3)",
+                  flexShrink: 0,
+                }}>
+                  {overdueCount}
+                </span>
+              )}
             </Link>
           )
         })}

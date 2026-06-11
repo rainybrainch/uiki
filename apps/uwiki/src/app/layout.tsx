@@ -33,10 +33,15 @@ export const viewport: Viewport = {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   let weather = null
   let rainIntensity = 0.35
+  let overdueCount = 0
   try {
     const settings = await prisma.settings.findUnique({ where: { id: "singleton" } })
     weather = settings ? await getWeatherFromSettings(settings) : null
     rainIntensity = weather?.rainIntensity ?? 0.35
+    const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0)
+    overdueCount = await prisma.task.count({
+      where: { completed: false, parentTaskId: null, dueDate: { lt: todayStart } },
+    })
   } catch (e) { console.error("[layout] error:", e) }
 
   return (
@@ -57,7 +62,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             {/* PCサイドバー */}
             <div className="hidden md:block">
               <Suspense fallback={<div style={{ width: 208, minHeight: "100vh", background: "rgba(4,8,18,0.96)", borderRight: "1px solid var(--border)" }} />}>
-                <Sidebar weather={weather} />
+                <Sidebar weather={weather} overdueCount={overdueCount} />
               </Suspense>
             </div>
 
