@@ -254,6 +254,29 @@ function MetricCard({ metric }: { metric: AttractionMetric & { logs: AttractionL
         </div>
       )}
 
+      {/* スパークライン */}
+      {metric.logs.length > 2 && (() => {
+        const vals = metric.logs.map((l) => l.value)
+        const minV = Math.min(...vals), maxV = Math.max(...vals)
+        const range = maxV - minV || 1
+        const W = 200, H = 22, pad = 3
+        const pts = vals.map((v, i) => {
+          const x = pad + (i / (vals.length - 1)) * (W - pad * 2)
+          const y = H - pad - ((v - minV) / range) * (H - pad * 2)
+          return `${x},${y}`
+        }).join(" ")
+        const lastX = pad + (W - pad * 2)
+        const lastY = H - pad - ((vals[vals.length - 1] - minV) / range) * (H - pad * 2)
+        return (
+          <div className="mb-3">
+            <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: 22 }} aria-hidden>
+              <polyline points={pts} fill="none" stroke="rgba(58,111,201,0.55)" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
+              <circle cx={lastX} cy={lastY} r="2.5" fill="#3a6fc9" />
+            </svg>
+          </div>
+        )
+      })()}
+
       {/* 記録フォーム */}
       <form onSubmit={handleRecord} className="flex gap-2">
         <input
