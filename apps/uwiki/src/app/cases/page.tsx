@@ -150,11 +150,11 @@ export default async function CasesPage({
             href="/cases"
             className={`rounded-lg p-3 text-center shrink-0 min-w-[72px] transition-colors ${!filter || filter === "all" ? "bg-[rgba(58,111,201,0.15)] border border-[rgba(58,111,201,0.4)]" : "surface hover:bg-[var(--faint)]"}`}
           >
-            <p className={`text-lg font-serif ${!filter || filter === "all" ? "text-white" : ""}`}>{cases.length}</p>
+            <p className={`text-lg font-serif ${!filter || filter === "all" ? "text-white" : ""}`}>{allCases.length}</p>
             <p className={`text-[10px] whitespace-nowrap ${!filter || filter === "all" ? "text-[var(--accent)]" : "text-dim"}`}>すべて</p>
           </Link>
           {STATUS_ORDER.map((s) => {
-            const count = cases.filter((c) => c.status === s).length
+            const count = allCases.filter((c) => c.status === s).length
             const active = filter === s
             const empty = count === 0 && !active
             return (
