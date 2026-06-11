@@ -230,6 +230,12 @@ export default async function ReportPage() {
                     <div className="w-2 h-2 rounded-full shrink-0" style={{ background: h.color }} />
                     <span className="text-sm flex-1">{h.name}</span>
                     <div className="flex items-center gap-2">
+                      {done === 7 && (
+                        <span className="text-[9px] font-mono px-1 py-0.5 rounded"
+                          style={{ background: "rgba(74,222,128,0.12)", color: "var(--green)" }}>
+                          完璧
+                        </span>
+                      )}
                       <div className="w-16 h-1.5 rounded-full" style={{ background: "var(--faint)" }}>
                         <div className="h-full rounded-full" style={{ width: `${rate * 100}%`, background: h.color }} />
                       </div>
