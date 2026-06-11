@@ -15,7 +15,7 @@ const WEIGHTS = [
     glow: "inset 0 0 20px rgba(184,122,58,0.15), 0 0 16px rgba(184,122,58,0.18)" },
 ]
 
-export function GravityInternal({ logs }: { logs: GravityLog[] }) {
+export function GravityInternal({ logs, totalCount }: { logs: GravityLog[]; totalCount?: number }) {
   const [text, setText] = useState("")
   const [weight, setWeight] = useState(1)
   const [isPending, startTransition] = useTransition()
@@ -53,9 +53,9 @@ export function GravityInternal({ logs }: { logs: GravityLog[] }) {
             color: "#c9a84c", letterSpacing: "0.05em",
           }}>砂のログ</h2>
           <span style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            {logs.length > 0 && (
+            {(totalCount ?? logs.length) > 0 && (
               <span style={{ fontSize: "0.7rem", fontFamily: "monospace", color: "#c9a84c", background: "rgba(201,168,76,0.12)", padding: "2px 6px", borderRadius: 4 }}>
-                {logs.length}粒
+                {totalCount ?? logs.length}粒
               </span>
             )}
             <span style={{ fontSize: "0.7rem", color: "var(--dim)", letterSpacing: "0.1em" }}>
