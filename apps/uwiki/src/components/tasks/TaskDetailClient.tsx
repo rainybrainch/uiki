@@ -378,7 +378,22 @@ export function TaskDetailClient({
 
       {/* サブタスク */}
       <div className="surface rounded-xl p-5">
-        <p className="text-xs text-dim mb-3">サブタスク</p>
+        <div className="flex items-center gap-2 mb-3">
+          <p className="text-xs text-dim">サブタスク</p>
+          {task.subtasks.length > 0 && (() => {
+            const done = task.subtasks.filter((s) => s.completed).length
+            const allDone = done === task.subtasks.length
+            return (
+              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded"
+                style={{
+                  background: allDone ? "rgba(74,222,128,0.1)" : "rgba(58,111,201,0.1)",
+                  color: allDone ? "var(--green)" : "var(--accent)",
+                }}>
+                {done}/{task.subtasks.length}
+              </span>
+            )
+          })()}
+        </div>
         <SubTaskList taskId={task.id} subtasks={task.subtasks} />
       </div>
 
