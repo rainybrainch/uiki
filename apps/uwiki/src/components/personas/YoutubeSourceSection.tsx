@@ -52,6 +52,15 @@ export function YoutubeSourceSection({ sources }: { sources: PersonaYoutubeSourc
         borderBottom: "1px solid rgba(255,255,255,.08)", display: "flex", alignItems: "center", gap: 8,
       }}>
         YouTube ソース
+        {sources.length > 0 && (
+          <span style={{
+            fontSize: 9, fontWeight: 400, padding: "1px 6px", borderRadius: 999,
+            background: "rgba(255,80,80,.12)", color: "#ff8080", border: "1px solid rgba(255,80,80,.25)",
+            textTransform: "none", letterSpacing: 0,
+          }}>
+            {sources.length}件
+          </span>
+        )}
         <span style={{ fontSize: 10, fontWeight: 400, color: "var(--fg-muted, #888)", textTransform: "none", letterSpacing: 0 }}>
           — URLをストックして定期的に AI 人格を生成
         </span>
