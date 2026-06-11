@@ -88,7 +88,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
           {/* モバイルボトムナビ */}
           <Suspense fallback={null}>
-            <MobileNav />
+            <MobileNav overdueCount={overdueCount} />
           </Suspense>
         </SessionProvider>
       </body>

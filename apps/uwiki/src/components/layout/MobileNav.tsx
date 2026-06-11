@@ -32,7 +32,7 @@ const MORE_NAV = [
   { href: "/settings",              label: "設定",       icon: Settings2 },
 ]
 
-export function MobileNav() {
+export function MobileNav({ overdueCount = 0 }: { overdueCount?: number }) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const [open, setOpen] = useState(false)
@@ -163,8 +163,23 @@ export function MobileNav() {
                   background: "var(--accent)",
                 }} />
               )}
-              <Icon size={20} strokeWidth={active ? 2.2 : 1.5}
-                style={{ color: active ? "var(--accent)" : "inherit", transition: "color 0.12s" }} />
+              <span style={{ position: "relative", display: "inline-flex" }}>
+                <Icon size={20} strokeWidth={active ? 2.2 : 1.5}
+                  style={{ color: active ? "var(--accent)" : "inherit", transition: "color 0.12s" }} />
+                {href === "/tasks" && overdueCount > 0 && (
+                  <span style={{
+                    position: "absolute", top: -3, right: -5,
+                    minWidth: 14, height: 14,
+                    fontSize: "0.52rem", fontFamily: "monospace", fontWeight: 700,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    background: "var(--red)", color: "white",
+                    borderRadius: 999, lineHeight: 1,
+                    padding: "0 3px",
+                  }}>
+                    {overdueCount > 9 ? "9+" : overdueCount}
+                  </span>
+                )}
+              </span>
               {label}
             </Link>
           )
