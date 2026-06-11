@@ -111,13 +111,19 @@ export default async function CalendarPage({
   const prevMonth = format(subMonths(monthDate, 1), "yyyy-MM")
   const nextMonth = format(addMonths(monthDate, 1), "yyyy-MM")
 
+  // 今月の Google Calendar イベント数
+  const googleEventsThisMonth = googleEvents.filter((e) => {
+    const d = e.start.dateTime ? format(new Date(e.start.dateTime), "yyyy-MM") : e.start.date?.slice(0, 7)
+    return d === monthStr
+  }).length
+
   return (
     <div className="h-full flex flex-col max-w-5xl mx-auto w-full">
       <div className="px-4 py-5 md:px-8 md:py-8 shrink-0 space-y-3">
         <div className="flex items-center gap-3">
           <CalendarDays size={20} strokeWidth={1.5} style={{ color: "var(--accent)" }} />
           <h1 className="text-2xl font-serif font-light tracking-wide">カレンダー</h1>
-          {(tasks.length > 0 || diaryEntries.length > 0 || cases.length > 0) && (
+          {(tasks.length > 0 || diaryEntries.length > 0 || cases.length > 0 || googleEventsThisMonth > 0) && (
             <div className="flex items-center gap-1.5 ml-1">
               {tasks.length > 0 && (
                 <span className="text-[10px] font-mono px-1.5 py-0.5 rounded"
@@ -135,6 +141,12 @@ export default async function CalendarPage({
                 <span className="text-[10px] font-mono px-1.5 py-0.5 rounded"
                   style={{ background: "rgba(201,168,76,0.1)", color: "var(--amber)" }}>
                   案件{cases.length}
+                </span>
+              )}
+              {googleEventsThisMonth > 0 && (
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded"
+                  style={{ background: "rgba(74,222,128,0.08)", color: "#4ade80" }}>
+                  GCal{googleEventsThisMonth}
                 </span>
               )}
             </div>
