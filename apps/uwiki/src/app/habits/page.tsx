@@ -104,6 +104,12 @@ export default async function HabitsPage() {
                         最高{habit.bestStreak}
                       </span>
                     )}
+                    {habit.logDates.length > 0 && (
+                      <span className="text-[9px] font-mono px-1.5 py-0.5 rounded shrink-0 ml-auto"
+                        style={{ background: "rgba(255,255,255,0.03)", color: "var(--faint)" }}>
+                        通算{habit.logDates.length}回
+                      </span>
+                    )}
                   </div>
                   <HabitHeatmap
                     logDates={habit.logDates}
