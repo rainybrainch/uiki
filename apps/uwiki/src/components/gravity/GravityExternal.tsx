@@ -14,6 +14,8 @@ const SELF_METRICS = [
 ]
 
 export function GravityExternal({ metrics }: { metrics: (AttractionMetric & { logs: AttractionLog[] })[] }) {
+  const todayStr = new Date().toISOString().slice(0, 10)
+  const todayRecordedCount = metrics.filter((m) => m.logs.some((l) => l.date === todayStr)).length
   const [showAdd, setShowAdd]     = useState(false)
   const [name, setName]           = useState("")
   const [target, setTarget]       = useState("")
@@ -48,8 +50,20 @@ export function GravityExternal({ metrics }: { metrics: (AttractionMetric & { lo
             fontSize: "1.2rem", fontWeight: 500,
             color: "#3a6fc9", letterSpacing: "0.05em",
           }}>引力雨域</h2>
-          <span style={{ marginLeft: "auto", fontSize: "0.7rem", color: "var(--dim)", letterSpacing: "0.1em" }}>
-            アナリスト（引力AI）
+          <span style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            {metrics.length > 0 && (
+              <span style={{ fontSize: "0.7rem", fontFamily: "monospace", color: "#3a6fc9", background: "rgba(58,111,201,0.12)", padding: "2px 6px", borderRadius: 4 }}>
+                {metrics.length}項目
+              </span>
+            )}
+            {todayRecordedCount > 0 && (
+              <span style={{ fontSize: "0.7rem", fontFamily: "monospace", color: "var(--green)", background: "rgba(74,222,128,0.08)", padding: "2px 6px", borderRadius: 4 }}>
+                今日{todayRecordedCount}件
+              </span>
+            )}
+            <span style={{ fontSize: "0.7rem", color: "var(--dim)", letterSpacing: "0.1em" }}>
+              アナリスト（引力AI）
+            </span>
           </span>
         </div>
         <p style={{ fontSize: "0.85rem", color: "var(--dim)", lineHeight: 1.6, margin: 0 }}>
