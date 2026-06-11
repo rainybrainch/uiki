@@ -92,7 +92,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
           {/* モバイルボトムナビ */}
           <Suspense fallback={null}>
-            <MobileNav overdueCount={overdueCount} />
+            <MobileNav overdueCount={overdueCount} waitingPayCount={waitingPayCount} />
           </Suspense>
         </SessionProvider>
       </body>

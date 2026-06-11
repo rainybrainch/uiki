@@ -32,7 +32,7 @@ const MORE_NAV = [
   { href: "/settings",              label: "設定",       icon: Settings2 },
 ]
 
-export function MobileNav({ overdueCount = 0 }: { overdueCount?: number }) {
+export function MobileNav({ overdueCount = 0, waitingPayCount = 0 }: { overdueCount?: number; waitingPayCount?: number }) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const [open, setOpen] = useState(false)
@@ -92,6 +92,7 @@ export function MobileNav({ overdueCount = 0 }: { overdueCount?: number }) {
           {MORE_NAV.map(({ href, label, icon: Icon, color }) => {
             const active = isActive(href)
             const c = color ?? "var(--accent)"
+            const hasBadge = href === "/cases" && waitingPayCount > 0
             return (
               <Link
                 key={href}
@@ -113,7 +114,21 @@ export function MobileNav({ overdueCount = 0 }: { overdueCount?: number }) {
                   transition: "background 0.15s, opacity 0.08s, transform 0.08s",
                 }}
               >
-                <Icon size={20} strokeWidth={active ? 2 : 1.5} style={{ color: active ? c : "inherit" }} />
+                <span style={{ position: "relative", display: "inline-flex" }}>
+                  <Icon size={20} strokeWidth={active ? 2 : 1.5} style={{ color: active ? c : "inherit" }} />
+                  {hasBadge && (
+                    <span style={{
+                      position: "absolute", top: -3, right: -5,
+                      minWidth: 14, height: 14,
+                      fontSize: "0.52rem", fontFamily: "monospace", fontWeight: 700,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      background: "rgba(201,168,76,0.9)", color: "#060c1a",
+                      borderRadius: 999, lineHeight: 1, padding: "0 3px",
+                    }}>
+                      {waitingPayCount > 9 ? "9+" : waitingPayCount}
+                    </span>
+                  )}
+                </span>
                 <span style={{ whiteSpace: "nowrap" }}>{label}</span>
               </Link>
             )
@@ -201,10 +216,20 @@ export function MobileNav({ overdueCount = 0 }: { overdueCount?: number }) {
             fontSize: "0.62rem", transition: "color 0.12s, opacity 0.08s, transform 0.08s",
           }}
         >
-          {open
-            ? <X size={20} style={{ color: "var(--accent)" }} />
-            : <MoreHorizontal size={20} strokeWidth={1.5} style={{ color: isMoreActive ? "var(--accent)" : "inherit" }} />
-          }
+          <span style={{ position: "relative", display: "inline-flex" }}>
+            {open
+              ? <X size={20} style={{ color: "var(--accent)" }} />
+              : <MoreHorizontal size={20} strokeWidth={1.5} style={{ color: isMoreActive ? "var(--accent)" : "inherit" }} />
+            }
+            {!open && waitingPayCount > 0 && (
+              <span style={{
+                position: "absolute", top: -2, right: -4,
+                width: 7, height: 7,
+                background: "var(--amber)",
+                borderRadius: 999,
+              }} />
+            )}
+          </span>
           もっと
         </button>
       </nav>
